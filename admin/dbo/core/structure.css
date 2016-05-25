@@ -1,0 +1,81 @@
+/* new clearfix */
+.clearfix:after {
+	visibility: hidden;
+	display: block;
+	font-size: 0;
+	content: " ";
+	clear: both;
+	height: 0;
+	}
+* html .clearfix             { zoom: 1; } /* IE6 */
+*:first-child+html .clearfix { zoom: 1; } /* IE7 */
+
+.dbo-element img { border: 0; }
+.dbo-element a { outline: none; }
+
+.dbo-element ul,
+.dbo-element li { padding: 0; margin: 0; list-style: none; }
+.wrapper-dbo-auto-admin ul,
+.wrapper-dbo-auto-admin li { padding: 0; margin: 0; list-style: none; }
+
+.wrapper-dbo-auto-admin *:focus{outline: none;}
+
+/* CSS reset */
+
+.wrapper-dbo-auto-admin .hidden { display: none; }
+
+/* estrutura dos formularios */
+.dbo-element div.fieldset .row { clear: both; }
+.dbo-element div.fieldset .row .item .dica {}
+.dbo-element div.fieldset .row .item { box-sizing: border-box; -ms-box-sizing: border-box; -moz-box-sizing: border-box; -webkit-box-sizing: border-box; position: relative; }
+.dbo-element div.fieldset .row .item-100 { float: left; width: 100%; }
+.dbo-element div.fieldset .row .item-80 { float: left; width: 80%; }
+.dbo-element div.fieldset .row .item-75 { float: left; width: 75%; }
+.dbo-element div.fieldset .row .item-66 { float: left; width: 66.6%; }
+.dbo-element div.fieldset .row .item-50 { float: left; width: 50%; }
+.dbo-element div.fieldset .row .item-33 { float: left; width: 33.3%; }
+.dbo-element div.fieldset .row .item-25 { float: left; width: 25%; }
+.dbo-element div.fieldset .row .item-20 { float: left; width: 20%; }
+.dbo-element div.fieldset .row .item label { display: block; }
+.dbo-element div.fieldset .row .item input[type=text],
+.dbo-element div.fieldset .row .item input[type=password],
+.dbo-element div.fieldset .row .item textarea,
+.dbo-element div.fieldset .row .item select { box-sizing: border-box; -ms-box-sizing: border-box; -moz-box-sizing: border-box; -webkit-box-sizing: border-box; }
+.dbo-element div.fieldset .row .item label {}
+.dbo-element div.fieldset .row .item label .required {}
+
+/* estrutura dos views */
+.dbo-element div.viewset .row { clear: both; }
+.dbo-element div.viewset .row .item .dica {}
+.dbo-element div.viewset .row .item { box-sizing: border-box; -ms-box-sizing: border-box; -moz-box-sizing: border-box; -webkit-box-sizing: border-box; position: relative; }
+.dbo-element div.viewset .row .item-100 { float: left; width: 100%; }
+.dbo-element div.viewset .row .item-80 { float: left; width: 80%; }
+.dbo-element div.viewset .row .item-75 { float: left; width: 75%; }
+.dbo-element div.viewset .row .item-66 { float: left; width: 66.6%; }
+.dbo-element div.viewset .row .item-50 { float: left; width: 50%; }
+.dbo-element div.viewset .row .item-33 { float: left; width: 33.3%; }
+.dbo-element div.viewset .row .item-25 { float: left; width: 25%; }
+.dbo-element div.viewset .row .item-20 { float: left; width: 20%; }
+.dbo-element div.viewset .row .item label { display: block; }
+.dbo-element div.viewset .row .item label {}
+.dbo-element div.viewset .row .item label .required {}
+
+/* header styles */
+.wrapper-dbo-auto-admin h1 { position: relative; }
+
+/*
+div.fieldset .item {  }
+div.fieldset .item .dica { display: block; position: absolute; top: 0px; right: 15px; font-size: 10px; color: #999; }
+div.fieldset .item .label { padding-right: 7px; }
+div.fieldset .item .input input[type=text],
+div.fieldset .item .input select,
+div.fieldset .item .input textarea { font-size: 15px; width: 530px; font-family: Trebuchet MS, Tahoma, Sans-serif; color: #777; font-size: 13px; padding: 4px; -moz-border-radius: 7px; -webkit-border-radius: 7px; border: 1px solid #CCC; font-weight: bold; background: #FFF; text-align: left; -webkit-transition: all 0.3s ease; -moz-transition: all 0.3s ease; }
+div.fieldset .item .input input:hover,
+div.fieldset .item .input select:hover,
+div.fieldset .item .input textarea:hover { -moz-box-shadow: 0px 0px 5px #CCC; -webkit-box-shadow: 0px 0px 5px #CCC; }
+div.fieldset .item .input input:focus
+div.fieldset .item .input select:focus
+div.fieldset .item .input textarea:focus { -moz-box-shadow: 0px 0px 5px #CCC; -webkit-box-shadow: 0px 0px 5px #CCC; background: #FAFAFA; }
+div.fieldset .item .submit { padding-top: 1em; }
+div.fieldset .item .submit * { width: 265px; font-family: Trebuchet MS, Tahoma, Sans-serif; color: #777; font-size: 15px; padding: 4px; -moz-border-radius: 7px; -webkit-border-radius: 7px; border: 1px solid #CCC; text-align: center; background: #EEE; font-weight: bold; }
+*/

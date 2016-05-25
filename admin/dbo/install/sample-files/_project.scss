@@ -1,0 +1,14 @@
+@charset "UTF-8";
+@import "foundation/variables";
+
+$header-color: $primary-color; /* verde agua */
+$title-color: #e0b88b; /* laranja desbotado */
+
+$neutral-link-color: #aaa;
+
+/* cores dos status */
+$status-color-ok: #16A765;
+$status-color-alert: #FF5353;
+$status-color-warning: #FFAD46;
+$status-color-ongoing: #ADEDD0;
+$status-color-cancel: #EEEEEE;

@@ -1,0 +1,52 @@
+@charset "UTF-8";
+
+@mixin desature-on {
+	filter: grayscale(100%); /* Current draft standard */
+    -webkit-filter: grayscale(100%); /* New WebKit */
+    -moz-filter: grayscale(100%);
+    -ms-filter: grayscale(100%); 
+    -o-filter: grayscale(100%); /* Not yet supported in Gecko, Opera or IE */ 
+    filter: url("data:image/svg+xml;utf8,<svg%20xmlns='http://www.w3.org/2000/svg'><filter%20id='grayscale'><feColorMatrix%20type='matrix'%20values='0.3333%200.3333%200.3333%200%200%200.3333%200.3333%200.3333%200%200%200.3333%200.3333%200.3333%200%200%200%200%200%201%200'/></filter></svg>#grayscale");
+    filter: gray; /* IE */
+    -webkit-filter: grayscale(1); /* Old WebKit */	
+}
+
+@mixin desature-off {
+	filter: none;
+    -webkit-filter: grayscale(0);
+    -moz-filter: grayscale(0);
+    -ms-filter: grayscale(0); 
+    -o-filter: grayscale(0);
+}
+
+@mixin transition($foo) {
+    -webkit-transition: $foo;
+    -moz-transition: $foo;
+    -ms-transition: $foo;
+    -o-transition: $foo;
+    transition: $foo;
+}
+
+@mixin transform($foo) {
+    -webkit-transform: $foo;
+    -moz-transform: $foo;
+    -ms-transform: $foo;
+    -o-transform: $foo;
+    transform: $foo;
+}
+
+@mixin border-radius($foo) {
+    -webkit-border-radius: $foo;
+    -moz-border-radius: $foo;
+    -ms-border-radius: $foo;
+    -o-border-radius: $foo;
+    border-radius: $foo;
+}
+
+@mixin box-shadow($foo) {
+	-webkit-box-shadow: $foo;
+	-moz-box-shadow: $foo;
+	-ms-box-shadow: $foo;
+	-o-box-shadow: $foo;
+	box-shadow: $foo;
+}

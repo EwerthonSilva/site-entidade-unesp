@@ -1,0 +1,195 @@
+//common CSS and Foundation Adjustments 07/03/2016
+
+//variables used here
+$peixe-helper-background-color: #333 !default;
+
+//printing
+@media print {
+	img { max-width: 100% !important; }
+	p, h2, h3 { orphans: 3; widows: 3; }
+	.no-print { display: none; }
+}
+
+//consertando o maldito modulo de segurança do BB
+html > object { display: none !important; }
+
+//escondendo parágrafos
+.hide-empty:empty { display: none; }
+p:empty { display: none; }
+
+//word wrapping in different breakpoints
+.medium-nowrap {
+	@include breakpoint(medium) { white-space: nowrap; }
+}
+.large-nowrap {
+	@include breakpoint(large) { white-space: nowrap; }
+}
+
+//disable selection
+.no-select {
+	-webkit-touch-callout: none;
+	-webkit-user-select: none;
+	-khtml-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	user-select: none;
+}
+
+//helpers
+.helper { font-size: rem-calc(14) !important; color: #fff !important; padding: rem-calc(10 15) !important; background: $peixe-helper-background-color; border-radius: rem-calc(5); position: relative; display: inline-block; cursor: help;
+	em { font-style: normal; text-decoration: underline; }
+
+	&.arrow-left:after { right: 100%; border: solid transparent; content: " "; height: 0; width: 0; position: absolute; pointer-events: none; }
+	&.arrow-left:after { border-color: rgba(51, 51, 51, 0); border-right-color: $peixe-helper-background-color; border-width: 6px; top: 50%; margin-top: -6px; }
+
+	&.arrow-bottom:after { top: 100%; border: solid transparent; content: " "; height: 0; width: 0; position: absolute; pointer-events: none; }
+	&.arrow-bottom:after { border-color: rgba(51, 51, 51, 0); border-top-color: $peixe-helper-background-color; border-width: 6px;	left: 50%; margin-left: -6px; }
+
+	&.arrow-right:after { left: 100%; border: solid transparent; content: " "; height: 0; width: 0; position: absolute; pointer-events: none; }
+	&.arrow-right:after { border-color: rgba(51, 51, 51, 0); border-left-color: $peixe-helper-background-color; border-width: 6px; top: 50%; margin-top: -6px; }
+
+	&.arrow-top:after { bottom: 100%; border: solid transparent; content: " "; height: 0; width: 0; position: absolute; pointer-events: none; }
+	&.arrow-top:after { border-color: rgba(51, 51, 51, 0); border-bottom-color: $peixe-helper-background-color; border-width: 6px; left: 50%; margin-left: -6px; }
+
+	*:last-child { margin-bottom: 0 !important; }
+}
+
+//some support classes
+.hidden { display: none; }
+.help { cursor: help; }
+.pointer { cursor: pointer; }
+.underline { text-decoration: underline; }
+.inline-block { display: inline-block !important; }
+.w-auto { width: auto !important; }
+.h-auto { height: auto !important; }
+.no-click > a { cursor: default; }
+.relative { position: relative; }
+
+//peixe messages
+.wrapper-message { font-family: $body-font-family, Sans-serif; max-height: rem-calc(100); position: fixed; top: 0; left: 0px; width: 100%; line-height: 1.2; overflow: hidden; font-size: rem-calc(19); z-index: 10000; opacity: 0.95; text-align: center; transition: all 1.5s ease;
+	&.closed { max-height: 0; }
+	&.no-transition { transition: none !important; }
+	.success { background: $peixe-helper-background-color; color: #FFF; font-weight: 100; padding: 15px 25px; }
+	.error { background: #CC0000; color: #FFF; font-weight: 100; padding: 15px 25px; }
+}
+
+//ajax helpers
+.peixe-screen-freezer { position: fixed; z-index: 10000; width: 100%; height: 100%; background: transparent; display: none; }
+.peixe-ajax-loader { position: fixed; z-index: 10001; background: $peixe-helper-background-color; padding: 5px 10px; color: #FFF; border-radius: 3px; top: 10px; left: 10px; box-shadow: 0px 1px 2px rgba(1,1,1,.2); text-shadow: 0px -1px 0px rgba(1,1,1,.99); display: none; }
+
+//media-manager styles
+div[media-manager-element="image-container"] { max-width: 100%;
+	&.float-left { float: left; margin-right: 1.5em; margin-bottom: 1em; }
+	&.float-right { float: right; margin-left: 1.5em; margin-bottom: 1em; } 
+	dl { display: inline-block; margin: 0; max-width: 100%;
+		dt { margin: 0; max-width: 100%;
+			img { display: block; max-width: 100%; }
+		}
+		dd { color: #999; font-style: italic; margin: 0; padding-top: 5px; font-size: 12px; }
+	}
+}
+
+//color helpers
+.color {
+	@each $key, $value in $foundation-palette {
+		&.#{$key} { color: #{$value}; }
+	}
+}
+
+//forms
+textarea { height: auto; resize: vertical; }
+input[type="file"][peixe-ajax-file-upload] { position: absolute; width: 1px; height: 1px; opacity: 0; margin-top: 30px; margin-left: 15px; }
+
+//font-size adjusmente on demand
+@each $value in $breakpoint-classes {
+	@if $value == small {
+		@for $i from 9 through 30 {
+			.font-#{$i} { font-size: rem-calc($i) !important; }
+		}
+	}
+	@else {
+		@include breakpoint($value) { 
+			@for $i from 9 through 30 {
+				.#{$value}-font-#{$i} { font-size: rem-calc($i) !important; }
+			}
+		}
+	}
+}
+
+//float adjustments
+@each $value in $breakpoint-classes {
+	@if $value == small {
+		.float-left { float: left; }
+		.float-right { float: right; }
+	}
+	@else {
+		@include breakpoint($value) { 
+			.#{$value}-float-left { float: left; }
+			.#{$value}-float-right { float: right; }
+			.#{$value}-float-none { float: none; }
+		}
+	}
+}
+
+//fine-tune position adjustments
+@each $value in $breakpoint-classes {
+	@if $value == small {
+		@for $i from 1 through 30 {
+			.top-#{$i} { top: rem-calc($i); }
+			.top-minus-#{$i} { top: rem-calc(-$i); }
+		}
+	}
+	@else {
+		@include breakpoint($value) { 
+			@for $i from 1 through 30 {
+				.#{$value}-top-#{$i} { top: rem-calc($i); }
+				.#{$value}-top-minus-#{$i} { top: rem-calc(-$i); }
+			}
+		}
+	}
+}
+
+//margin control
+@each $value in $breakpoint-classes {
+	@if $value == small {
+		.no-margin { margin-bottom: 0 !important; }
+		.margin-bottom { margin-bottom: $global-margin !important; }
+		@for $i from 1 through 5 {
+			.margin-bottom-#{$i*2}x { margin-bottom: $global-margin*$i*2 !important; }
+		}
+	}
+	@else {
+		@include breakpoint($value) { 
+			.#{$value}-no-margin { margin-bottom: 0 !important; }
+			.#{$value}-margin-bottom { margin-bottom: $global-margin !important; }
+			@for $i from 1 through 5 {
+				.#{$value}-margin-bottom-#{$i*2}x { margin-bottom: $global-margin*$i*2 !important; }
+			}
+		}
+	}
+}
+
+/* ------------------ */
+/* FOUNDATION HELPERS */
+/* ------------------ */
+
+//rows
+.row.full { max-width: 100%; }
+
+//button icons
+.button i[class^=fa-]:not(.single) { margin-right: .3em; }
+
+//prevent FOUC (Flash of Unstyled Content) for .top-bar and .title-bar
+.no-js {
+	@include breakpoint(small only) {
+		.top-bar {
+			display: none; 
+		}
+	}
+
+	@include breakpoint(medium) {
+		.title-bar {
+			display: none;
+		}
+	}
+}
