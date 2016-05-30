@@ -91,8 +91,8 @@ if(!strlen(trim($error)))
 	}
 
 	$to = $_POST['email'];
-	$subject = "All Pharma Júnior - Confirmação de Inscrição";
-	$from_name = "All Pharma Júnior";
+	$subject = SYSTEM_NAME ." - Confirmação de Inscrição";
+	$from_name = SYSTEM_NAME;
 	$from_email = "no-reply@fcfar.unesp.br";
 
 	$message = "
