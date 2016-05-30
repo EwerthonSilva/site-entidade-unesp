@@ -7,9 +7,9 @@
 /* ************************************************************************************************ */
 
 //system definitions
-define (SYSTEM_NAME, 'AllPharmaJr'); // System Name
+define (SYSTEM_NAME, 'Site Entidade Unesp'); // System Name
 define (SYSTEM_DESCRIPTION, 'Administração'); // System description (be reasonable...)
-define (DBO_URL, 'https://www.fcfar.unesp.br/eventos/allpharmajr/admin/dbo'); // http url to the dbo folder (without the last slash '/')
+define (DBO_URL, 'https://www.fcfar.unesp.br/eventos/site-entidade-unesp/admin/dbo'); // http url to the dbo folder (without the last slash '/')
 
 //system colors
 define (COLOR_MENU, '#9fbdb5'); // color of the menu background (use hexadecimal)

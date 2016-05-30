@@ -9,7 +9,7 @@ $ev = new evento($_GET['evento']);
 	<meta charset="UTF-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
 
-	<title>All Pharma Jr - Inscrições</title>
+	<title><?=SYSTEM_NAME?> - Inscrições</title>
 	<meta name="description" content="">
 	<meta name="author" content="Serviço Técnico de Informática - FCFAR - UNESP - Araraquara">
 	<!-- <meta name="viewport" content="width=device-width" /> -->

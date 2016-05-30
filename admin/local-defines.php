@@ -1,7 +1,7 @@
 <?
-	define(BREAD_CRUMB_NAME, 'All Pharma Jr');
-	define(HEADER_NAME, '<span class="hide-for-small inline">Eventos All Pharma Jr</span><span class="show-for-small inline">All Pharma Jr</span>');
-	define(SYSTEM_SLUG, 'allpharmajr');
+	define(BREAD_CRUMB_NAME, 'Site Entidade Unesp');
+	define(HEADER_NAME, '<span class="hide-for-small inline">Eventos Site Entidade Unesp</span><span class="show-for-small inline">Site Entidade Unesp</span>');
+	define(SYSTEM_SLUG, 'siteentidadeunesp');
 
 	$_system['module_blacklist'] = array(
 		'pagina',
