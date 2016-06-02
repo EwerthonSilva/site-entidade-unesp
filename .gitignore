@@ -1,0 +1,7 @@
+admin/local-defines.php
+admin/lib/db.php
+admin/lib/defines.php
+admin/dbo/upload/files/*
+admin/dbo/upload/images/*
+admin/dbo/upload/dbo-media-manager/*
+admin/scss/foundation/_variables.scss
