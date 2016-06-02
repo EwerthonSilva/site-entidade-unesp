@@ -4,4 +4,7 @@ admin/lib/defines.php
 admin/dbo/upload/files/*
 admin/dbo/upload/images/*
 admin/dbo/upload/dbo-media-manager/*
+admin/dbo/module_backups
 admin/scss/foundation/_variables.scss
+admin/.sass-cache
+admin/css
