@@ -7,7 +7,7 @@ Assim que clonar o sistema, deve-se **copiar os arquivos de outro sistema** já 
 - admin/local-defines.php
 - admin/scss/foundation/_variables.scss
 
-##Adição do **dbo** como **fake submodule** na pasta admin
+##Adição do dbo como fake submodule na pasta admin
 
 1. Navegar para a pasta admin   
 ``cd admin``
