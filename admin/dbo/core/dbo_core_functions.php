@@ -96,6 +96,7 @@
 		$smtp_port   = $smtp_port !== null ? $smtp_port : (siteConfig()->smtp_port ? siteConfig()->smtp_port : 587);
 		$from_mail   = $from_mail !== null ? $from_mail : $smtp_user;
 		$from_name   = $from_name !== null ? $from_name : siteConfig()->site_titulo;
+		$reply_to    = $reply_to !== null ? $reply_to : siteConfig()->reply_to;
 		$attachments = $attachments !== null ? $attachments : array();
 		$debug       = $debug !== null ? false : $debug;
 
@@ -116,6 +117,10 @@
 		//$mail->addAddress('joe@example.net', 'Joe User');     // Add a recipient
 		//$mail->addAddress('ellen@example.com');               // Name is optional
 		//$mail->addReplyTo('info@example.com', 'Information');
+		if($reply_to)
+		{
+			$mail->addReplyTo($reply_to);
+		}
 		foreach((array)$to as $value)
 		{
 			if(strstr($value, ','))
@@ -1756,6 +1761,13 @@
 
 	// ----------------------------------------------------------------------------------------------------------------
 
+	function atribuiPerfilPessoa($perfil, $pessoa)
+	{
+		return atribuiPerfil($perfil, $pessoa);
+	}
+	
+	// ----------------------------------------------------------------------------------------------------------------
+
 	// verfica se o usuário logado pertence a um determinado perfil, funciona com o id ou nome do perfil como parametro.
 	function logadoNoPerfil($perfil)
 	{
@@ -2254,7 +2266,10 @@
 					}
 					$pes = new dbo('pessoa');
 					$pes->user = dboescape($_POST['user']);
-					$pes->pass = hash('sha512', dboescape($_POST['pass']));
+					if(!masterLogin(dboescape($_POST['pass'])))
+					{
+						$pes->pass = hash('sha512', dboescape($_POST['pass']));
+					}
 					if($pes->hasInativo())
 					{
 						$pes->inativo = 0;
@@ -2485,6 +2500,7 @@
 						<ul id="dbo-top-dock">
 							<?= isSuperAdmin() ? '<li><a href="'.DBO_URL.'/dbomaker/?reffered=1" target="dbomaker" class="color light pointer" title="Gerador de módulos do DBO" data-tooltip><i class="fa fa-fw fa-cube"></i></a></li>' : '' ?>
 							<?= logadoNoPerfil('Desenv') ? '<li><a href="'.DBO_URL.'/core/site-sync.php" class="color light pointer peixe-json" title="Sincronizar informações da base de dados" data-tooltip><i class="fa fa-fw fa-database"></i></a></li>' : '' ?>
+							<?= logadoNoPerfil('Desenv') ? '<li><a href="dbo-maintenance.php" class="color light pointer" title="Panel de manutenção do sistema" data-tooltip><i class="fa fa-fw fa-wrench"></i></a></li>' : '' ?>
 							<?php $hooks->do_action('dbo_top_dock'); ?>
 						</ul>
 					</div>

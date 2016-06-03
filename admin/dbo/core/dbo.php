@@ -640,10 +640,17 @@ class Dbo extends Obj
 		return $this->__module_scheme->campo[$campo]->join->chave;
 	}
 
+	//-----------------------------------------------------------------------------------------------------------------------------------------------
+	function getReferenceUri()
+	{
+		return '&dbo_mid='.$this->getMid().($_GET['dbo_fixo'] ? '&dbo_fixo='.$_GET['dbo_fixo'] : '');
+	}
+
 	//gera uma matriz com os valores fixos para o modulo atual --------------------------------------------------------------------------------------
 
-	function makeBreadCrumb()
+	function makeBreadcrumb($params = array())
 	{
+		extract($params);
 		if(!$this->hideComponent('breadcrumb'))
 		{
 			$parents = array();
@@ -1584,7 +1591,6 @@ class Dbo extends Obj
 
 	function getModuleParent($mid, $fixo)
 	{
-		global $_SESSION;
 		foreach($_SESSION[sysId()]['dbo_mid'] as $key => $value)
 		{
 			if($key == $mid)
@@ -3650,7 +3656,8 @@ class Dbo extends Obj
 							</style>
 							<script>
 								function resizeIframe() {
-									var height = document.body.clientHeight
+									modal = $('.reveal-modal.open')[0];
+									var height = Math.max(document.body.clientHeight, (modal ? modal.getBoundingClientRect().bottom + 50 : 0));
 									$(parent.document).find('#<?= $_GET[dbo_subsection] ?>-iframe:not(:animated)').animate({
 										height: height+'px'
 									}, 300);
