@@ -48,3 +48,42 @@
 
 @include motion-ui-transitions;
 @include motion-ui-animations;
+
+table{
+	&.lista-atividades{
+		td{font-size: 12px; color: #999;
+			&.checkbox{ width: 1%;}
+			.titulo { display: block; font-weight: bold; color: #000}
+			.palestrante, .universidade { font-style: italic; }
+			.universidade:before { content: " - "; }
+			.universidade:empty{display: none}
+			.descricao{display: block;}
+		}
+	}
+	tbody{
+		tr{
+			&:first-child{
+				td{
+					border-top: 1px solid #ddd;
+				}
+			}
+		}
+		td{
+			border-bottom: 1px solid #ddd;
+		}
+	}
+}
+
+div{
+	&.input-graduacao{
+		display: none ;
+	}
+	&.outra-instituicao{
+		display: none;
+	}
+}
+
+
+.radius{
+	border-radius: 5px;
+}
