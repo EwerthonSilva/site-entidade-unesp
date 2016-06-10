@@ -1,204 +1,241 @@
 <?php
-require_once('admin/lib/includes.php');
+require_once("admin/lib/includes.php");
 $ev = new evento($_GET['evento']);
 ?>
-<!DOCTYPE html>
-<html>
+<!doctype html>
+<html class="no-js" lang="en">
 <head>
-	<meta charset="utf-8">
+	<base href="<?= SITE_URL ?>/">
 	<meta http-equiv="x-ua-compatible" content="ie=edge">
-	<title><?=SYSTEM_NAME?> - Inscrições</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title><?= SYSTEM_NAME?> - Inscrições</title>
+
+	<link href='https://fonts.googleapis.com/css?family=Lato:400,300,900' rel='stylesheet' type='text/css'>
 	<link rel="stylesheet" href="css/app.css">
+	<link rel="stylesheet" href="admin/css/common.css">
+	<script src="bower_components/jquery/dist/jquery.js"></script>
+	<script src="bower_components/foundation-sites/dist/foundation.js"></script>
+	<script src="admin/js/peixelaranja.js"></script>
+
+	<?= dboImportJs(array(
+		'hotkeys',
+		'maskedinput',
+	)) ?>
+
+	<style media="screen">
+	/*div{
+		border: 1px dashed;
+	}*/
+	body {
+		background-repeat: no-repeat;
+		background-attachment: fixed;
+		background-size: cover;
+	}
+	</style>
 </head>
-
-<body>
-
-	<header>
-		<div class="row">
-			<div class="text-center large-12 columns">
-				<h1>Inscrições</h1>
-			</div>
-		</div>
-	</header>
-
+<?php
+	if($ev->background_image)
+	{
+		$bg = $ev->_background_image->url();
+	}
+	elseif(siteConfig()->background_image)
+	{
+		$bg = siteConfig()->_background_image->url();
+	}
+?>
+<body style="<?= $bg ? 'background-image: url('.$bg.')' : '' ?>; ">
 	<div class="row">
-		<div class="text-center large-12 columns">
-			<h2 style="white-space:nowrap"><?= $ev->nome ?></h2>
-		</div>
-	</div>
-
-	<div class="row">
-		<div class="large-12 columns">
-			<p style="text-align: justify"><?= $ev->descricao ?></p>
-			<p>
-				Selecione as atividades desejadas para inscrição:
-			</p>
-		</div>
-	</div>
-
-	<form class="no-margin peixe-json" action="ajax-incricao-action.php" method="post">
-		<div class="row">
-			<div class="large-12 columns">
-
-				<?php
-				$pal= new palestra("WHERE evento = '".$ev->id."' ORDER BY data, horario");
-				if($pal->size())
-				{
-					do {
-						$array_atividades[$pal->data][$pal->horario][$pal->id] = array(
-							'titulo' => $pal->titulo,
-							'valor' => $pal->valor,
-							'descricao' => $pal->descricao,
-							'vagas' => $pal->getVagasDisponiveis()
-						);
-					}while ($pal->fetch());
-				}
-				foreach($array_atividades as $data => $horarios)
-				{
-					echo '<h4>'.date('d/m', strtotime($pal->data)).'</h4>';
-					foreach($horarios as $horario => $atividades)
-					{
-						echo '<h5>'.$horario.'</h5>';
-						?>
-						<table class="lista-atividades">
-							<tbody>
-								<?php
-								foreach($atividades as $id_atividade => $dados_atividade)
-								{
-									list($descricao, $palestrante, $universidade) = explode("\n", $dados_atividade[titulo]);
-									?>
-									<tr>
-										<td class="checkbox"><input title="<?= (($dados_atividade[vagas] <= 0)?('Vagas esgotadas'):('')) ?>" type='checkbox' class="<?= $dados_atividade[valor] > 0 ? 'atividade-paga' : ''?> " name='palestra[<?= $id_atividade ?>]' value="<?= $id_atividade ?>" <?= (($dados_atividade[vagas] <= 0)?('disabled'):('')) ?>/></td>
-										<td>
-											<span class="titulo"><?= $descricao?><?= $dados_atividade[valor] !=0 ? "- R$".number_format($dados_atividade[valor], 2, ',', '.') : "" ?></span>
-											<span class="palestrante"><?= $palestrante ?></span>
-											<span class="universidade"><?= $universidade ?></span>
-											<span class="descricao"><?=$dados_atividade[descricao]?></span>
-										</td>
-									</tr>
-									<?php
-								}
-								?>
-							</tbody>
-						</table>
-						<?php
-					}
-				}
-				?>
+		<div class="container large-12 columns" style="padding: 15px 40px;">
+			<header>
+				<div class="row">
+					<div class="text-center large-12 columns">
+						<h2 style="white-space:nowrap"><?= $ev->nome ?></h2>
+					</div>
+				</div>
+				<div class="row">
+					<div class="text-center large-12 columns">
+						<h3>Inscrições</h3>
+						<hr>
+					</div>
+				</div>
+			</header>
+			<div class="row">
+				<div class="large-12 columns">
+					<p style="text-align: justify"><?= $ev->descricao ?></p>
+					<p>
+						Selecione as atividades desejadas para inscrição:
+					</p>
+				</div>
 			</div>
 			<div class="row">
 				<div class="large-12 columns">
-					<div class="row">
-						<div class="large-8 columns">
-							<label for="nome">Nome Completo para o certificado</label>
-							<input type="text" name="nome" required="">
-						</div>
-						<div class="large-4 end columns">
-							<label for="cpf">CPF</label>
-							<input class="required cpf" type="text" name="cpf" >
-						</div>
-					</div>
-					<div class="row">
-						<div class="large-6 columns">
-							<label for="email">E-mail</label>
-							<input type="email" name="email" required="">
-						</div>
-					</div>
-					<div class="row">
-						<div class="large-6 columns">
-							<label for="email">Logradouro</label>
-							<input type="email" name="email" required="">
-						</div>
-						<div class="large-2 columns">
-							<label for="email">Nº</label>
-							<input type="email" name="email" required="">
-						</div>
-						<div class="large-4 columns">
-							<label for="email">Bairro</label>
-							<input type="email" name="email" required="">
-						</div>
-					</div>
-					<div class="row">
-						<div class="large-6 columns">
-							<label for="email">Cidade</label>
-							<input type="email" name="email" required="">
-						</div>
-						<div class="large-4 columns">
-							<label for="email">Estado</label>
-							<input type="email" name="email" required="">
-						</div>
-					</div>
-					<div class="row">
-						<div class="large-4 columns">
-							<label for="categoria">Categoria</label>
-							<select name="formacao" class="required">
-								<option value=''>Selecione...</option>
-								<option value="Graduação">Graduação</option>
-								<option value="Pós-graduação">Pós-graduação</option>
-								<option value="Profissional">Profissional</option>
-							</select>
-						</div>
-						<div class="large-4 columns">
-							<label for="faculdade">Instituição</label>
-							<select name="faculdade" class="required" id="faculdade">
-								<option value=''>Selecione...</option>
-								<option value="UNESP">UNESP</option>
-								<option value="UNIARA">UNIARA</option>
-								<option value="UNIP">UNIP</option>
-								<option value="USP">USP</option>
-								<option value="UFSCar">UFSCar</option>
-								<option value="Outras Instituições">Outras Instituições</option>
-							</select>
-						</div>
-						<div id="outra-instituicao" class="large-4 columns outra-instituicao">
-							<label for="outra">Outra Instituição</label>
-							<input type="text" name="outra">
-						</div>
-					</div>
+					<form id="form-inscricao" class="no-margin peixe-json" action="<?=SecureUrl('ajax-inscricoes.php?action=insert-inscricao&evento='.$ev->id)?>" method="post" peixe-log>
+						<div class="row">
+							<div class="large-12 columns">
+								<?php
+								$pal= new palestra("WHERE evento = '".$ev->id."' ORDER BY data, horario");
+								if($pal->size())
+								{
+									do {
 
-					<div id="input-graduacao" class="row input-graduacao">
-					  <div class="large-4 columns">
-							<label for="curso">Curso</label>
-					  	<input type="text" name="curso">
-					  </div>
-						<div class="large-4 columns">
-							<label for="ano">Ano</label>
-							<select name="ano">
-								<option value=''>Selecione...</option>
-								<option value="1">1º</option>
-								<option value="2">2º</option>
-								<option value="3">3º</option>
-								<option value="4">4º</option>
-								<option value="5">5º</option>
-								<option value="6">6º</option>
-							</select>
-						</div>
-						<div class="large-4 columns">
-							<label for="periodo">Periodo</label>
-							<select name="periodo">
-								<option value=''>Selecione...</option>
-								<option value="Integral">Integral</option>
-								<option value="Noturno">Noturno</option>
-							</select>
-						</div>
-					</div>
+										$array_atividades[$pal->data][$pal->horario][$pal->id] = array(
+											'titulo' => $pal->titulo,
+											'valor' => $pal->valor,
+											'descricao' => $pal->descricao,
+											'vagas' => $pal->getVagasDisponiveis()
+										);
 
-					<div class="row">
-						<div class="large-12 columns text-right">
-							<button class="button radius" type="button" name="button">Enviar</button>
-						</div>
-					</div>
+									}while ($pal->fetch());
 
+								}
+								foreach($array_atividades as $data => $horarios)
+								{
+									echo '<h4>'.date('d/m', strtotime($data)).'</h4>';
+									foreach($horarios as $horario => $atividades)
+									{
+										echo '<h5>'.$horario.'</h5>';
+										?>
+										<table class="lista-atividades">
+											<tbody>
+												<?php
+												foreach($atividades as $id_atividade => $dados_atividade)
+												{
+													list($descricao, $palestrante, $universidade) = explode("\n", $dados_atividade[titulo]);
+													?>
+													<tr>
+														<td class="checkbox"><input title="<?= (($dados_atividade[vagas] <= 0)?('Vagas esgotadas'):('')) ?>" type='checkbox' class="<?= $dados_atividade[valor] > 0 ? 'atividade-paga' : ''?> " name='palestra[<?= $id_atividade ?>]' value="<?= $id_atividade ?>"
+															<?= (($dados_atividade[vagas] <= 0)?('disabled'):('')) ?>/></td>
+															<td>
+																<span class="titulo"><?= $descricao?><?= $dados_atividade[valor] !=0 ? "- R$".number_format($dados_atividade[valor], 2, ',', '.') : "" ?></span>
+																<span class="palestrante"><?= $palestrante ?></span>
+																<span class="universidade"><?= $universidade ?></span>
+																<span class="descricao"><?=$dados_atividade[descricao]?></span>
+															</td>
+														</tr>
+														<?php
+													}
+													?>
+												</tbody>
+											</table>
+										<?php
+									}
+								}
+								?>
+								<h3>Preencha os campos abaixo</h3>
+								<div class="row">
+									<div class="large-8 columns">
+										<label for="nome">Nome Completo para o certificado</label>
+										<input type="text" name="nome" required="">
+									</div>
+									<div class="large-4 end columns">
+										<label for="cpf">CPF</label>
+										<input class="required cpf" type="text" name="cpf" >
+									</div>
+								</div>
+								<div class="row">
+									<div class="large-6 columns">
+										<label for="email">E-mail</label>
+										<input type="email" name="email" required="">
+									</div>
+									<div id="forma-pagamento-input" class="large-4 columns">
+										<label for="forma_pagamento">Forma de pagamento</label>
+										<select name="forma_pagamento">
+											<option value="à vista">À vista</option>
+											<option value="2x">2x</option>
+											<option value="3x">3x</option>
+										</select>
+									</div>
+								</div>
+								<div class="row">
+									<div class="large-6 columns">
+										<label for="logradouro">Logradouro</label>
+										<input type="text" name="logradouro" required="">
+									</div>
+									<div class="large-2 columns">
+										<label for="numero">Nº</label>
+										<input maxlength="5" type="text" name="numero" required="">
+									</div>
+									<div class="large-4 columns">
+										<label for="bairro">Bairro</label>
+										<input type="text" name="bairro" required="">
+									</div>
+								</div>
+								<div class="row">
+									<div class="large-6 columns">
+										<label for="cidade">Cidade</label>
+										<input type="text" name="cidade" required="">
+									</div>
+									<div class="large-2 end columns">
+										<label for="estado">Estado</label>
+										<input maxlength="2" type="text" name="estado" required="">
+									</div>
+								</div>
+								<div class="row">
+									<div class="large-4 columns">
+										<label for="categoria">Categoria</label>
+										<select name="formacao" class="required">
+											<option value=''>Selecione...</option>
+											<option value="Graduação">Graduação</option>
+											<option value="Pós-graduação">Pós-graduação</option>
+											<option value="Profissional">Profissional</option>
+										</select>
+									</div>
+									<div class="large-4 columns">
+										<label for="faculdade">Instituição</label>
+										<select name="faculdade" class="required" id="faculdade">
+											<option value=''>Selecione...</option>
+											<option value="UNESP">UNESP</option>
+											<option value="UNIARA">UNIARA</option>
+											<option value="UNIP">UNIP</option>
+											<option value="USP">USP</option>
+											<option value="UFSCar">UFSCar</option>
+											<option value="Outras Instituições">Outras Instituições</option>
+										</select>
+									</div>
+									<div id="outra-instituicao" class="large-4 columns outra-instituicao">
+										<label for="outra">Outra Instituição</label>
+										<input type="text" name="outra">
+									</div>
+								</div>
+								<div id="input-graduacao" class="row input-graduacao">
+									<div class="large-4 columns">
+										<label for="curso">Curso</label>
+										<input type="text" name="curso">
+									</div>
+									<div class="large-4 columns">
+										<label for="ano">Ano</label>
+										<select name="ano">
+											<option value=''>Selecione...</option>
+											<option value="1">1º</option>
+											<option value="2">2º</option>
+											<option value="3">3º</option>
+											<option value="4">4º</option>
+											<option value="5">5º</option>
+											<option value="6">6º</option>
+										</select>
+									</div>
+									<div class="large-4 columns">
+										<label for="periodo">Periodo</label>
+										<select name="periodo">
+											<option value=''>Selecione...</option>
+											<option value="Integral">Integral</option>
+											<option value="Noturno">Noturno</option>
+										</select>
+									</div>
+								</div>
+								<div class="row">
+									<div class="large-12 columns text-right">
+										<button class="button radius" type="submit" name="button">Enviar</button>
+									</div>
+								</div>
+							</div>
+						</div>
+					</form>
 				</div>
+			</div>
 
 			</div>
 		</div>
-	</form>
-	<script src="bower_components/jquery/dist/jquery.js"></script>
-	<script src="bower_components/what-input/what-input.js"></script>
-	<script src="bower_components/foundation-sites/dist/foundation.js"></script>
-	<script src="js/app.js"></script>
-	<script src="js/jquery.inputmask.js"></script>
-
-</body>
-</html>
+		<script src="js/app.js"></script>
+	</body>
+	</html>

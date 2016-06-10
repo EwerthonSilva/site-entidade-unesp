@@ -25,6 +25,7 @@ if(!class_exists('dbo_mail'))
 			'smtp_pass',
 			'smtp_host',
 			'smtp_port',
+			'debug',
 		);
 
 		/* smart constructor: will perform load() upon numeric argument and loadAll() upon string argument */
@@ -43,6 +44,8 @@ if(!class_exists('dbo_mail'))
 					$sql = "SELECT * FROM ".$this->getTable()." WHERE slug = '".$foo."';";
 					$this->query($sql);
 				}
+				//decodificando o conteudo do ContentTools
+				$this->dbo_mail_body = $this->_dbo_mail_body->html();
 			}
 		}
 
@@ -54,19 +57,17 @@ if(!class_exists('dbo_mail'))
 
 		function parseKeywords()
 		{
-			foreach($this as $key => $value)
+			foreach($this->__pocket as $key => $value)
 			{
 				if(in_array($key, $this->keyword_blacklist)) continue;
-				foreach($this->__pocket as $key => $value)
-				{
-					$this->dbo_mail_subject = str_replace('[['.$key.']]', nl2br($value), $this->dbo_mail_subject);
-					$this->dbo_mail_body = str_replace('[['.$key.']]', nl2br($value), $this->dbo_mail_body);
-				}
-				foreach($this->__data as $key => $value)
-				{
-					$this->dbo_mail_subject = str_replace('[['.$key.']]', nl2br($value), $this->dbo_mail_subject);
-					$this->dbo_mail_body = str_replace('[['.$key.']]', nl2br($value), $this->dbo_mail_body);
-				}
+				$this->dbo_mail_subject = str_replace('[['.$key.']]', nl2br($value), $this->dbo_mail_subject);
+				$this->dbo_mail_body = str_replace('[['.$key.']]', nl2br($value), $this->dbo_mail_body);
+			}
+			foreach($this->__data as $key => $value)
+			{
+				if(in_array($key, $this->keyword_blacklist)) continue;
+				$this->dbo_mail_subject = str_replace('[['.$key.']]', nl2br($value), $this->dbo_mail_subject);
+				$this->dbo_mail_body = str_replace('[['.$key.']]', nl2br($value), $this->dbo_mail_body);
 			}
 		}
 
@@ -110,6 +111,7 @@ if(!class_exists('dbo_mail'))
 				'smtp_pass' => $this->pass,
 				'smtp_host' => $this->smtp_host,
 				'smtp_port' => $this->smtp_port,
+				'debug' => $this->debug,
 			));
 		}
 

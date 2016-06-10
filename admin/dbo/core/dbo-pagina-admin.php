@@ -130,8 +130,8 @@
 							</div>
 							<div class="large-6 columns">
 								<dl class="sub-nav right no-margin top-9">
-									<dd class="<?= $iniciar_editor ? 'active' : '' ?>"><a href="#" tabindex="-1" class="trigger-editor-visual set-dbo-pref" data-pref_key="editor_type" data-pref_value="visual">Visual</a></dd>
-									<dd class="<?= $iniciar_editor ? '' : 'active' ?>"><a href="#" tabindex="-1" class="trigger-editor-codigo set-dbo-pref" data-pref_key="editor_type" data-pref_value="codigo">Código</a></dd>
+									<dd class="<?= $iniciar_editor ? 'active' : '' ?>"><a href="#" tabindex="-1" class="trigger-editor-visual" data-dbo-set-pref data-pref_key="editor_type" data-pref_value="visual">Visual</a></dd>
+									<dd class="<?= $iniciar_editor ? '' : 'active' ?>"><a href="#" tabindex="-1" class="trigger-editor-codigo" data-dbo-set-pref data-pref_key="editor_type" data-pref_value="codigo">Código</a></dd>
 								</dl>
 							</div>
 						</div>
@@ -668,20 +668,36 @@
 		?>
 		<div class="row" style="position: relative;">
 			<div class="large-9 columns">
-				<div class="breadcrumb">
-					<ul class="no-margin">
-						<li><a href="cadastros.php"><?= DBO_TERM_CADASTROS ?></a></li>
-						<li><a href="<?= $dbo->keepUrl('!dbo_new&!dbo_update') ?>"><?= ucfirst($titulo_plural) ?></a></li>
-						<?
-							if($_GET['dbo_new'] || $_GET['dbo_update'])
-							{
-								?>
-								<li id="breadcrumb-item-atual"><a href="#"><?= $pag->id ? $pag->getBreadcrumbIdentifier() : 'Nov'.$genero.' '.$titulo ?></a></li>
-								<?
-							}
-						?>
-					</ul>
-				</div>
+				<?php
+					$stack = array();
+					if(!$pag->hideBreadcrumbsRoot())
+					{
+						$stack[] = array(
+							'tipo' => 'url',
+							'url' => 'cadastros.php',
+							'label' => DBO_TERM_CADASTROS,
+						);
+					}
+					$stack[] = array(
+						'tipo' => 'url',
+						'url' => $dbo->keepUrl('!dbo_new&!dbo_update'),
+						'label' => ucfirst($titulo_plural),
+					);
+					if($_GET['dbo_new'] || $_GET['dbo_update']) 
+					{
+						$stack[] = array(
+							'tipo' => 'url',
+							'url' => $pag->keepUrl(),
+							'label' => $pag->id ? $pag->getBreadcrumbIdentifier() : 'Nov'.$genero.' '.$titulo,
+							'params' => array(
+								'id' => 'breadcrumb-item-atual',
+							),
+						);
+					}
+					echo dboBreadcrumbs(array(
+						'stack' => $stack,
+					));
+				?>
 			</div>
 			<div class="large-3 columns text-right">
 				<?= ((hasPermission('insert', 'pagina-'.$tipo) && !$_GET['dbo_new'] && !$_GET['dbo_update'])?('<a href="'.$dbo->keepUrl('dbo_new=1').'" class="button small radius no-margin top-less-15 trigger-nova-pagina"><i class="fa fa-plus"></i> Nov'.$genero.' '.$titulo.'</a>'):('')) ?>
@@ -1306,7 +1322,7 @@
 										foreach($campos as $campo)
 										{
 											?>
-											<input type="checkbox" id="preference-hidden-field-<?= $campo['name'] ?>" <?= $pag->hideFormField($campo['name']) ? '' : 'checked' ?>/><label for="preference-hidden-field-<?= $campo['name'] ?>" class="set-dbo-pref" data-meta_key="form_pagina_<?= $tipo ?>_prefs" data-pref_key="hide_<?= $campo['name'] ?>" data-pref_value="<?= $pag->hideFormField($campo['name']) ? 'false' : 'true' ?>" data-toggle onClick="togglePaginaFormField('<?= $campo['name'] ?>')"><?= $campo['label'] ?></label>
+											<input type="checkbox" id="preference-hidden-field-<?= $campo['name'] ?>" <?= $pag->hideFormField($campo['name']) ? '' : 'checked' ?>/><label for="preference-hidden-field-<?= $campo['name'] ?>" data-dbo-set-pref data-meta_key="form_pagina_<?= $tipo ?>_prefs" data-pref_key="hide_<?= $campo['name'] ?>" data-pref_value="<?= $pag->hideFormField($campo['name']) ? 'false' : 'true' ?>" data-toggle onClick="togglePaginaFormField('<?= $campo['name'] ?>')"><?= $campo['label'] ?></label>
 											<?php
 										}
 									?>

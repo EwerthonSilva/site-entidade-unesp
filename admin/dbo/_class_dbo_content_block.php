@@ -96,8 +96,15 @@ if(!class_exists('dbo_content_block'))
 			//alterando o nome dos content_blocks para não ter perido de se misturarem com os outros dados do POST.
 			$params['name'] = 'dbo_content_block_'.$params['name'];
 
-			$params['autosize'] = $params['autosize'] === null ? true : $params['autosize'];
-			$params['markdown'] = $params['markdown'] === null ? true : $params['markdown'];
+			if($params['field_type'] == 'content-tools')
+			{
+				$params['classes'] = 'content-tools';
+			}
+			else
+			{
+				$params['autosize'] = $params['autosize'] === null ? true : $params['autosize'];
+				$params['markdown'] = $params['markdown'] === null ? true : $params['markdown'];
+			}
 
 			ob_start();
 			?>
@@ -112,7 +119,9 @@ if(!class_exists('dbo_content_block'))
 					}
 				?>
 			</div>
-			<?= dboUI::field($params['field_type'], 'update', false, $params); ?>
+			<span class="input input-<?= $params['field_type'] ?>">
+				<?= dboUI::field($params['field_type'], 'update', false, $params); ?>
+			</span>
 			<?php
 			return ob_get_clean();
 		}
@@ -121,6 +130,7 @@ if(!class_exists('dbo_content_block'))
 		{
 			global $_system;
 			extract($params);
+
 			//vericicamos se o nome da variavel começa com o idenfiticador
 			foreach($data_array as $key => $value)
 			{
@@ -137,8 +147,7 @@ if(!class_exists('dbo_content_block'))
 						'modulo' => $modulo,
 						'modulo_id' => $modulo_id,
 					));
-
-					dbo_content_block::set($key, dboUI::fieldSQL($field_type, $value), $params);
+					dbo_content_block::set($key, dboUI::fieldSQL($field_type, $value, new Obj(), array(), $data_array), $params);
 				}
 			}
 		}

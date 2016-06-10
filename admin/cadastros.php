@@ -17,17 +17,22 @@
 	{
 		$nro_itens_sidebar = getItemsSidebar();
 		?>
+
 		<div class="row">
 			<div class="large-12 columns">
-				<div class="breadcrumb">
-					<ul class="no-margin">
-						<li><a href="cadastros.php"><?= DBO_TERM_CADASTROS ?></a></li>
-					</ul>
-				</div>
+				<?= dboBreadcrumbs(array(
+					'stack' => array(
+						array(
+							'tipo' => 'url',
+							'url' => 'cadastros.php',
+							'label' => DBO_TERM_CADASTROS,
+						),
+					)
+				)); ?>
 			</div>
 		</div>
 
-		<hr>
+		<hr class="small">
 
 		<div class='row'>
 			<div class='large-12 columns'>

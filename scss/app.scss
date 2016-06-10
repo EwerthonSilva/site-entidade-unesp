@@ -51,9 +51,9 @@
 
 table{
 	&.lista-atividades{
-		td{font-size: 12px; color: #999;
+		td{font-size: 12px; color: $dark-gray;
 			&.checkbox{ width: 1%;}
-			.titulo { display: block; font-weight: bold; color: #000}
+			.titulo { display: block; font-weight: bold; color: $black}
 			.palestrante, .universidade { font-style: italic; }
 			.universidade:before { content: " - "; }
 			.universidade:empty{display: none}
@@ -63,27 +63,22 @@ table{
 	tbody{
 		tr{
 			&:first-child{
-				td{
-					border-top: 1px solid #ddd;
-				}
+				td{border-top: 1px solid #ddd;}
 			}
 		}
-		td{
-			border-bottom: 1px solid #ddd;
-		}
+		td{border-bottom: 1px solid #ddd;}
 	}
+}
+
+.container{
+	background-color: rgba($white, .8);
 }
 
 div{
-	&.input-graduacao{
-		display: none ;
-	}
-	&.outra-instituicao{
-		display: none;
-	}
+	&.input-graduacao{display: none ;}
+	&.outra-instituicao{display: none;}
+	&.obrigado{ padding: 20px; text-align: center; font: 18px; font-weight: bold; background-color: rgba($primary-color, .3);}
 }
+#forma-pagamento-input{display: none;}
 
-
-.radius{
-	border-radius: 5px;
-}
+.radius{border-radius: 5px;}

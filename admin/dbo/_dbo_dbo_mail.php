@@ -1,7 +1,7 @@
 <?
 
 /* ================================================================================================================== */
-/* DBO DEFINITION FILE FOR MODULE 'dbo_mail' ==================================== AUTO-CREATED ON 22/05/2016 21:37:36 */
+/* DBO DEFINITION FILE FOR MODULE 'dbo_mail' ==================================== AUTO-CREATED ON 02/06/2016 18:47:52 */
 /* ================================================================================================================== */
 
 
@@ -99,9 +99,10 @@ $field->filter = false;
 $field->order = false;
 $field->type = 'TEXT';
 $field->interaction = '';
-$field->classes = 'tinymce';
-$field->tipo = 'textarea-rich';
-$field->rows = 5;
+$field->tipo = 'content-tools';
+$field->params = array(
+	'template' => 'content-tools-blank',
+);
 $module->campo[$field->coluna] = $field;
 
 /*==========================================*/

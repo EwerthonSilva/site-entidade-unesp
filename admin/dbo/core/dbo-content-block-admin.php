@@ -41,7 +41,7 @@
 						</div>
 						<div class="row">
 							<div class="large-12 columns text-right">
-								<button type="submit" class="button radius" accesskey="s">Atualizar blocos de conteúdo</button>
+								<button type="submit" class="button radius peixe-save">Atualizar blocos de conteúdo</button>
 							</div>
 						</div>
 					</form>

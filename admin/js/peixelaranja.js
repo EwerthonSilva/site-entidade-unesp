@@ -9,6 +9,7 @@ Date.prototype.dateTime = function() {
 	return y + '-' + (m[1] ? m : '0'+m) + '-' + (d[1] ? d : '0'+d) + ' ' + (h[1] ? h : '0'+h) + ':' + (i[1] ? i : '0'+i);
 };
 
+//exemplo: string.split('-').list('key', 'value'); <--- variaveis são passadas como string para o list.
 Array.prototype.list = function()
 {
 	var 
@@ -69,6 +70,15 @@ function peixeQueryString(obj){
 		});
 	}
 	return ret;
+}
+
+function isJsonString(str) {
+    try {
+        JSON.parse(str);
+    } catch (e) {
+        return false;
+    }
+    return true;
 }
 
 function keepUrl(foo, url) {
@@ -510,7 +520,31 @@ function peixeInit() {
 	peixeAjaxFileUploadInit();
 }
 
+function peixeSmartSave(c) {
+	//primeiro clica para finalizar o editor
+	target = $('.ct-ignition__button--confirm:visible');
+	if(target.length){
+		target.trigger('click');
+	}
+	//depois dá um trigger no proprio form clicado ou no último botão de peixe-save
+	if(c){
+		return true;
+	}
+	else {
+		target = $('.peixe-save:visible').last();
+		if(target.length){
+			target.trigger('click');
+		}
+	}
+}
+
 $(document).ready(function(){
+
+	if(jQuery.hotkeys){
+		jQuery.hotkeys.options.filterInputAcceptingElements = false;
+		jQuery.hotkeys.options.filterContentEditable = false;
+		jQuery.hotkeys.options.filterTextInputs = false;
+	}
 
 	peixeInit();
 
@@ -669,7 +703,7 @@ $(document).ready(function(){
 
 	$(document).on('click', '[peixe-reload]', function(e){
 		e.preventDefault();
-		c = $(this);
+		var c = $(this);
 		if(c.attr('peixe-done')) var d = eval("("+c.attr('peixe-done')+")");
 		peixeUpdateCurrentUrl(c.data('keep-url') ? keepUrl(c.data('keep-url')) : (c.attr('href'))?(c.attr('href')):((c.data('url'))?(c.data('url')):(document.URL)));
 		peixeGet(peixe_current_url, function(d){
@@ -688,6 +722,18 @@ $(document).ready(function(){
 			w.find('.peixe-menu-item.'+cl).removeClass(cl);
 			c.addClass(cl);
 		}
+	});
+	
+	//hotkeys
+	$(document).bind('keydown', 'ctrl+s', function(){
+		peixeSmartSave();
+		return false;
+	});
+
+	$(document).on('click', '.peixe-save', function(){
+		var c = $(this);
+		peixeSmartSave(c);
+		return true;
 	});
 
 	//colcando ajax loader e screen freezer

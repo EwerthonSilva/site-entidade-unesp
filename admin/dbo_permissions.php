@@ -113,14 +113,30 @@
 
 				<div class="row" style="position: relative;">
 				<div class="large-7 columns">
-					<div class="breadcrumb">
-						<ul class="no-margin">
-							<li><a href="cadastros.php"><?= DBO_TERM_CADASTROS ?></a></li>
-							<li><a href="dbo_admin.php?dbo_mod=perfil">Perfis</a></li>
-							<li><a href="dbo_admin.php?dbo_mod=perfil&dbo_update=<?= $obj->id ?>"><?= $obj->nome ?></a></li>
-							<li><a href="#">Permissões</a></li>
-						</ul>
-					</div>
+					<?= dboBreadcrumbs(array(
+						'stack' => array(
+							array(
+								'tipo' => 'url',
+								'url' => 'cadastros.php',
+								'label' => DBO_TERM_CADASTROS,
+							),
+							array(
+								'tipo' => 'url',
+								'url' => 'dbo_admin.php?dbo_mod=perfil',
+								'label' => 'Perfis',
+							),
+							array(
+								'tipo' => 'url',
+								'url' => 'dbo_admin.php?dbo_mod=perfil&dbo_update='.$obj->id,
+								'label' => $obj->nome,
+							),
+							array(
+								'tipo' => 'url',
+								'url' => $dbo->keepUrl(),
+								'label' => 'Permissões',
+							),
+						)
+					)); ?>
 				</div>
 				<div class="large-5 columns text-right">
 					<div class="top-less-10">
@@ -348,7 +364,7 @@
 				</div>
 				<div class="row full">
 					<div class="large-12 columns">
-						<input type="submit" class="button radius" value="Atualizar Permissões">
+						<input type="submit" class="button radius peixe-save" value="Atualizar Permissões">
 					</div>
 				</div><!-- row -->
 				<input type="hidden" name="flag_update" value="<?= $_GET['perfil'] ?>">

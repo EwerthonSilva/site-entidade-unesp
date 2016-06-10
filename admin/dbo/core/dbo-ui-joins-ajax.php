@@ -1,6 +1,8 @@
 <?
 	require_once('../../lib/includes.php');
-	require_once('../../auth.php');
+	if(DBO_ALLOW_UNLOGGED_AJAX_JOINS !== true) {
+		require_once('../../auth.php');
+	}
 
 	$modulo = dboescape($_GET['module']);
 	$field = dboescape($_GET['field']);
@@ -11,7 +13,7 @@
 	$field = $mod->__module_scheme->campo[$field];
 
 	//verifica se o usuário tem permissão de acesso
-	if(logadoNoPerfil('Desenv') || hasPermission('access', $modulo))
+	if(DBO_ALLOW_UNLOGGED_AJAX_JOINS === true || logadoNoPerfil('Desenv') || hasPermission('access', $modulo))
 	{
 		//agora verificar se o ajax está habilitado para esta seleção
 		if($field->join->ajax)
@@ -36,17 +38,23 @@
 				//caso não exista uma função para fazer o select, usar o padrão do mosulo
 				if(!$metodo_listagem)
 				{
+
+					if(strlen(trim($field->restricao)))
+					{
+						eval($field->restricao);
+					}
+
 					//implodindo para varios termos
 					foreach($terms as $term)
 					{
 						$sql_parts[] = " ".$field->join->valor." LIKE '%".$term."%' ";
 					}
 					$sql = "
-						SELECT * FROM ".$mod->getTable()." 
+						SELECT * FROM ".$mod->getTable()."
 						WHERE
 							( ".implode(" AND ", $sql_parts)." )
-						ORDER BY
-							".$field->join->order_by."
+							".(strlen(trim($rest)) ? ' AND '.preg_replace('/^WHERE /is', '', $rest) : '')."
+							".(!preg_match('/ORDER BY/i', $rest) ? " ORDER BY ".$field->join->order_by : '')."
 					";
 					$mod->query($sql);
 					if($mod->size())
@@ -83,7 +91,7 @@
 	{
 		$json_result[] = "ERRO: Usuário sem permissão de acesso ao módulo '".$modulo."'";
 	}
-	
+
 	echo json_encode($json_result);
 
 ?>

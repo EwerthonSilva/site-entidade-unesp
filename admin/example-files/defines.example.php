@@ -3,8 +3,14 @@
 /* define a senha mestra para login no site */
 //define(MASTER_PASSWORD, 'e771ebe40a650de43bd9ed531015268d106700b5bda5a3a98b70d9bef1577642d13f75da34d97bd6f8ca0121019d6cacf79582b2708749e3899ba5c9da1de16b');
 
+/* define se os e-mails serão ou não enviados por SMTP */
+//define(DBO_MAIL_IS_SMTP, true);
+
 /* define a url do site */
 //define(SITE_URL, preg_replace('#/admin/dbo$#is', '', DBO_URL));
+
+/* define uma pagina principal diferente do cadastros.php */
+//define(DBO_ADMIN_INDEX, 'painel.php');
 
 /* define a palavra principal do cockpit */
 //define(DBO_TERM_CADASTROS, 'Cadastros');

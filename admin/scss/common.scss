@@ -551,4 +551,19 @@ hr.tiny { margin: 0.50em 0; }
 
 [data-editable] p:empty { display: block; }
 
+.ce-element {
+	&.ce-element--over { background-color: rgba($primary-color, .15); 
+		&.ce-element--type-image { outline: 4px solid rgba($primary-color, .15) !important; }
+	}
+	&.ce-element--focused { background-color: rgba($primary-color, .15); 
+		&.ce-element--type-image { outline: 4px solid rgba($primary-color, .15) !important; }
+	}
+	&.ce-element--drop:before { background-color: rgba($primary-color, .4); }
+}
+.ct--highlight { outline: 4px solid rgba($primary-color, .15) !important; }
+.ct-dialog__body {
+	input[type="text"] { margin-bottom: 0; }
+	.ct-video-dialog__input { display: inline-block; }
+}
+
 /* /Content Tools */

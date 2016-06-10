@@ -57,7 +57,7 @@ class dboUI
 		elseif($field_type == 'password')
 		{
 			?>
-			<input type="password" name="<?= $name ?>" id="" data-name="<?= $titulo ?>" class="<?= (($required)?('required'):(''))." ".$classes ?>" <?= (($required)?('required'):('')) ?> value="<?= (($edit_function)?($edit_function(htmlSpecialChars($value))):(htmlSpecialChars($value))) ?>"/>
+			<input type="password" autocomplete="new-password" name="<?= $name ?>" id="" data-name="<?= $titulo ?>" class="<?= (($required)?('required'):(''))." ".$classes ?>" <?= (($required)?('required'):('')) ?> value="<?= (($edit_function)?($edit_function(htmlSpecialChars($value))):(htmlSpecialChars($value))) ?>"/>
 			<?
 		}
 		//---------------------------------------------------------------------------------------------
@@ -84,6 +84,66 @@ class dboUI
 			if($init_js !== false)
 			{
 				dboUi::fieldJS('textarea-rich');
+			}
+		}
+		//---------------------------------------------------------------------------------------------
+		// CONTENT-TOOLS ------------------------------------------------------------------------------
+		//---------------------------------------------------------------------------------------------
+		elseif($field_type == 'content-tools')
+		{
+			$aux_name = 'ct_'.uniqid();
+
+			//essa loucura é para dar certo os content blocks do DBO.
+			$value = is_object($value) ? $value->value : $value;
+
+			$json = json_decode($value, true);
+			if(!$json && strlen(trim($value)))
+			{
+				$json = array('content' => $value);
+				$string = json_encode($json);
+			}
+			elseif($json)
+			{
+				$string = $value;
+			}
+			else
+			{
+				$string = '';
+			}
+			?>
+			<input type="hidden" name="<?= $aux_name ?>" id="<?= $aux_name ?>" value="<?= htmlSpecialChars($string) ?>"/>
+			<input type="hidden" name="<?= $name ?>" id="" value="<?= $aux_name ?>"/>
+			<div data-input="<?= $name ?>" class="content-tools <?= $classes ?>" id="<?= $input_id ? $input_id : $operation.'-'.$name ?>" data-name="<?= $titulo ?>" style="<?= $styles ?>">
+			<?php
+				$params['template'] = $params['template'] ? $params['template'] : 'content-tools-blank';
+				if($params['template'])
+				{
+					//extraindo o json e criando o template para edição
+					$value = json_decode($string, true);
+					extract((array)$value);
+
+					//salvando todo o conteudo compilado do template para fazer a substituicao dos campos de data-name, concatenando a coluna do modulo
+					ob_start();
+					include(dboTemplate($params['template']));
+					$string = ob_get_clean();
+					//subsituindo os nomes pelo nome com o campo concatenado
+					preg_match_all('/data-editable\s+data-name="([\w]+)"/im', $string, $matches);
+					if(is_array($matches))
+					{
+						foreach($matches[0] as $key => $value)
+						{
+							$foo = 'data-editable data-name="'.$aux_name.'___'.$matches[1][$key].'"';
+							$string = str_replace($value, $foo, $string);
+						}
+					}
+					echo $string;
+				}
+			?>
+			</div>
+			<?
+			if($init_js !== false)
+			{
+				dboUi::fieldJS('content-tools');
 			}
 		}
 		//---------------------------------------------------------------------------------------------
@@ -578,7 +638,7 @@ class dboUI
 				<div class="large-12 columns" id="wrapper-midia-<?= $name ?>">
 					<input type="hidden" name="<?= $name ?>" id="" value="<?= $value ?>"/>
 					<div class="wrapper-field-media">
-						<img src="<?= $value ? DBO_URL.'/upload/dbo-media-manager/thumbs/'.($size ? $size : 'medium').'-'.$value : DBO_IMAGE_PLACEHOLDER ?>" style="max-height: <?= $max_height ? $max_height : '220px' ?>; max-width: <?= $max_width ? $max_width : '550px' ?>; margin-bottom: 7px;" class="th">
+						<img src="<?= $value ? DBO_URL.'/upload/dbo-media-manager/thumbs/'.($size ? $size : 'medium').'-'.$value : DBO_IMAGE_PLACEHOLDER ?>" style="max-height: <?= $max_height ? $max_height : '220px' ?>; max-width: <?= $max_width ? $max_width : '550px' ?>; margin-bottom: 7px; <?= $styles ?>" class="th">
 					</div>
 					<div class="media-controls-insert margin-bottom" style="<?= $value ? 'display: none;' : '' ?>">
 						<span class="button small secondary trigger-colorbox-modal radius" data-width="100%" data-height="100%" data-url="dbo-media-manager.php?dbo_modal=1&modulo=<?= $modulo ?>&modulo_id=<?= $pag->id ?>&destiny=field&wrapper_id=wrapper-midia-<?= $name ?>" data-transition="none" data-fadeout="1" style="margin-bottom: 5px;"><i class="fa fa-fw fa-image top-1"></i> Adicionar mídia</span>
@@ -650,6 +710,51 @@ class dboUI
 			});
 			<?
 			dboRegisterDboInit(singleLine(ob_get_clean()), true, 'field_textarea_rich');
+		}
+		elseif($field_type == 'content-tools')
+		{
+			ob_start();
+			?>
+			editor = ContentTools.EditorApp.get();
+			editor.init('*[data-editable]', 'data-name');
+			editor.addEventListener('saved', function (ev) {
+				var regions = ev.detail().regions;
+				updateContentToolsInputs(regions);
+			});
+			function updateContentToolsInputs(regions) {
+				inputs = {};
+				for(var region in regions)
+				{
+					region.split('___').list('ct_input', 'ct_key');
+					if(!inputs[ct_input]){
+						inputs[ct_input] = {};
+						inputs[ct_input][ct_key] = regions[ct_input+'___'+ct_key];
+					}
+					else {
+						inputs[ct_input][ct_key] = regions[ct_input+'___'+ct_key];
+					}
+				}
+				for(var input in inputs)
+				{
+					json = {};
+					st = document.getElementById(input).value;
+					if(isJsonString(st)){
+						json = JSON.parse(st);
+					}
+					else {
+						if(st.length){
+							json[content] = st;
+						}
+					}
+					for(var key in inputs[input])
+					{
+						json[key] = inputs[input][key];
+					}
+					document.getElementById(input).value = JSON.stringify(json);
+				}
+			}
+			<?
+			dboRegisterDboInit(singleLine(ob_get_clean()), true, 'field_content_tools');
 		}
 		elseif($field_type == 'price')
 		{
@@ -896,6 +1001,11 @@ class dboUI
 		}
 		elseif($field_type == 'textarea-rich')
 		{
+			return strlen(trim($raw_value)) ? $raw_value : (($isnull)?($dbo->null()):(''));
+		}
+		elseif($field_type == 'content-tools')
+		{
+			$raw_value = $data_array[$raw_value];
 			return strlen(trim($raw_value)) ? $raw_value : (($isnull)?($dbo->null()):(''));
 		}
 		elseif($field_type == 'radio')

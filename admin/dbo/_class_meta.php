@@ -209,7 +209,7 @@ if(!class_exists('meta'))
 
 		static function setPreference($json_key, $value, $meta_key = null)
 		{
-			$meta_key = $meta_key === null ? 'global_preferences' : $meta_key;
+			$meta_key = !strlen(trim($meta_key)) ? 'global_preferences' : $meta_key;
 			$meta = new meta();
 			$meta->meta_key = $meta_key;
 			$meta->created_by = loggedUser();

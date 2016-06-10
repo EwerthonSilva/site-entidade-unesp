@@ -5,8 +5,12 @@ auth();
 
 if($_GET['getDiskModules'])
 {
-	getDiskModules();
-	showModules();
+	getDiskModules(array(
+		'all_modules' => ($_GET['all_modules'] ? true : false),
+	));
+	showModules(array(
+		'all_modules' => ($_GET['all_modules'] ? true : false),
+	));
 } 
  
 elseif($_GET['showFields'])
@@ -254,13 +258,14 @@ function getDiskModules ($params = array())
 	}
 }
 
-function showModules ()
+function showModules ($params = array())
 {
+	extract($params);
 	//mostrando os links para os modulos
 	$count = 0;
 	foreach($_SESSION['dbomaker_modulos'] as $nome_modulo => $modulo)
 	{
-		if($modulo->dbo_maker_read_only) continue;
+		if($modulo->dbo_maker_read_only && !$all_modules) continue;
 
 		$class = '';
 		$module_file = '../_dbo_'.$modulo->modulo.'.php';
@@ -1002,6 +1007,20 @@ function getFieldForm ($mod,$field)
 			<div class='anchor' style='<?= ($_SESSION['dbomaker_controls']['show_field_advanced'])?('display: block;'):('') ?>'>
 				<div class='row'>
 					<div class='item'>
+						<label title="Como o label deste element é exibido no formulário">Visibilidade do label</label>
+
+						<div class='input'>
+							<select name='label_display' style='width: 49%;'>
+								<option value='' <?= ($campo->label_display == '')?('SELECTED'):('') ?>>Visível</option>
+								<option value='transparent' <?= ($campo->label_display == 'transparent')?('SELECTED'):('') ?>>Transparente</option>
+								<option value='hidden' <?= ($campo->label_display == 'hidden')?('SELECTED'):('') ?>>Invisível</option>
+							</select>
+						</div>
+					</div>
+				</div><!-- row -->
+
+				<div class='row'>
+					<div class='item'>
 						<label title="Título mostrado na coluna da listagem. Se omitido, o nome do campo será mostrado.">Título da Listagem</label>
 						<div class='input'><input type='text' name='titulo_listagem' value="<?= htmlspecialchars($campo->titulo_listagem) ?>"></div>
 					</div>
@@ -1171,6 +1190,13 @@ function getFieldForm ($mod,$field)
 					</div>
 				</div><!-- row -->
 
+				<div class='row'>
+					<div class='item'>
+						<label title="Estilos que serão exibidas na criação do formulário. Exatamente como declarado dentro do atributo.">Styles</label>
+						<div class='input'><input type='text' name='styles' value="<?= htmlspecialchars($campo->styles) ?>"></div>
+					</div>
+				</div><!-- row -->
+
 			</div><!-- anchor -->
 
 		</div><!-- field-functions -->
@@ -1189,6 +1215,7 @@ function getFieldForm ($mod,$field)
 								<option value='password' <?= ($campo->tipo == 'password')?('SELECTED'):('') ?>>Password</option>
 								<option value='textarea' <?= ($campo->tipo == 'textarea')?('SELECTED'):('') ?>>Textarea</option>
 								<option value='textarea-rich' <?= ($campo->tipo == 'textarea-rich')?('SELECTED'):('') ?>>Textarea Rich</option>
+								<option value='content-tools' <?= ($campo->tipo == 'content-tools')?('SELECTED'):('') ?>>Content Tools</option>
 								<option value='select' <?= ($campo->tipo == 'select')?('SELECTED'):('') ?>>Select (combo-box)</option>
 								<option value='radio' <?= ($campo->tipo == 'radio')?('SELECTED'):('') ?>>Radio Button</option>
 								<option value='checkbox' <?= ($campo->tipo == 'checkbox')?('SELECTED'):('') ?>>Checkbox</option>
@@ -1236,7 +1263,7 @@ function getFieldTypeDetail ($type = '', $mod = '',$field = '')
 		$campo = $_SESSION['dbomaker_modulos'][$mod]->campo[$field];
 	}
 
-	// SELECT ------------------------------------------------------------------------------------------------------------------------
+	// TEXTEAREA / RICH -----------------------------------------------------------------------------------------------------------
 	if($type == 'textarea' || $type == 'textarea-rich')
 	{
 		?>
@@ -1254,6 +1281,62 @@ function getFieldTypeDetail ($type = '', $mod = '',$field = '')
 							</div><!-- input -->
 						</div>
 					</div><!-- row -->
+		<?
+	}
+	// TEXTEAREA / RICH -----------------------------------------------------------------------------------------------------------
+	if($type == 'content-tools')
+	{
+		?>
+			<div class="wrapper-plugin-detail">				
+				<div class="row wide">
+					<div class="item">
+						<div class="input">
+							<div class="wrapper-field-type-detail">
+								<div class="row standard">
+									<div class="item">
+										<label>
+											Parâmetros (1 por linha):<br><br>
+											template:
+											<span class="param-desc">
+												nome do template que será utilizado para este campo (dboTemplates)<br /><br />
+
+												Exemplo:<br />
+												template: pagina-completa<br />
+											</span>
+										</label>
+										<div class="input">
+											<textarea rows="10" name="params"><?php
+												if(!in_array('template', array_keys((array)$campo->params)))
+												{
+													echo "template: content-tools-blank\n";
+												}
+												foreach((array)$campo->params as $key => $value)
+												{
+													echo $key.': ';
+													if($value === true)
+													{
+														echo 'true';
+													}
+													elseif($value === false)
+													{
+														echo 'false';
+													}
+													else
+													{
+														echo $value;
+													}
+													echo "\n";
+												}	
+											?></textarea>
+										</div><!-- input -->
+									</div><!-- item -->
+								</div><!-- row -->
+								<div class="clear"></div>
+							</div><!-- wrapper-field-type-detail -->
+						</div><!-- input -->
+					</div><!-- item -->
+				</div><!-- row -->
+			</div>
 		<?
 	}
 	// SELECT ------------------------------------------------------------------------------------------------------------------------
@@ -1698,6 +1781,7 @@ function getNewFieldForm($mod)
 				<li><input type='radio' name='tipo' id="tipo-text" value='text' checked/><label for="tipo-text">Text</label></li>
 				<li><input type='radio' name='tipo' id="tipo-textarea" value='textarea'/><label for="tipo-textarea">Textarea</label></li>
 				<li><input type='radio' name='tipo' id="tipo-textarea-rich" value='textarea-rich'/><label for="tipo-textarea-rich">Textarea Rich Text</label></li>
+				<li><input type='radio' name='tipo' id="tipo-content-tools" value='content-tools'/><label for="tipo-content-tools">Content Tools</label></li>
 				<li><input type='radio' name='tipo' id="tipo-password" value='password'/><label for="tipo-password">Password</label></li>
 				<li><input type='radio' name='tipo' id="tipo-image" value='image'/><label for="tipo-image">Upload de Imagem</label></li>
 				<li><input type='radio' name='tipo' id="tipo-file" value='file'/><label for="tipo-file">Upload de Arquivo</label></li>
@@ -1840,6 +1924,7 @@ function runUpdateField($post_data)
 	//back to business...
 	$_SESSION['dbomaker_modulos'][$mod]->campo[$field]->titulo = ((strlen(trim($post_data['titulo'])))?(stripslashes($post_data['titulo'])):('&nbsp;'));
 	$_SESSION['dbomaker_modulos'][$mod]->campo[$field]->coluna = $post_data['coluna'];
+	$_SESSION['dbomaker_modulos'][$mod]->campo[$field]->label_display = $post_data['label_display'];
 	$_SESSION['dbomaker_modulos'][$mod]->campo[$field]->titulo_listagem = stripslashes($post_data['titulo_listagem']);
 	$_SESSION['dbomaker_modulos'][$mod]->campo[$field]->dica = stripslashes($post_data['dica']);
 
@@ -1871,6 +1956,7 @@ function runUpdateField($post_data)
 	$_SESSION['dbomaker_modulos'][$mod]->campo[$field]->default_value = stripslashes($post_data['default_value']);
 	$_SESSION['dbomaker_modulos'][$mod]->campo[$field]->mask = stripslashes($post_data['mask']);
 	$_SESSION['dbomaker_modulos'][$mod]->campo[$field]->classes = stripslashes($post_data['classes']);
+	$_SESSION['dbomaker_modulos'][$mod]->campo[$field]->styles = stripslashes($post_data['styles']);
 	$_SESSION['dbomaker_modulos'][$mod]->campo[$field]->tipo = $post_data['tipo'];
 
 	//now checking all the specific data for the types.
@@ -1878,6 +1964,24 @@ function runUpdateField($post_data)
 	if($post_data['tipo'] == 'textarea' || $post_data['tipo'] == 'textarea-rich')
 	{
 		if(strlen($post_data['rows'])) { $_SESSION['dbomaker_modulos'][$mod]->campo[$field]->rows = $post_data['rows']; }
+	}
+	//content-tools --------------------------------------------------------------------------------------------------
+	if($post_data['tipo'] == 'content-tools')
+	{
+		$params = array();
+		$post_params = explode("\n", trim($post_data['params']));
+		foreach($post_params as $key => $param)
+		{
+			$parts = explode(":", $param);
+			$parts = array_reverse($parts);
+			$identifier = array_pop($parts);
+			$parts = array_reverse($parts);
+			$parts = stripslashes(trim(implode(":", $parts)));
+			if(strtolower($parts) == 'false') { $parts = false; }
+			if(strtolower($parts) == 'true') { $parts = true; }
+			$params[$identifier] = $parts;
+		}
+		$_SESSION['dbomaker_modulos'][$mod]->campo[$field]->params = $params;
 	}
 	//select, radio, checkbox ----------------------------------------------------------------------------------------
 	elseif($post_data['tipo'] == 'select' || $post_data['tipo'] == 'radio' || $post_data['tipo'] == 'checkbox')
@@ -2196,6 +2300,7 @@ function runNewField($post_data)
 	{
 		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->type = "TEXT";
 		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->tipo = 'textarea';
+		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->classes = 'autosize';
 		$_SESSION['dbomaker_controls']['show_field_type'] = TRUE;
 	}
 	//Textarea Rich
@@ -2204,6 +2309,13 @@ function runNewField($post_data)
 		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->type = "TEXT";
 		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->tipo = 'textarea-rich';
 		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->classes = 'tinymce';
+		$_SESSION['dbomaker_controls']['show_field_type'] = TRUE;
+	}
+	//Textarea Rich
+	elseif($post_data['tipo'] == 'content-tools')
+	{
+		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->type = "TEXT";
+		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->tipo = 'content-tools';
 		$_SESSION['dbomaker_controls']['show_field_type'] = TRUE;
 	}
 	//Password
@@ -3017,6 +3129,10 @@ function writeModuleFile($mod)
 					fwrite($fh, "\$field = new Obj();\n");
 					fwrite($fh, "\$field->titulo = '".((strlen($field->titulo))?(singleScape($field->titulo)):('&nbsp;'))."';\n");
 					fwrite($fh, "\$field->coluna = '".$field->coluna."';\n");
+					if(strlen($field->label_display))
+					{
+						fwrite($fh, "\$field->label_display = '".singleScape($field->label_display)."';\n");
+					}
 					if(strlen($field->titulo_listagem))
 					{
 						fwrite($fh, "\$field->titulo_listagem = '".singleScape($field->titulo_listagem)."';\n");
@@ -3071,6 +3187,10 @@ function writeModuleFile($mod)
 					{
 						fwrite($fh, "\$field->classes = '".singleScape($field->classes)."';\n");
 					}
+					if(strlen($field->styles))
+					{
+						fwrite($fh, "\$field->styles = '".singleScape($field->styles)."';\n");
+					}
 					fwrite($fh, "\$field->tipo = '".$field->tipo."';\n");
 
 					//writes the type specific definitions
@@ -3080,6 +3200,19 @@ function writeModuleFile($mod)
 						if(strlen($field->rows))
 						{
 							fwrite($fh, "\$field->rows = ".$field->rows.";\n");
+						}
+					}
+					//content-tools
+					elseif($field->tipo == 'content-tools')
+					{
+						if(is_array($field->params))
+						{
+							fwrite($fh, "\$field->params = array(\n");
+							foreach($field->params as $key => $value)
+							{
+								fwrite($fh, "\t'".$key."' => ".(($value === true)?("true"):((($value === false)?("false"):("'".singleScape($value)."'")))).",\n");
+							}
+							fwrite($fh, ");\n");
 						}
 					}
 					//select, radio, checkbox

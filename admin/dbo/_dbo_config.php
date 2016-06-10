@@ -1,7 +1,7 @@
 <?
 
 /* ================================================================================================================== */
-/* DBO DEFINITION FILE FOR MODULE 'config' ====================================== AUTO-CREATED ON 01/06/2016 17:05:46 */
+/* DBO DEFINITION FILE FOR MODULE 'config' ====================================== AUTO-CREATED ON 10/06/2016 16:15:24 */
 /* ================================================================================================================== */
 
 
@@ -354,6 +354,31 @@ $module->campo[$field->coluna] = $field;
 
 /*==========================================*/
 
+$field = new Obj();
+$field->titulo = 'Imagem de fundo';
+$field->coluna = 'background_image';
+$field->pk = false;
+$field->isnull = false;
+$field->add = true;
+$field->valida = false;
+$field->edit = true;
+$field->view = true;
+$field->lista = false;
+$field->filter = false;
+$field->order = false;
+$field->type = 'TEXT';
+$field->interaction = '';
+$field->tipo = 'image';
+	$image = new Obj();
+	$image->width = 1920;
+	$image->height = 1080;
+	$image->prefix = '';
+	$image->quality = 75;
+$field->image[] = $image;
+$module->campo[$field->coluna] = $field;
+
+/*==========================================*/
+
 /* GRID FOR THE FORM LAYOUT ========================================================================================= */
 
 $grid = array();
@@ -372,6 +397,8 @@ $grid[] = array('12');
 $grid[] = array('Google Maps');
 $grid[] = array('4');
 $grid[] = array('6','6');
+$grid[] = array('12');
+$grid[] = array('Informações específicas');
 $grid[] = array('12');
 
 $module->grid = $grid;

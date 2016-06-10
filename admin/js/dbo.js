@@ -63,7 +63,16 @@ $(document).ready(function(){
 		e.preventDefault();
 		e.stopPropagation();
 		clicado = $(this);
-		openColorBoxModal(clicado.attr('href'), ((typeof clicado.attr('data-width') != 'undefined')?(clicado.attr('data-width')):(1000)), ((typeof clicado.attr('data-height') != 'undefined')?(clicado.attr('data-height')):('98%')));
+		width = clicado.data('modal-width') || clicado.data('width') || 1000;
+		height = clicado.data('modal-height') || clicado.data('height') || '98%';
+		openColorBoxModal(clicado.attr('href') ? clicado.attr('href') : clicado.data('url'), width, height);
+	});
+
+	$(document).on('click', '[rel="redirect"]', function(e){
+		e.preventDefault();
+		e.stopPropagation();
+		clicado = $(this);
+		document.location = clicado.data('url');
 	});
 
 	$(document).on('click', '[rel^="lightbox"]', function(e){
@@ -150,9 +159,9 @@ $(document).ready(function(){
 	});
 
 	//Preferences
-	$(document).on('click', '.set-dbo-pref', function(e){
-		c = this;
-		mk = (typeof c.dataset.meta_key !== undefined ? c.dataset.meta_key : null);
+	$(document).on('click', '[data-dbo-set-pref]', function(e){
+		var c = this;
+		mk = (typeof c.dataset.meta_key !== 'undefined' ? c.dataset.meta_key : null);
 		jk = c.dataset.pref_key;
 		jv = c.dataset.pref_value;
 		peixeJSONSilent(DBO_URL+'/core/dbo-meta-ajax.php?action=set-pref', {
@@ -160,8 +169,15 @@ $(document).ready(function(){
 			json_key: jk,
 			json_value: jv
 		}, null, true);
-		if(typeof c.dataset.toggle !== undefined){
+		if(typeof c.dataset.toggle !== 'undefined'){
 			c.dataset.pref_value = jv == 'true' ? 'false' : 'true';
+		}
+	});
+
+	$(document).on('click', '.input-content-tools', function(){
+		target = $('.ct-ignition__button--edit:visible');
+		if(target.length){
+			target.trigger('click');
 		}
 	});
 

@@ -1,7 +1,7 @@
 <?
 
 /* ================================================================================================================== */
-/* DBO DEFINITION FILE FOR MODULE 'evento' ====================================== AUTO-CREATED ON 17/05/2016 12:38:53 */
+/* DBO DEFINITION FILE FOR MODULE 'evento' ====================================== AUTO-CREATED ON 10/06/2016 15:49:48 */
 /* ================================================================================================================== */
 
 
@@ -118,7 +118,7 @@ $button = new Obj();
 $button->value = 'Total de Inscritos';
 $button->custom = true;
 $button->code = '
-	$code = "<a target=\'_blank\' class=\'button tiny no-margin radius nowrap\' href=\'total-inscritos.php?evento=".$id."\'>Total de Inscritos</a>";
+	$code = "<a target=\'_blank\' class=\'button tiny no-margin radius nowrap\' href=\'total-inscritos.php?evento=".$id."&dbo_modal=1\'>Total de Inscritos</a>";
 ';
 $module->button[] = $button;
 

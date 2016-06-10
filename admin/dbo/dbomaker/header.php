@@ -356,7 +356,7 @@ $(document).ready(function(){
 	jQuery.hotkeys.options.filterContentEditable = false;
 	jQuery.hotkeys.options.filterTextInputs = false;
 
-	$('#wrapper-modules > .anchor').load('actions.php?getDiskModules=1', init);
+	$('#wrapper-modules > .anchor').load('actions.php?getDiskModules=1<?= $_GET[all_modules] ? "&all_modules=1" : "" ?>', init);
 
 	$(document).on('click', '#wrapper-modules > .anchor a', function(e){
 		e.preventDefault();

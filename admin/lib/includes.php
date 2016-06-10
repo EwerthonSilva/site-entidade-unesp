@@ -14,6 +14,9 @@ define(INCLUDE_PATH, dirname(__FILE__));
 /* trying to include the defines.php. If it's not there, the validation engine will try to run the system install. */
 @include_once(INCLUDE_PATH.'/defines.php');
 
+/* intancing the generic object class */
+require_once(INCLUDE_PATH.'/../dbo/core/obj.php');
+
 /* include the local defines, if exists */
 if(file_exists(INCLUDE_PATH.'/../local-defines.php'))
 {

@@ -18,6 +18,7 @@ Description: Interface para criação de formularios automatizados e facil comun
 define(DBO_CORE_PATH, dirname(__FILE__));
 
 //incluindo o arquivo de funções especificas do dbo
+require_once(DBO_CORE_PATH.'/obj.php');
 require_once(DBO_CORE_PATH.'/dbo_core_functions.php');
 
 //caminho da pasta mãe, contendo a pasta core e definicoes
@@ -37,15 +38,6 @@ define(DBO_IMAGE_PLACEHOLDER, DBO_URL.'/../images/image-placeholder.png');
 /* SALTS */
 
 define(SALT_DBO_AUTO_ADMIN_TOGGLE_ACTIVE, '0A89SD7UF0ASDFA#@');
-
-/*
-* ===============================================================================================================================================
-* ===============================================================================================================================================
-* Objeto Genérico ===============================================================================================================================
-* ===============================================================================================================================================
-* ===============================================================================================================================================
-*/
-class Obj {}
 
 /*
 * ===============================================================================================================================================
@@ -138,10 +130,38 @@ class DboFieldType {
 	function decode($params = array())
 	{
 		extract($params);
-		if($this->data->tipo == 'plugin' && $this->data->plugin->name = 'datagrid')
+		if(
+			($this->data->tipo == 'plugin' && $this->data->plugin->name = 'datagrid') ||
+			 $this->data->tipo == 'content-tools'
+		)
 		{
 			return json_decode($this->value, true);
 		}
+	}
+	function content()
+	{
+		if($this->data->tipo == 'content-tools')
+		{
+			return $this->html();
+		}
+		else
+		{
+			return $this->data;
+		}
+	}
+	function html()
+	{
+		if($this->data->tipo == 'content-tools')
+		{
+			return dboContentTools($this->value, array(
+				'template' => $this->data->params['template'],
+			));
+		}
+	}
+	//esta função irá permitir editar os conteúdos diretamente no frontend. Por hora, soh retorna o valor padrão.
+	function frontEndField()
+	{
+		return $this->content();
 	}
 }
 
@@ -646,10 +666,17 @@ class Dbo extends Obj
 		return '&dbo_mid='.$this->getMid().($_GET['dbo_fixo'] ? '&dbo_fixo='.$_GET['dbo_fixo'] : '');
 	}
 
+	//-----------------------------------------------------------------------------------------------------------------------------------------------
+	function hideBreadcrumbsRoot()
+	{
+		return false;
+	}
+
 	//gera uma matriz com os valores fixos para o modulo atual --------------------------------------------------------------------------------------
 
 	function makeBreadcrumb($params = array())
 	{
+		global $hooks;
 		extract($params);
 		if(!$this->hideComponent('breadcrumb'))
 		{
@@ -704,24 +731,57 @@ class Dbo extends Obj
 			}
 
 			$bread_crumb = array_reverse($bread_crumb);
-			echo "<ul class=\"no-margin\">";
-			echo '<li><a href="cadastros.php">'.DBO_TERM_CADASTROS.'</a></li>';
+
+			$stack = array();
+
+			//verirficando se deve mostrar o item cadastros nos breadcrumbs
+			if(!$this->hideBreadcrumbsRoot())
+			{
+				$stack[] = array(
+					'tipo' => 'url',
+					'url' => 'cadastros.php',
+					'label' => DBO_TERM_CADASTROS,
+				);
+			}
+
+			//montando todo o caminho do breadcrumb até aqui
 			foreach($bread_crumb as $chave => $obj)
 			{
-				?>
-				<li><a href='<?= $this->keepUrl(array('dbo_mod='.$obj['modulo']."&mid=".$obj[mid]."&dbo_fixo=".$obj[fixo], "!pag&!dbo_new!&!dbo_update&!dbo_delete&!dbo_view")) ?>'><?= $obj['label'] ?></a></li>
-				<li><a class='valor' href='<?= $this->keepUrl(array('dbo_update='.$obj['key'].'&dbo_mod='.$obj['modulo']."&mid=".$obj[mid]."&dbo_fixo=".$obj[fixo], "!pag&!dbo_new!&!dbo_delete")) ?>'><?= $obj['valor'] ?></a></li>
-				<?
+				$stack[] = array(
+					'tipo' => 'url',
+					'url' => $this->keepUrl(array('dbo_mod='.$obj['modulo']."&mid=".$obj[mid]."&dbo_fixo=".$obj[fixo], "!pag&!dbo_new!&!dbo_update&!dbo_delete&!dbo_view")),
+					'label' => $obj['label'],
+				);
+				$stack[] = array(
+					'tipo' => 'url',
+					'url' => $this->keepUrl(array('dbo_update='.$obj['key'].'&dbo_mod='.$obj['modulo']."&mid=".$obj[mid]."&dbo_fixo=".$obj[fixo], "!pag&!dbo_new!&!dbo_delete")),
+					'label' => $obj['valor'],
+				);
 			}
-			echo '<li><a href="'.$this->keepUrl('!dbo_update&!dbo_view').'">'.(($this->__module_scheme->titulo_big_button)?($this->__module_scheme->titulo_big_button):($this->__module_scheme->titulo_plural)).'</a></li>';
+
+			//mostranto o modulo atual
+			$stack[] = array(
+				'tipo' => 'url',
+				'url' => $this->keepUrl('!dbo_update&!dbo_view'),
+				'label' => (($this->__module_scheme->titulo_big_button)?($this->__module_scheme->titulo_big_button):($this->__module_scheme->titulo_plural)),
+			);
+
+			//se estiver editando um item, mostra ele
 			if($_GET['dbo_update'])
 			{
 				$obj = $this->newSelf();
 				$obj->id = $_GET['dbo_update'];
 				$obj->load();
-				echo '<li><a href="#">'.$obj->getBreadcrumbIdentifier().'</a></li>';
+				$stack[] = array(
+					'tipo' => 'url',
+					'url' => $obj->keepUrl(),
+					'label' => $obj->getBreadcrumbIdentifier(),
+				);
 			}
-			echo "</ul><!-- breadcrumbs -->";
+
+			echo dboBreadcrumbs(array(
+				'stack' => $stack,
+			));
 		}
 	}
 
@@ -2028,9 +2088,16 @@ class Dbo extends Obj
 
 	//retorna os itens fixos em forma de array -------------------------------------------------------------------------------------------
 
-	function getFixo($coluna)
+	/*function getFixo($coluna)
 	{
 		return $this->__fixos[$coluna];
+	}*/
+
+	static function getFixo($coluna)
+	{
+		global $dbo;
+		$fixos = $dbo->decodeFixos($_GET['dbo_fixo']);
+		return $fixos[$coluna];
 	}
 
 	//retorna o total de itens de uma tabela segundo a query, usado para comparações que venham a ser necessarias -------------------------
@@ -2873,7 +2940,7 @@ class Dbo extends Obj
 							//checando se existe uma subgrid para exibicao do elemento filho
 							$return .= $this->getGridCellPart($grid_cell, 'field-start');
 
-							$return .= "<label>".$valor->titulo.(($valor->valida)?(" <span class='required'></span>"):('')).(($valor->dica)?(" <span data-tooltip class='has-tip tip-top' title='".$valor->dica."'><i class=\"fa fa-question-circle\"></i></span>"):(''))."</label>";
+							$return .= "<label style=\"".($this->isFixo($valor->coluna) || $valor->label_display == 'hidden' ? 'display: none; ' : ($valor->label_display == 'transparent' ? 'visibility: hidden; ' : ''))."\">".$valor->titulo.(($valor->valida)?(" <span class='required'></span>"):('')).(($valor->dica)?(" <span data-tooltip class='has-tip tip-top' title='".$valor->dica."'><i class=\"fa fa-question-circle\"></i></span>"):(''))."</label>";
 							$return .= "<span class='input input-".$valor->tipo."'>";
 
 							//checando se existe uma subgrid para exibicao do elemento filho
@@ -2934,7 +3001,7 @@ class Dbo extends Obj
 			}
 			if(!$fields_only)
 			{
-				$return .= '<div class="row"><div class="item large-12 columns text-right"><div class="input"><button class="button radius" id="main-submit" accesskey="s">'.((!$this->__module_scheme->insert_button_text)?('Inserir '.dboStrToLower($this->__module_scheme->titulo)):($this->__module_scheme->insert_button_text)).'</button></div></div></div>';
+				$return .= '<div class="row"><div class="item large-12 columns text-right"><div class="input"><button class="button radius peixe-save" id="main-submit" accesskey="s">'.((!$this->__module_scheme->insert_button_text)?('Inserir '.dboStrToLower($this->__module_scheme->titulo)):($this->__module_scheme->insert_button_text)).'</button></div></div></div>';
 				$return .= "<input type='hidden' name='__dbo_insert_flag' value='1'>";
 				$return .= CSRFInput();
 				$return .= submitToken();
@@ -3066,8 +3133,8 @@ class Dbo extends Obj
 							$return .= "\t<div class='item columns ".(($hasgrid)?('large-'.$this->getGridCellPart($grid_cell, 'item-size')):(''))." ".(($hasgrid)?($this->getGridCellPart($grid_cell, 'item-classes')):(''))."' id='item-".$valor->coluna."'>\n";
 
 							$return .= $this->getGridCellPart($grid_cell, 'field-start');
-							
-							$return .= "\t\t<label>".$valor->titulo.(($valor->valida)?(" <span class='required'></span>"):('')).(($valor->dica)?(" <span data-tooltip class='has-tip tip-top' title='".$valor->dica."'><i class=\"fa fa-question-circle\"></i></span>"):(''))."</label>\n";
+
+							$return .= "\t\t<label style=\"".($this->isFixo($valor->coluna) || $valor->label_display == 'hidden' ? 'display: none; ' : ($valor->label_display == 'transparent' ? 'visibility: hidden; ' : ''))."\">".$valor->titulo.(($valor->valida)?(" <span class='required'></span>"):('')).(($valor->dica)?(" <span data-tooltip class='has-tip tip-top' title='".$valor->dica."'><i class=\"fa fa-question-circle\"></i></span>"):(''))."</label>\n";
 							$return .= "\t\t<span class='input input-".$valor->tipo."'>\n";
 
 							$return .= $this->getGridCellPart($grid_cell, 'field-middle');
@@ -3127,7 +3194,7 @@ class Dbo extends Obj
 
 			if(!$fields_only)
 			{
-				$return .= "<div class='row'><div class='item large-12 columns text-right'><div class='input'><button class='button radius' id=\"main-submit\" accesskey='s'>Salvar alterações n".$this->__module_scheme->genero." ".dboStrToLower($this->__module_scheme->titulo)."</button></div></div></div>";
+				$return .= "<div class='row'><div class='item large-12 columns text-right'><div class='input'><button class='button radius peixe-save' id=\"main-submit\" accesskey='s'>Salvar alterações n".$this->__module_scheme->genero." ".dboStrToLower($this->__module_scheme->titulo)."</button></div></div></div>";
 				$return .= "<input type='hidden' name='__dbo_update_flag' value='".$update."'>\n\n";
 				$return .= CSRFInput();
 				$return .= submitToken();
@@ -3425,23 +3492,31 @@ class Dbo extends Obj
 										}
 										else
 										{
-											?>
-											<ul class="no-margin">
-												<li><a href="cadastros.php"><?= DBO_TERM_CADASTROS ?></a></li>
-												<li><a href='<?= $this->keepUrl('!dbo_view&!dbo_update&!dbo_delete&!dbo_new') ?>'><?= (($scheme->titulo_big_button)?($scheme->titulo_big_button):($scheme->titulo_plural)) ?></a></li>
-												<?
-													if($_GET['dbo_update'])
-													{
-														$obj = $this->newSelf();
-														$obj->id = $_GET['dbo_update'];
-														$obj->load();
-														?>
-														<li><a href="#"><?= $obj->getBreadcrumbIdentifier(); ?></a></li>
-														<?
-													}
-												?>
-											</ul>																			
-											<?
+											$stack = array();
+											$stack[] = array(
+												'tipo' => 'url',
+												'url' => 'cadastros.php',
+												'label' => DBO_TERM_CADASTROS,
+											);
+											$stack[] = array(
+												'tipo' => 'url',
+												'url' => $this->keepUrl('!dbo_view&!dbo_update&!dbo_delete&!dbo_new'),
+												'label' => (($scheme->titulo_big_button)?($scheme->titulo_big_button):($scheme->titulo_plural)),
+											);
+											if($_GET['dbo_update'])
+											{
+												$obj = $this->newSelf();
+												$obj->id = $_GET['dbo_update'];
+												$obj->load();
+												$stack[] = array(
+													'tipo' => 'url',
+													'url' => $obj->keepUrl(),
+													'label' => $obj->getBreadcrumbIdentifier(),
+												);
+											}
+											echo dboBreadcrumbs(array(
+												'stack' => $stack,
+											));
 										}
 									?>
 								</div>

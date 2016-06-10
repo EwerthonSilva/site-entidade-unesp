@@ -14,7 +14,7 @@
 	<title><?= SYSTEM_NAME ?> - <?= SYSTEM_DESCRIPTION ?></title>
 	<meta name="description" content="">
 	<meta name="author" content="Peixe Laranja">
-	<base href="<?= @ereg_replace('/dbo$', '', DBO_URL) ?>/">
+	<base href="<?= preg_replace('#/dbo$#', '', DBO_URL) ?>/">
 
 	<link rel="shortcut icon" href="images/favicon.ico">
 	<link rel="stylesheet" href="css/foundation.css" />
@@ -46,6 +46,8 @@
 	<?= dboBody(); ?>
 
 	<div id="main-header" <?= prettyHeaderAtts() ?> data-stellar-background-ratio="0.5">
+
+		<?php $hooks->do_action('dbo_header_prepend') ?>
 		
 		<?= prettyHeaderLogo() ?>
 
@@ -81,6 +83,9 @@
 				</section>
 			</nav>
 		</div><!-- main-tabs -->
+
+		<?php $hooks->do_action('dbo_header_append') ?>
+	
 	</div><!-- main-header -->
 
 	<div id="main-wrap">

@@ -310,7 +310,7 @@
 
 	// ----------------------------------------------------------------------------------------------------------------
 
-	function renderBreadcrumbItem($data)
+	function renderBreadcrumbItem($data, $params = array())
 	{
 		ob_start();
 		if($data['module'])
@@ -321,16 +321,16 @@
 			{
 				$obj->id = $data['id'];
 				$obj->load();
-				return '<li><a href="dbo_admin.php?dbo_mod='.$data['module'].'&dbo_update='.$data['id'].'">'.$obj->getBreadcrumbIdentifier().'</a></li>';
+				return '<li '.($params['id'] ? 'id="'.$params['id'].'"' : '').'><a href="dbo_admin.php?dbo_mod='.$data['module'].'&dbo_update='.$data['id'].'">'.$obj->getBreadcrumbIdentifier().'</a></li>';
 			}
 			else
 			{
-				return '<li><a href="dbo_admin.php?dbo_mod='.$data['module'].'">'.$obj->getBreadcrumbIdentifier().'</a></li>';
+				return '<li '.($params['id'] ? 'id="'.$params['id'].'"' : '').'><a href="dbo_admin.php?dbo_mod='.$data['module'].'">'.$obj->getBreadcrumbIdentifier().'</a></li>';
 			}
 		}
 		elseif($data['url'])
 		{
-			return '<li><a href="'.$data['url'].'">'.$data['label'].'</a></li>';
+			return '<li '.($params['id'] ? 'id="'.$params['id'].'"' : '').'><a href="'.$data['url'].'">'.$data['label'].'</a></li>';
 		}
 		return ob_get_clean();
 	}
@@ -339,16 +339,27 @@
 	
 	function dboBreadcrumbs($params = array())
 	{
+		/*
+			ignore_hooks
+		*/
+		global $hooks;
 		extract($params);
 		ob_start();
 		?>
 		<div class="breadcrumb">
 			<ul style="margin-bottom: 6px;">
-				<li><a href="cadastros.php"><?= DBO_TERM_CADASTROS ?></a></li>
-				<?php
+				<?php 
+					if(!$ignore_hooks)
+					{
+						$hooks->do_action('dbo_breadcrumbs_prepend');
+					}
 					foreach((array)$stack as $data)
 					{
-						echo renderBreadcrumbItem($data);
+						echo renderBreadcrumbItem($data, $data['params']);
+					}
+					if(!$ignore_hooks)
+					{
+						$hooks->do_action('dbo_breadcrumbs_append');
 					}
 				?>
 			</ul>

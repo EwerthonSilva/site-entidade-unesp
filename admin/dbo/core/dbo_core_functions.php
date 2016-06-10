@@ -98,20 +98,23 @@
 		$from_name   = $from_name !== null ? $from_name : siteConfig()->site_titulo;
 		$reply_to    = $reply_to !== null ? $reply_to : siteConfig()->reply_to;
 		$attachments = $attachments !== null ? $attachments : array();
-		$debug       = $debug !== null ? false : $debug;
+		$debug       = $debug !== null ? $debug : false;
 
 		$mail = new PHPMailer;
 
 		//$mail->SMTPDebug = 3;                               // Enable verbose debug output
 
 		$mail->CharSet = 'UTF-8';
-		$mail->isSMTP();                                      // Set mailer to use SMTP
-		$mail->Host = $smpt_host;                                  // Specify main and backup SMTP servers
-		$mail->SMTPAuth = true;                               // Enable SMTP authentication
-		$mail->Username = $smtp_user;						  // SMTP username
-		$mail->Password = $smtp_pass;                         // SMTP password
-		//$mail->SMTPSecure = 'tls';                          // Enable TLS encryption, `ssl` also accepted
-		$mail->Port = $smtp_port;                             // TCP port to connect to
+		if(DBO_MAIL_IS_SMTP !== false)
+		{
+			$mail->isSMTP();                                      // Set mailer to use SMTP
+			$mail->Host = $smpt_host;                                  // Specify main and backup SMTP servers
+			$mail->SMTPAuth = true;                               // Enable SMTP authentication
+			$mail->Username = $smtp_user;						  // SMTP username
+			$mail->Password = $smtp_pass;                         // SMTP password
+			//$mail->SMTPSecure = 'tls';                          // Enable TLS encryption, `ssl` also accepted
+			$mail->Port = $smtp_port;                             // TCP port to connect to
+		}
 
 		$mail->setFrom($from_mail, $from_name);
 		//$mail->addAddress('joe@example.net', 'Joe User');     // Add a recipient
@@ -826,6 +829,25 @@
 			return safeArrayKey($key+100, $array);
 		}
 		return $key;
+	}
+	
+	// ----------------------------------------------------------------------------------------------------------------
+
+	function dboContentTools($__json__, $params = array())
+	{
+		global $hooks;
+		extract($params);		
+		$__template__ = $template === null ? 'content-tools-blank' : $template;
+
+		$__json__ = json_decode($__json__, true);
+		extract($__json__);
+
+		ob_start();
+		include(dboTemplate($__template__));
+		$json = ob_get_clean();
+
+		$json = $hooks->apply_filters('dbo_content', $json);
+		return $json;
 	}
 	
 	// ----------------------------------------------------------------------------------------------------------------
@@ -1683,6 +1705,17 @@
 	
 	// ----------------------------------------------------------------------------------------------------------------
 
+	function isNull($val)
+	{
+		if($val != null && $val != '|##|NULL|##|')
+		{
+			return false;
+		}
+		return true;
+	}
+	
+	// ----------------------------------------------------------------------------------------------------------------
+
 	//funcao que verifica se o usuário tem permissao. para realizar algo, segundo a tabela perfil.
 	function pessoaHasPermission ($pessoa_id, $perm, $modulo = '')
 	{
@@ -2465,6 +2498,8 @@
 				'multiselect',
 				'dbo',
 				'colorbox',
+				'content-tools',
+				'hotkeys',
 			)); ?>
 		<?
 		if(getPrettyHeaderSetting('parallax'))
@@ -3213,7 +3248,11 @@
 
 	// ----------------------------------------------------------------------------------------------------------------
 
-	function ago($datetime, $show_tense = true) {
+	function ago($datetime, $params = array()) {
+
+		extract($params);
+
+		$show_tense = $show_tense === null ? true : false;
 
 		$time = strtotime($datetime);
 
@@ -3229,10 +3268,10 @@
 			$now = time();
 		}
 
-		$difference = $now - $time;
+		$difference = abs($now - $time);
 		$tense = "há";
 
-		for($j = 0; $difference >= $lengths[$j] && $j < count($lengths)-1; $j++) {
+		for($j = 0; $difference >= $lengths[$j] && $j < ($days_only ? 3 : count($lengths)-1); $j++) {
 		   $difference /= $lengths[$j];
 		}
 
@@ -3249,7 +3288,14 @@
 			}
 		}
 
-		if($difference <= 0) { return 'agora'; }
+		if(!$future)
+		{
+			if($now - $time <= 0) { return 'agora'; }
+		}
+		else
+		{
+			if($now - $time <= 0) { $tense = 'em'; }
+		}
 
 		return (($show_tense)?($tense." "):('')).abs($difference)." ".$periods[$j];
 	}	
