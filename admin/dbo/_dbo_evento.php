@@ -1,7 +1,7 @@
 <?
 
 /* ================================================================================================================== */
-/* DBO DEFINITION FILE FOR MODULE 'evento' ====================================== AUTO-CREATED ON 10/06/2016 15:49:48 */
+/* DBO DEFINITION FILE FOR MODULE 'evento' ====================================== AUTO-CREATED ON 13/06/2016 10:21:33 */
 /* ================================================================================================================== */
 
 
@@ -86,6 +86,31 @@ $module->campo[$field->coluna] = $field;
 
 /*==========================================*/
 
+$field = new Obj();
+$field->titulo = 'Imagem de Fundo';
+$field->coluna = 'background_image';
+$field->pk = false;
+$field->isnull = false;
+$field->add = true;
+$field->valida = false;
+$field->edit = true;
+$field->view = true;
+$field->lista = false;
+$field->filter = false;
+$field->order = false;
+$field->type = 'TEXT';
+$field->interaction = '';
+$field->tipo = 'image';
+	$image = new Obj();
+	$image->width = 1900;
+	$image->height = 1080;
+	$image->prefix = '';
+	$image->quality = 75;
+$field->image[] = $image;
+$module->campo[$field->coluna] = $field;
+
+/*==========================================*/
+
 /* GRID FOR THE FORM LAYOUT ========================================================================================= */
 
 $grid = array();
@@ -118,7 +143,7 @@ $button = new Obj();
 $button->value = 'Total de Inscritos';
 $button->custom = true;
 $button->code = '
-	$code = "<a target=\'_blank\' class=\'button tiny no-margin radius nowrap\' href=\'total-inscritos.php?evento=".$id."&dbo_modal=1\'>Total de Inscritos</a>";
+	$code = "<a rel=\'modal\' data-width=\'100%\' target=\'_blank\' class=\'button tiny no-margin radius nowrap\' href=\'total-inscritos.php?evento=".$id."&dbo_modal=1\'>Total de Inscritos</a>";
 ';
 $module->button[] = $button;
 

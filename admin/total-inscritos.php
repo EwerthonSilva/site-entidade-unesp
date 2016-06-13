@@ -91,14 +91,20 @@ $nome = '';
 </table>
 <h3 class="text-center"><strong>Total de Inscritos: <?= $count ?></strong></h3>
 <script type="text/javascript" charset="utf-8">
-	$(document).ready(function(){
-		$('.handler').click(function(){
+$(document).ready(function(){
+	$('.handler').click(function(){
+		if(!$(this).hasClass('active')){
 			$('tr.active').removeClass('active');
 			$(this).addClass('active');
 			$('tr.detail').hide();
 			$(this).next('tr').fadeIn();
-		})
-	}) //doc.ready
+			console.log('clicou');
+		}else {
+			$('tr.detail').hide();
+			$('tr.active').removeClass('active');
+		}
+	})
+}) //doc.ready
 </script>
 
 <?php require_once("footer.php"); ?>

@@ -94,6 +94,55 @@ else{
 				</div>
 				<?
 			}
+			$to = $_POST['email'];
+			$subject =  SYSTEM_NAME."- Confirmação de Inscrição";
+			$from_name = SYSTEM_NAME;
+			$from_email = "no-reply@fcfar.unesp.br";
+
+			$message = "
+
+			<p>Olá, ".$_POST['nome'].".</p>
+
+			<p>Sua inscrição foi efetivada para as seguintes atividades:</p>
+
+			<ul>
+			<li>".implode("</li><li>", $palestras)."</li>
+			</ul>";
+
+			if($valor_total !=0){
+
+				$message .= "<p>Você receberá o botelo em até 3 dias, com prazo para pagamento de 7 dias após o recebimento.</p>" ;
+
+			}
+
+			$message .= "
+			<p>Em caso de dúvidas, entre em contato pelo e-mail ".EMAIL_CONTATO."  </p>
+
+			<p><center><small>Esta mensagem foi gerada automaticamente, favor n&atilde;o responder.</small></center></p>
+			";
+
+			mail($to, $subject, $message, "From: ".$from_name." <".$from_email.">\r\nMIME-Version: 1.0\r\nContent-type: text/html; charset=UTF-8\r\n", "-r ".$from_email);
+			$editores = getUsersPerfil('Editor');
+
+
+			foreach((array)$editores as $pessoa_id)
+			{
+				$pes = new pessoa($pessoa_id);
+
+				$message = "
+					<p>Olá, ".$pes->nome.".</p>
+
+					<p>".$_POST['nome']." se inscreveu nas seguintes atividades:</p>
+
+					<ul>
+					<li>".implode("</li><li>", $palestras)."</li>
+					</ul>
+
+					<p>Para gerenciar as inscrições, acesse: <a href='".SITE_URL."/admin'>Área Administrativa</a>
+				";
+				mail($pes->email, "Nova inscrição: ".$_POST['nome'], $message, "From: ".$from_name." <".$from_email.">\r\nMIME-Version: 1.0\r\nContent-type: text/html; charset=UTF-8\r\n", "-r ".$from_email);
+			}
+
 			$json_result['html']['#form-inscricao'] = ob_get_clean();
 		}else{
 			$json_result['message'] = "<div class='error'>".$error."</div>";

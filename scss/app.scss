@@ -3,6 +3,7 @@
 @import 'settings';
 @import 'foundation';
 @import 'motion-ui';
+@import 'common-f6';
 
 @include foundation-global-styles;
 @include foundation-grid;
@@ -82,3 +83,7 @@ div{
 #forma-pagamento-input{display: none;}
 
 .radius{border-radius: 5px;}
+
+body{
+	background-color: rgba($primary-color, 0.8);
+}

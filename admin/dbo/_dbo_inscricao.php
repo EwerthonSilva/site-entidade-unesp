@@ -1,7 +1,7 @@
 <?
 
 /* ================================================================================================================== */
-/* DBO DEFINITION FILE FOR MODULE 'inscricao' =================================== AUTO-CREATED ON 10/06/2016 15:52:07 */
+/* DBO DEFINITION FILE FOR MODULE 'inscricao' =================================== AUTO-CREATED ON 13/06/2016 10:28:32 */
 /* ================================================================================================================== */
 
 
@@ -111,6 +111,46 @@ $module->campo[$field->coluna] = $field;
 /*==========================================*/
 
 $field = new Obj();
+$field->titulo = 'CPF';
+$field->coluna = 'cpf';
+$field->pk = false;
+$field->isnull = false;
+$field->add = true;
+$field->valida = false;
+$field->edit = true;
+$field->view = true;
+$field->lista = true;
+$field->filter = true;
+$field->order = true;
+$field->type = 'VARCHAR(255)';
+$field->interaction = '';
+$field->tipo = 'text';
+$module->campo[$field->coluna] = $field;
+
+/*==========================================*/
+
+$field = new Obj();
+$field->titulo = 'Endereço';
+$field->coluna = 'endereco';
+$field->pk = false;
+$field->isnull = false;
+$field->add = true;
+$field->valida = false;
+$field->edit = true;
+$field->view = true;
+$field->lista = false;
+$field->filter = false;
+$field->order = false;
+$field->type = 'TEXT';
+$field->interaction = '';
+$field->classes = 'autosize';
+$field->tipo = 'textarea';
+$field->rows = 4;
+$module->campo[$field->coluna] = $field;
+
+/*==========================================*/
+
+$field = new Obj();
 $field->titulo = 'Faculdade';
 $field->coluna = 'faculdade';
 $field->pk = false;
@@ -180,6 +220,25 @@ $module->campo[$field->coluna] = $field;
 /*==========================================*/
 
 $field = new Obj();
+$field->titulo = 'Curso';
+$field->coluna = 'curso';
+$field->pk = false;
+$field->isnull = false;
+$field->add = true;
+$field->valida = false;
+$field->edit = true;
+$field->view = true;
+$field->lista = true;
+$field->filter = true;
+$field->order = true;
+$field->type = 'VARCHAR(255)';
+$field->interaction = '';
+$field->tipo = 'text';
+$module->campo[$field->coluna] = $field;
+
+/*==========================================*/
+
+$field = new Obj();
 $field->titulo = 'Ano';
 $field->coluna = 'ano';
 $field->pk = false;
@@ -230,46 +289,6 @@ $module->campo[$field->coluna] = $field;
 /*==========================================*/
 
 $field = new Obj();
-$field->titulo = 'CPF';
-$field->coluna = 'cpf';
-$field->pk = false;
-$field->isnull = false;
-$field->add = true;
-$field->valida = false;
-$field->edit = true;
-$field->view = true;
-$field->lista = true;
-$field->filter = true;
-$field->order = true;
-$field->type = 'VARCHAR(255)';
-$field->interaction = '';
-$field->tipo = 'text';
-$module->campo[$field->coluna] = $field;
-
-/*==========================================*/
-
-$field = new Obj();
-$field->titulo = 'Endereço';
-$field->coluna = 'endereco';
-$field->pk = false;
-$field->isnull = false;
-$field->add = true;
-$field->valida = false;
-$field->edit = true;
-$field->view = true;
-$field->lista = false;
-$field->filter = false;
-$field->order = false;
-$field->type = 'TEXT';
-$field->interaction = '';
-$field->classes = 'autosize';
-$field->tipo = 'textarea';
-$field->rows = 4;
-$module->campo[$field->coluna] = $field;
-
-/*==========================================*/
-
-$field = new Obj();
 $field->titulo = 'Forma de pagamento';
 $field->coluna = 'forma_pagamento';
 $field->pk = false;
@@ -293,31 +312,17 @@ $module->campo[$field->coluna] = $field;
 
 /*==========================================*/
 
-$field = new Obj();
-$field->titulo = 'Curso';
-$field->coluna = 'curso';
-$field->pk = false;
-$field->isnull = false;
-$field->add = true;
-$field->valida = false;
-$field->edit = true;
-$field->view = true;
-$field->lista = true;
-$field->filter = true;
-$field->order = true;
-$field->type = 'VARCHAR(255)';
-$field->interaction = '';
-$field->tipo = 'text';
-$module->campo[$field->coluna] = $field;
-
-/*==========================================*/
-
 /* GRID FOR THE FORM LAYOUT ========================================================================================= */
 
 $grid = array();
 
 $grid[] = array('12');
+$grid[] = array('12');
 $grid[] = array('6','6');
+$grid[] = array('12');
+$grid[] = array('4','4','4');
+$grid[] = array('4','4','4');
+$grid[] = array('4');
 
 $module->grid = $grid;
 
