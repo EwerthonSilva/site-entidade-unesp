@@ -15,6 +15,7 @@ $ev = new evento($_GET['evento']);
 	<script src="bower_components/jquery/dist/jquery.js"></script>
 	<script src="bower_components/foundation-sites/dist/foundation.js"></script>
 	<script src="admin/js/peixelaranja.js"></script>
+	<script src="js/mascaras.js"></script>
 
 	<?= dboImportJs(array(
 		'hotkeys',
@@ -99,13 +100,16 @@ elseif(siteConfig()->background_image)
 													list($descricao, $palestrante, $universidade) = explode("\n", $dados_atividade[titulo]);
 													?>
 													<tr>
-														<td class="checkbox"><input title="<?= (($dados_atividade[vagas] <= 0)?('Vagas esgotadas'):('')) ?>" type='checkbox' class="<?= $dados_atividade[valor] > 0 ? 'atividade-paga' : ''?> " name='palestra[<?= $id_atividade ?>]' value="<?= $id_atividade ?>"
+														<td class="checkbox"><input title="<?= (($dados_atividade[vagas] <= 0)?('Vagas esgotadas'):('')) ?>" type='checkbox' class="no-margin <?= $dados_atividade[valor] > 0 ? 'atividade-paga' : ''?> " name='palestra[<?= $id_atividade ?>]' value="<?= $id_atividade ?>"
 															<?= (($dados_atividade[vagas] <= 0)?('disabled'):('')) ?>/></td>
 															<td>
-																<span class="titulo"><?= $descricao?><?= $dados_atividade[valor] !=0 ? "- R$".number_format($dados_atividade[valor], 2, ',', '.') : "" ?></span>
-																<span class="palestrante"><?= $palestrante ?></span>
-																<span class="universidade"><?= $universidade ?></span>
-																<span class="descricao"><?=$dados_atividade[descricao]?></span>
+																<blockquote class="no-margin">
+																	<span class="titulo"><?= $descricao?><?= $dados_atividade[valor] !=0 ? "- R$".number_format($dados_atividade[valor], 2, ',', '.') : "" ?></span>
+																	<cite>
+																		<?= $palestrante ?> - <?= $universidade ?>
+																	</cite>
+																	<span class="descricao"><?=$dados_atividade[descricao]?></span>
+																</blockquote>
 															</td>
 														</tr>
 														<?php
@@ -125,7 +129,7 @@ elseif(siteConfig()->background_image)
 										</div>
 										<div class="large-4 end columns">
 											<label for="cpf">CPF</label>
-											<input class="required cpf" type="text" name="cpf" >
+											<input class="required cpf" type="text" name="cpf" maxlength="14" onKeyPress="MascaraCPF(this);" onblur="ValidarCPF(this);">
 										</div>
 									</div>
 									<div class="row">
@@ -149,7 +153,7 @@ elseif(siteConfig()->background_image)
 										</div>
 										<div class="large-2 columns">
 											<label for="numero">Nº</label>
-											<input maxlength="5" type="text" name="numero" required="">
+											<input maxlength="5" type="text" name="numero" onkeypress="soNumeros(this);" required="">
 										</div>
 										<div class="large-4 columns">
 											<label for="bairro">Bairro</label>
@@ -163,7 +167,36 @@ elseif(siteConfig()->background_image)
 										</div>
 										<div class="large-2 end columns">
 											<label for="estado">Estado</label>
-											<input maxlength="2" type="text" name="estado" required="">
+											<select class="required" name="uf" title="Este campo é obrigatório" required >
+												<option value="">--</option>
+												<option value="AC">AC</option>
+												<option value="AL">AL</option>
+												<option value="AM">AM</option>
+												<option value="AP">AP</option>
+												<option value="BA">BA</option>
+												<option value="CE">CE</option>
+												<option value="DF">DF</option>
+												<option value="ES">ES</option>
+												<option value="GO">GO</option>
+												<option value="MA">MA</option>
+												<option value="MG">MG</option>
+												<option value="MS">MS</option>
+												<option value="MT">MT</option>
+												<option value="PA">PA</option>
+												<option value="PB">PB</option>
+												<option value="PE">PE</option>
+												<option value="PI">PI</option>
+												<option value="PR">PR</option>
+												<option value="RJ">RJ</option>
+												<option value="RN">RN</option>
+												<option value="RO">RO</option>
+												<option value="RR">RR</option>
+												<option value="RS">RS</option>
+												<option value="SC">SC</option>
+												<option value="SE">SE</option>
+												<option value="SP">SP</option>
+												<option value="TO">TO</option>
+											</select>
 										</div>
 									</div>
 									<div class="row">

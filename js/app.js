@@ -1,8 +1,5 @@
 $(document).foundation();
 
-$(document).ready(function(){
-	$('.cpf').inputmask('999.999.999-99');
-});
 $(document).on('change', 'select[name=formacao]', function(){
 	c = $(this);
 	if(c.val() == 'Graduação'){
