@@ -1,7 +1,7 @@
 <?
 
 /* ================================================================================================================== */
-/* DBO DEFINITION FILE FOR MODULE 'pagina' ====================================== AUTO-CREATED ON 01/04/2016 15:49:50 */
+/* DBO DEFINITION FILE FOR MODULE 'pagina' ====================================== AUTO-CREATED ON 07/06/2016 16:10:32 */
 /* ================================================================================================================== */
 
 
@@ -186,8 +186,10 @@ $field->order = false;
 $field->type = 'TEXT';
 $field->interaction = '';
 $field->classes = 'tinymce';
-$field->tipo = 'textarea-rich';
-$field->rows = 20;
+$field->tipo = 'content-tools';
+$field->params = array(
+	'template' => 'pagina-blank',
+);
 $module->campo[$field->coluna] = $field;
 
 /*==========================================*/

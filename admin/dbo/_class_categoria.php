@@ -216,6 +216,9 @@ if(!class_exists('categoria'))
 							'cat' => $_categoria->id,
 							'tipo' => $_pagina_tipo,
 						));
+
+						$_pagina_backup = false;
+						
 						//testa especificidade pelas cutomizações do tempalte
 						if(file_exists($_pagina_tipo.'-categoria-'.$_categoria->slug.'.php'))
 						{
@@ -422,6 +425,27 @@ function arvoreDeCategorias($pagina_tipo = null)
 		return $_category_tree[$pagina_tipo];
 	}
 	return $_category_tree;
+}
+
+function menuDeCategorias($params = array())
+{
+	extract($params);
+	global $_category_tree;
+
+	if($pagina_tipo)
+	{
+		return categoria::renderTreeMenu($_category_tree[$pagina_tipo], $params);
+	}
+	$keys = array_keys($_category_tree);
+	ob_start();
+	foreach((array)$keys as $key => $value)
+	{
+		?>
+		<h4><?= $value ?></h4>
+		<?php
+		echo categoria::renderTreeMenu($_category_tree[$value], $params);
+	}
+	return ob_get_clean();
 }
 
 function categoriaId()

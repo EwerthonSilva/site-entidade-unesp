@@ -544,6 +544,12 @@ $(document).ready(function(){
 		jQuery.hotkeys.options.filterInputAcceptingElements = false;
 		jQuery.hotkeys.options.filterContentEditable = false;
 		jQuery.hotkeys.options.filterTextInputs = false;
+
+		//hotkeys
+		$(document).bind('keydown', 'ctrl+s', function(){
+			peixeSmartSave();
+			return false;
+		});
 	}
 
 	peixeInit();
@@ -724,12 +730,6 @@ $(document).ready(function(){
 		}
 	});
 	
-	//hotkeys
-	$(document).bind('keydown', 'ctrl+s', function(){
-		peixeSmartSave();
-		return false;
-	});
-
 	$(document).on('click', '.peixe-save', function(){
 		var c = $(this);
 		peixeSmartSave(c);

@@ -219,7 +219,7 @@
 	}
 
 	global $hooks;
-	$hooks->add_filter('dbo_content', 'dboAutop');
+	$hooks->add_filter('dbo_content', 'dboAutop', 0);
 	$hooks->add_filter('dbo_content', 'dboShortcodeUnautop');
 
 ?>

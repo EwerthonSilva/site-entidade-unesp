@@ -13,6 +13,9 @@ $peixe-helper-background-color: #333 !default;
 //consertando o maldito modulo de segurança do BB
 html > object { display: none !important; }
 
+//consertando larguras de embed
+iframe { max-width: 100%; }
+
 //escondendo parágrafos
 .hide-empty:empty { display: none; }
 p:empty { display: none; }
@@ -64,6 +67,9 @@ p:empty { display: none; }
 .h-auto { height: auto !important; }
 .no-click > a { cursor: default; }
 .relative { position: relative; }
+.m-auto { margin-left: auto; margin-right: auto; }
+.block { display: block; }
+.uppercase { text-transform: uppercase; }
 
 //peixe messages
 .wrapper-message { font-family: $body-font-family, Sans-serif; max-height: rem-calc(100); position: fixed; top: 0; left: 0px; width: 100%; line-height: 1.2; overflow: hidden; font-size: rem-calc(19); z-index: 10000; opacity: 0.95; text-align: center; transition: all 1.5s ease;
@@ -169,6 +175,12 @@ input[type="file"][peixe-ajax-file-upload] { position: absolute; width: 1px; hei
 	}
 }
 
+//width control
+@include breakpoint(medium) { 
+	.width-80 { max-width: 80%; margin-left: auto; margin-right: auto; }
+	.width-50 { max-width: 50%; margin-left: auto; margin-right: auto; }
+}
+
 /* ------------------ */
 /* GOOGLE MAPS HELPER */
 /* ------------------ */
@@ -199,6 +211,10 @@ input[type="file"][peixe-ajax-file-upload] { position: absolute; width: 1px; hei
 		}
 	}
 }
+//prevents FOUC on slick slides
+/*.slick-slide { display: none !important; }
+.slick-initialized,
+.slick-slide:first-child { display: block !important; }*/
 
 /* ------------------ */
 /* CONTENT TOOLS ---- */
@@ -208,34 +224,37 @@ input[type="file"][peixe-ajax-file-upload] { position: absolute; width: 1px; hei
 
 // Center (default)
 [data-editable] image,
-[data-editable] [data-ce-tag=img],
+[data-editable] .ce-element--type-image,
 [data-editable] img,
 [data-editable] video {
     clear: both;
     display: block;
     margin-left: auto;
     margin-right: auto;
+	margin-bottom: 1em;
     max-width: 100%;
 }
 
 // Left align
 [data-editable] image.align-left,
-[data-editable] [data-ce-tag=img].align-left,
+[data-editable] .ce-element--type-image.align-left,
 [data-editable] img.align-left,
 [data-editable] video.align-left {
     clear: initial;
     float: left;
-    margin-right: 0.5em;
+    margin-right: 1em;
+	margin-bottom: .3em;
 }
 
 // Right align
 [data-editable] image.align-right,
-[data-editable] [data-ce-tag=img].align-right,
+[data-editable] .ce-element--type-image.align-right,
 [data-editable] img.align-right,
 [data-editable] video.align-right {
     clear: initial;
     float: right;
-    margin-left: 0.5em;
+    margin-left: 1em;
+	margin-bottom: .3em;
 }
 
 // Alignment styles for text in editable regions
@@ -253,4 +272,31 @@ input[type="file"][peixe-ajax-file-upload] { position: absolute; width: 1px; hei
 
 [data-editable] p:empty { display: block; }
 
-/* /Content Tools */
+[data-editable] {
+	.ce-element--type-video { margin-bottom: 1.5rem; }
+	iframe { margin-bottom: 1.5rem; margin-left: auto; margin-right: auto; display: block; }
+}
+
+.ce-element {
+	&.ce-element--over { background-color: rgba($primary-color, .15); 
+		&.ce-element--type-image { outline: 4px solid rgba($primary-color, .15) !important; }
+	}
+	&.ce-element--focused { background-color: rgba($primary-color, .15); 
+		&.ce-element--type-image { outline: 4px solid rgba($primary-color, .15) !important; }
+	}
+	&.ce-element--drop:before { background-color: rgba($primary-color, .4); }
+}
+.ct--highlight { outline: 4px solid rgba($primary-color, .15) !important; }
+.ct-dialog__body {
+	input[type="text"] { margin-bottom: 0; }
+	.ct-video-dialog__input { display: inline-block; }
+}
+
+@include breakpoint(large) { 
+	.width-80 { max-width: 80%; margin-left: auto; margin-right: auto; }
+	.width-50 { max-width: 50%; margin-left: auto; margin-right: auto; }
+	.margin-bottom-2x { margin-bottom: 2em; }
+	.margin-bottom-4x { margin-bottom: 4em; }
+}
+
+/* /Content Tools *//* /Content Tools */

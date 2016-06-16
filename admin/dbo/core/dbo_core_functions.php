@@ -66,7 +66,7 @@
 
 	function dboTemplate($template_name)
 	{
-		return DBO_PATH.'/../templates/'.$template_name.'.php';
+		return DBO_TEMPLATE_PATH.'/'.$template_name.'.php';
 	}
 	
 	// ----------------------------------------------------------------------------------------------------------------
@@ -315,6 +315,7 @@
 		if(!in_array("content-tools", $_system['dbo_imported_js']) && (in_array("content-tools", $libs) || $import_all))
 		{
 			$return .= '<script src="'.$js_url.'/content-tools/content-tools.min.js"></script>'."\n";
+			//$return .= '<script src="'.$js_url.'/content-tools/sandbox.js"></script>'."\n";
 			$return .= '<link rel="stylesheet" href="'.$js_url.'/content-tools/content-tools.min.css">'."\n";
 			$_system['dbo_imported_js'][] = "content-tools";
 		}
@@ -509,6 +510,12 @@
 			$return .= "<script src=\"".$js_url."/shortcuts/jquery.infinite.min.js\"></script>\n";
 			$_system['dbo_imported_js'][] = "infinite";
 		}
+		if(!in_array("google-maps", $_system['dbo_imported_js']) && (in_array("google-maps", $libs) || $import_all))
+		{
+			$return .= "<script src=\"https://maps.googleapis.com/maps/api/js?v=3.exp&sensor=false\"></script>\n";
+			$return .= "<script src=\"".$js_url."/markerwithlabel.js\"></script>\n";
+			$_system['dbo_imported_js'][] = "google-maps";
+		}
 
 		$return .= "<!-- DBO_IMPORTED_JS (END) -->\n";
 
@@ -528,6 +535,9 @@
 	function dboRegisterJS($code, $once = false, $id)
 	{
 		global $_system;
+
+		$code = ' '.preg_replace('/<script>(.*)<\/script>/is', '${1}', $code).' ';
+
 		if($once)
 		{
 			if(!$_system['dbo_registered_js'][$id])
@@ -706,6 +716,9 @@
 	function dboRegisterDocReady($code, $once = false, $id = null)
 	{
 		global $_system;
+
+		$code = ' '.preg_replace('/<script>(.*)<\/script>/is', '${1}', $code).' ';
+
 		if($once)
 		{
 			if(!$_system['dbo_registered_doc_ready'][$id])
@@ -840,13 +853,17 @@
 		$__template__ = $template === null ? 'content-tools-blank' : $template;
 
 		$__json__ = json_decode($__json__, true);
-		extract($__json__);
+		@extract($__json__);
 
 		ob_start();
 		include(dboTemplate($__template__));
 		$json = ob_get_clean();
 
+		//retira o filter de autop
+		$hooks->remove_filter('dbo_content', 'dboAutop', 0);
 		$json = $hooks->apply_filters('dbo_content', $json);
+		$hooks->add_filter('dbo_content', 'dboAutop', 0);
+		
 		return $json;
 	}
 	
@@ -2481,6 +2498,8 @@
 		?>
 			<script>
 				var DBO_URL = '<?= DBO_URL ?>';
+				var editor;
+				var editorCls;
 			</script>
 			<?= dboImportJs(array(
 				'modernizr',
@@ -2506,6 +2525,7 @@
 		{
 			echo dboImportJs(array(
 				'stellar',
+				//'smooth-scroll',
 			));
 			?>
 			<script>
@@ -3435,5 +3455,31 @@
 	}
 	
 	// ----------------------------------------------------------------------------------------------------------------
+
+	function dboPlaceholder($params = array())
+	{
+		extract($params);
+		$type = $type ? $type : 'text';
+		$height = $height ? $height : '100%';
+		ob_start();
+		?>
+		<div class="dbo-placeholder" style="padding-top: <?= $height ?>; <?= $styles ?>">
+			<div class="dbo-placeholder-label"><?= $label ?></div>
+		</div>
+		<?php
+		return ob_get_clean();
+	}
+
+	function smartPlaceHolder($content, $params = array())
+	{
+		if(!isDboAdminContext())
+		{
+			echo $content;
+		}
+		else
+		{
+			echo dboPlaceholder($params);
+		}
+	}
 
 ?>

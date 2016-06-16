@@ -2,42 +2,50 @@
 
 	function paginaForm($pag, $params = array())
 	{
+
+		global $_pagina;
+
+		$_pagina = $pag;
+
 		require_once(DBO_PATH.'/core/dbo-ui.php');
 		global $hooks;
 		global $_pes;
 		global $_system;
 
-		$iniciar_editor = meta::getPreference('editor_type') == 'codigo' ? false : true;
-		?>
-		<script>
-			var iniciar_editor = <?= $iniciar_editor ? 'true' : 'false' ?>;
-		
-			function trocaEditor() {
-				if(iniciar_editor == false){
-					editorInit();
-					iniciar_editor = true;
-					$('#ed_toolbar_texto').hide();
-				}
-				else {
-					var ed = tinymce.activeEditor;
-					if(ed && ed.isHidden()){
-						val = window.dboEditor.dboAutop($('#texto').val());
-						ed.show();
-						ed.setContent(val);
+		if($pag->getEditorType() == 'tinymce')
+		{
+			$iniciar_editor = meta::getPreference('editor_type') == 'codigo' ? false : true;
+			?>
+			<script>
+				var iniciar_editor = <?= $iniciar_editor ? 'true' : 'false' ?>;
+			
+				function trocaEditor() {
+					if(iniciar_editor == false){
+						editorInit();
+						iniciar_editor = true;
 						$('#ed_toolbar_texto').hide();
 					}
 					else {
-						mce_container = $(ed.getContainer());
-						code_container = $('#texto');
-						code_container.height(mce_container.height()-100);
-						$('#ed_toolbar_texto').show();
-						ed.hide();
+						var ed = tinymce.activeEditor;
+						if(ed && ed.isHidden()){
+							val = window.dboEditor.dboAutop($('#texto').val());
+							ed.show();
+							ed.setContent(val);
+							$('#ed_toolbar_texto').hide();
+						}
+						else {
+							mce_container = $(ed.getContainer());
+							code_container = $('#texto');
+							code_container.height(mce_container.height()-100);
+							$('#ed_toolbar_texto').show();
+							ed.hide();
+						}
 					}
 				}
-			}
 
-		</script>
-		<?php
+			</script>
+			<?php
+		}
 
 		extract($params);
 
@@ -80,7 +88,7 @@
 						<div class="row wrapper-pagina-field-slug" style="<?= $pag->status == 'rascunho-automatico' ? 'opacity: 0;' : '' ?> <?= $pag->hideFormField('slug') ? 'display: none;' : '' ?>" id="wrapper-pagina-slug">
 							<div class="large-12 columns">
 								<div class="font-12">
-									<span class="color medium">Link permanente: <?= SITE_URL ?>/</span><span id="wrapper-slug-view"><strong id="slug-label" class="color" style="padding-right: 7px;"><?= $pag->slug ?></strong><span class="button radius secondary no-margin tiny font-10 trigger-slug-edit">EDITAR</span></span><span id="wrapper-slug-edit" style="display: none;"><input type="text" name="slug" id="pagina-slug" value="<?= $pag->slug ?>" data-slug_atual="<?= $pag->slug ?>" style="width: auto; display: inline-block; height: 21px;" class="no-margin"/> <span class="button radius secondary no-margin tiny font-10 trigger-slug-save">SALVAR</span> <a href="" class="underline trigger-slug-edit" style="position: relative; left: 5px;">cancelar</a></span>
+									<span class="color medium">Link permanente: <?= SITE_URL.($pag->slugPrefix() ? '/'.$pag->slugPrefix() : '') ?>/</span><span id="wrapper-slug-view"><strong id="slug-label" class="color" style="padding-right: 7px;"><?= $pag->slug ?></strong><span class="button radius secondary no-margin tiny font-10 trigger-slug-edit">EDITAR</span></span><span id="wrapper-slug-edit" style="display: none;"><input type="text" name="slug" id="pagina-slug" value="<?= $pag->slug ?>" data-slug_atual="<?= $pag->slug ?>" style="width: auto; display: inline-block; height: 21px;" class="no-margin"/> <span class="button radius secondary no-margin tiny font-10 trigger-slug-save">SALVAR</span> <a href="" class="underline trigger-slug-edit" style="position: relative; left: 5px;">cancelar</a></span>
 								</div>
 							</div>
 						</div>
@@ -123,36 +131,66 @@
 					
 					<? $hooks->do_action('dbo_'.$tipo.'_form_conteudo_before', $pag, $params); ?>
 			
-					<div style="<?= $pag->hideFormField('texto') ? 'display: none;' : '' ?>" class="wrapper-pagina-field-texto">
-						<div class="row">
-							<div class="large-6 columns">
-								<span class="ed_button font-14 trigger-colorbox-modal" data-width="100%" data-height="100%" data-url="dbo-media-manager.php?dbo_modal=1&modulo=pagina&modulo_id=<?= $pag->id ?>&destiny=tinymce&external_button=1" data-transition="none" data-fadeout="1"><i class="fa fa-fw fa-image top-1"></i> Adicionar mídia</span>
+					<?php
+						/* ------------------------------------------------------------ */
+						/* CONTENT TOOLS ---------------------------------------------- */
+						/* ------------------------------------------------------------ */
+						if($pag->getEditorType() == 'content-tools')
+						{
+							?>
+							<div class="input input-content-tools wrapper-pagina-field-texto" style="min-height: <?= $pag->tipo == 'pagina' ? 500 : 200 ?>px; <?= $pag->hideFormField('texto') ? 'display: none;' : '' ?>">
+								<div>
+								<?= dboUI::field('content-tools', 'update', $pag, array(
+									'name' => 'texto',
+									'value' => $pag->texto,
+									'params' => array(
+										'template' => $pag->getTemplate(),
+									),
+								)); ?>
+								</div>
 							</div>
-							<div class="large-6 columns">
-								<dl class="sub-nav right no-margin top-9">
-									<dd class="<?= $iniciar_editor ? 'active' : '' ?>"><a href="#" tabindex="-1" class="trigger-editor-visual" data-dbo-set-pref data-pref_key="editor_type" data-pref_value="visual">Visual</a></dd>
-									<dd class="<?= $iniciar_editor ? '' : 'active' ?>"><a href="#" tabindex="-1" class="trigger-editor-codigo" data-dbo-set-pref data-pref_key="editor_type" data-pref_value="codigo">Código</a></dd>
-								</dl>
+							<?php
+						}
+						/* ------------------------------------------------------------ */
+						/* TINYMCE ---------------------------------------------------- */
+						/* ------------------------------------------------------------ */
+						elseif($pag->getEditorType() == 'tinymce')
+						{
+							?>
+							<div style="<?= $pag->hideFormField('texto') ? 'display: none;' : '' ?>" class="wrapper-pagina-field-texto">
+								<div class="row">
+									<div class="large-6 columns">
+										<span class="ed_button font-14 trigger-colorbox-modal" data-width="100%" data-height="100%" data-url="dbo-media-manager.php?dbo_modal=1&modulo=pagina&modulo_id=<?= $pag->id ?>&destiny=tinymce&external_button=1" data-transition="none" data-fadeout="1"><i class="fa fa-fw fa-image top-1"></i> Adicionar mídia</span>
+									</div>
+									<div class="large-6 columns">
+										<dl class="sub-nav right no-margin top-9">
+											<dd class="<?= $iniciar_editor ? 'active' : '' ?>"><a href="#" tabindex="-1" class="trigger-editor-visual" data-dbo-set-pref data-pref_key="editor_type" data-pref_value="visual">Visual</a></dd>
+											<dd class="<?= $iniciar_editor ? '' : 'active' ?>"><a href="#" tabindex="-1" class="trigger-editor-codigo" data-dbo-set-pref data-pref_key="editor_type" data-pref_value="codigo">Código</a></dd>
+										</dl>
+									</div>
+								</div>
+											
+								<div class="row">
+									<div class="large-12 columns">
+										<script>edToolbar('texto', {
+											styles: (!iniciar_editor ? '' : 'display: none;'),
+										})
+										</script>
+										<?= $pag->getFormElement($operation, 'texto', array(
+											'classes' => 'editor code-editor',
+											'styles' => ($iniciar_editor ? 'height: 300px; opacity: 0;' : 'height: 600px;'),
+											'input_id' => 'texto',
+											//'edit_function' => ($iniciar_editor ? 'dboAutop' : null),
+											'init_js' => false,
+										)) ?>
+										<textarea name="texto_codigo" id="texto-codigo" spellcheck='false' class="code-editor" style="display: none;"></textarea>
+									</div>
+								</div>
 							</div>
-						</div>
-									
-						<div class="row">
-							<div class="large-12 columns">
-								<script>edToolbar('texto', {
-									styles: (!iniciar_editor ? '' : 'display: none;'),
-								})
-								</script>
-								<?= $pag->getFormElement($operation, 'texto', array(
-									'classes' => 'editor code-editor',
-									'styles' => ($iniciar_editor ? 'height: 300px; opacity: 0;' : 'height: 600px;'),
-									'input_id' => 'texto',
-									//'edit_function' => ($iniciar_editor ? 'dboAutop' : null),
-									'init_js' => false,
-								)) ?>
-								<textarea name="texto_codigo" id="texto-codigo" spellcheck='false' class="code-editor" style="display: none;"></textarea>
-							</div>
-						</div>
-					</div>
+							<?php
+						}
+					?>
+
 			
 					<? $hooks->do_action('dbo_'.$tipo.'_form_conteudo_after', $pag, $params); ?>
 					
@@ -339,13 +377,13 @@
 													if(!$pag->status || $pag->status == 'rascunho' || $pag->status == 'rascunho-automatico' || $pag->status == 'pendente' || $pag->status == 'lixeira')
 													{
 														?>
-														<span data-status="publicado" id="button-publicar" class="button radius no-margin trigger-form-submit" accesskey="s">Publicar</span>
+														<span data-status="publicado" id="button-publicar" class="button radius no-margin trigger-form-submit peixe-save" accesskey="s">Publicar</span>
 														<?
 													}
 													else
 													{
 														?>
-														<span class="button radius no-margin trigger-form-submit" accesskey="s" id="button-publicar">Atualizar</span>
+														<span class="button radius no-margin trigger-form-submit peixe-save" accesskey="s" id="button-publicar">Atualizar</span>
 														<?
 													}
 												?>
@@ -580,16 +618,6 @@
 					$('#texto').scrollLock();
 				}, 1000);
 
-				//fazendo save
-				$(document).bind('keydown', 'ctrl+s', function(){
-					smartSave();
-					return false;
-				})
-
-				jQuery.hotkeys.options.filterInputAcceptingElements = false;
-				jQuery.hotkeys.options.filterContentEditable = false;
-				jQuery.hotkeys.options.filterTextInputs = false;
-
 			}) //doc.ready
 		</script>
 		<?
@@ -681,7 +709,7 @@
 					$stack[] = array(
 						'tipo' => 'url',
 						'url' => $dbo->keepUrl('!dbo_new&!dbo_update'),
-						'label' => ucfirst($titulo_plural),
+						'label' => ucfirst($titulo_big_button ? $titulo_big_button : $titulo_plural),
 					);
 					if($_GET['dbo_new'] || $_GET['dbo_update']) 
 					{
@@ -1049,7 +1077,7 @@
 																			<span class="color light">&nbsp;|&nbsp;</span>
 																			<a href="<?= secureUrl('dbo/core/dbo-pagina-ajax.php?action=lixeira&pagina_id='.$pag->id.'&'.CSRFVar()) ?>" class="color alert peixe-json" data-confirm='Tem certeza que deseja enviar <?= $genero ?> <?= $titulo ?> "<?= $pag->titulo ?>" para a lixeira?'>Lixeira</a> 
 																			<span class="color light">&nbsp;|&nbsp;</span>
-																			<a href="<?= SITE_URL ?>/<?= $pag->slug ?>" target="_blank">Visualizar</a> 
+																			<a href="<?= $pag->permalink(); ?>" target="_blank">Visualizar</a> 
 																			
 																			<?php
 																				$keep_url = keepUrl();
@@ -1469,7 +1497,7 @@
 						entity_encoding: 'named',
 						entities: '160,nbsp',
 						content_css: '<?= file_exists('css/tinymce.css') ? 'css/tinymce.css' : '' ?>',
-						save_onsavecallback: function(){ smartSave(); },
+						save_onsavecallback: function(){ /*smartSave();*/ },
 						save_enablewhendirty: false,
 						extended_valid_elements: 'div[media-manager-element|class|id],img[media-manager-element|src|alt|class|id|style]',
 

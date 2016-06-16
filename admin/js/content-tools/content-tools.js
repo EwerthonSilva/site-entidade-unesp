@@ -1,5 +1,7 @@
 (function() {
-  window.FSM = {};
+  var FSM, exports;
+
+  FSM = {};
 
   FSM.Machine = (function() {
     function Machine(context) {
@@ -81,14 +83,28 @@
 
   })();
 
+  window.FSM = FSM;
+
+  if (typeof module !== 'undefined' && module.exports) {
+    exports = module.exports = FSM;
+  }
+
 }).call(this);
 
 (function() {
-  var ALPHA_CHARS, ALPHA_NUMERIC_CHARS, ATTR_DELIM, ATTR_ENTITY_DOUBLE_DELIM, ATTR_ENTITY_NO_DELIM, ATTR_ENTITY_SINGLE_DELIM, ATTR_NAME, ATTR_NAME_CHARS, ATTR_NAME_FIND_VALUE, ATTR_OR_TAG_END, ATTR_VALUE_DOUBLE_DELIM, ATTR_VALUE_NO_DELIM, ATTR_VALUE_SINGLE_DELIM, CHAR_OR_ENTITY_OR_TAG, CLOSING_TAG, ENTITY, ENTITY_CHARS, OPENING_TAG, OPENNING_OR_CLOSING_TAG, TAG_NAME_CHARS, TAG_NAME_CLOSING, TAG_NAME_MUST_CLOSE, TAG_NAME_OPENING, TAG_OPENING_SELF_CLOSING, _Parser,
+  var ALPHA_CHARS, ALPHA_NUMERIC_CHARS, ATTR_DELIM, ATTR_ENTITY_DOUBLE_DELIM, ATTR_ENTITY_NO_DELIM, ATTR_ENTITY_SINGLE_DELIM, ATTR_NAME, ATTR_NAME_CHARS, ATTR_NAME_FIND_VALUE, ATTR_OR_TAG_END, ATTR_VALUE_DOUBLE_DELIM, ATTR_VALUE_NO_DELIM, ATTR_VALUE_SINGLE_DELIM, CHAR_OR_ENTITY_OR_TAG, CLOSING_TAG, ENTITY, ENTITY_CHARS, HTMLString, OPENING_TAG, OPENNING_OR_CLOSING_TAG, TAG_NAME_CHARS, TAG_NAME_CLOSING, TAG_NAME_MUST_CLOSE, TAG_NAME_OPENING, TAG_OPENING_SELF_CLOSING, exports, _Parser,
     __slice = [].slice,
     __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
 
-  window.HTMLString = {};
+  HTMLString = {};
+
+  if (typeof window !== 'undefined') {
+    window.HTMLString = HTMLString;
+  }
+
+  if (typeof module !== 'undefined' && module.exports) {
+    exports = module.exports = HTMLString;
+  }
 
   HTMLString.String = (function() {
     String._parser = null;
@@ -1310,11 +1326,12 @@
   })();
 
 }).call(this);
+
 (function() {
-  var SELF_CLOSING_NODE_NAMES, _containedBy, _getChildNodeAndOffset, _getNodeRange, _getOffsetOfChildNode,
+  var ContentSelect, SELF_CLOSING_NODE_NAMES, exports, _containedBy, _getChildNodeAndOffset, _getNodeRange, _getOffsetOfChildNode,
     __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
 
-  window.ContentSelect = {};
+  ContentSelect = {};
 
   ContentSelect.Range = (function() {
     function Range(from, to) {
@@ -1598,17 +1615,25 @@
     return [startNode, startOffset, endNode, endOffset];
   };
 
+  if (typeof window !== 'undefined') {
+    window.ContentSelect = ContentSelect;
+  }
+
+  if (typeof module !== 'undefined' && module.exports) {
+    exports = module.exports = ContentSelect;
+  }
+
 }).call(this);
 
 (function() {
-  var _Root, _TagNames, _mergers,
+  var ContentEdit, exports, _Root, _TagNames, _mergers,
     __slice = [].slice,
     __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; },
     __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
-  window.ContentEdit = {
+  ContentEdit = {
     ALIGNMENT_CLASS_NAMES: {
       'left': 'align-left',
       'right': 'align-right'
@@ -1720,6 +1745,14 @@
       }
     }
   };
+
+  if (typeof window !== 'undefined') {
+    window.ContentEdit = ContentEdit;
+  }
+
+  if (typeof module !== 'undefined' && module.exports) {
+    exports = module.exports = ContentEdit;
+  }
 
   _TagNames = (function() {
     function _TagNames() {
@@ -2697,7 +2730,7 @@
         return _results;
       }).call(this);
       if (this.isFixed()) {
-        return "" + (children.join('\n')) + "\n";
+        return children.join('\n');
       } else {
         return ("" + indent + "<" + (this.tagName()) + (this._attributesToString()) + ">\n") + ("" + (children.join('\n')) + "\n") + ("" + indent + "</" + (this.tagName()) + ">");
       }
@@ -3590,6 +3623,7 @@
         insertAt += 1;
         selection = new ContentSelect.Range(insertAt, insertAt);
         selection.select(this.domElement());
+        this.taint();
         return;
       }
       if (!this.can('spawn')) {
@@ -5189,13 +5223,13 @@
 }).call(this);
 
 (function() {
-  var AttributeUI, CropMarksUI, StyleUI, _EditorApp,
+  var AttributeUI, ContentTools, CropMarksUI, StyleUI, exports, _EditorApp,
     __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
     __slice = [].slice;
 
-  window.ContentTools = {
+  ContentTools = {
     Tools: {},
     CANCEL_MESSAGE: 'Your changes have not been saved, do you really want to lose them?'.trim(),
     DEFAULT_TOOLS: [['bold', 'italic', 'link', 'align-left', 'align-center', 'align-right'], ['heading', 'subheading', 'paragraph', 'unordered-list', 'ordered-list', 'table', 'indent', 'unindent', 'line-break'], ['image', 'video', 'preformatted'], ['undo', 'redo', 'remove']],
@@ -5310,6 +5344,14 @@
       }
     }
   };
+
+  if (typeof window !== 'undefined') {
+    window.ContentTools = ContentTools;
+  }
+
+  if (typeof module !== 'undefined' && module.exports) {
+    exports = module.exports = ContentTools;
+  }
 
   ContentTools.ComponentUI = (function() {
     function ComponentUI() {
@@ -6141,11 +6183,17 @@
       this._updateToolsTimeout = setInterval(this._updateTools, 100);
       this._handleKeyDown = (function(_this) {
         return function(ev) {
-          var element, os, redo, undo, version;
-          if (ev.keyCode === 46) {
-            element = ContentEdit.Root.get().focused();
-            if (element && !element.content) {
-              ContentTools.Tools.Remove.apply(element, null, function() {});
+          var Paragraph, element, os, redo, undo, version;
+          element = ContentEdit.Root.get().focused();
+          if (element && !element.content) {
+            if (ev.keyCode === 46) {
+              ev.preventDefault();
+              return ContentTools.Tools.Remove.apply(element, null, function() {});
+            }
+            if (ev.keyCode === 13) {
+              ev.preventDefault();
+              Paragraph = ContentTools.Tools.Paragraph;
+              return Paragraph.apply(element, null, function() {});
             }
           }
           version = navigator.appVersion;
@@ -6216,7 +6264,6 @@
         this._domGrip.removeEventListener('mousedown', this._onStartDragging);
       }
       window.removeEventListener('keydown', this._handleKeyDown);
-      window.removeEventListener('resize', this._handleResize);
       window.removeEventListener('resize', this._handleResize);
       return clearInterval(this._updateToolsTimeout);
     };
@@ -7729,6 +7776,7 @@
       _EditorApp.__super__.constructor.call(this);
       this.history = null;
       this._state = 'dormant';
+      this._busy = false;
       this._namingProp = null;
       this._fixtureTest = function(domElement) {
         return domElement.hasAttribute('data-fixture');
@@ -7804,29 +7852,37 @@
     };
 
     _EditorApp.prototype.busy = function(busy) {
-      return this._ignition.busy(busy);
+      if (busy === void 0) {
+        this._busy = busy;
+      }
+      this._busy = busy;
+      if (this._ignition) {
+        return this._ignition.busy(busy);
+      }
     };
 
-    _EditorApp.prototype.init = function(queryOrDOMElements, namingProp, fixtureTest) {
+    _EditorApp.prototype.createPlaceholderElement = function(region) {
+      return new ContentEdit.Text('p', {}, '');
+    };
+
+    _EditorApp.prototype.init = function(queryOrDOMElements, namingProp, fixtureTest, withIgnition) {
       if (namingProp == null) {
         namingProp = 'id';
       }
       if (fixtureTest == null) {
         fixtureTest = null;
       }
+      if (withIgnition == null) {
+        withIgnition = true;
+      }
       this._namingProp = namingProp;
       if (fixtureTest) {
         this._fixtureTest = fixtureTest;
       }
-      this.syncRegions(queryOrDOMElements);
-      if (this._domRegions.length === 0) {
-        return;
-      }
       this.mount();
-      this._ignition = new ContentTools.IgnitionUI();
-      this.attach(this._ignition);
-      if (this._domRegions.length) {
-        this._ignition.show();
+      if (withIgnition) {
+        this._ignition = new ContentTools.IgnitionUI();
+        this.attach(this._ignition);
         this._ignition.addEventListener('edit', (function(_this) {
           return function(ev) {
             ev.preventDefault();
@@ -7933,7 +7989,8 @@
       ContentEdit.Root.get().bind('detach', this._handleDetach);
       ContentEdit.Root.get().bind('paste', this._handleClipboardPaste);
       ContentEdit.Root.get().bind('next-region', this._handleNextRegionTransition);
-      return ContentEdit.Root.get().bind('previous-region', this._handlePreviousRegionTransition);
+      ContentEdit.Root.get().bind('previous-region', this._handlePreviousRegionTransition);
+      return this.syncRegions(queryOrDOMElements);
     };
 
     _EditorApp.prototype.destroy = function() {
@@ -8208,7 +8265,14 @@
         this._domRegions = document.querySelectorAll(this._regionQuery);
       }
       if (this._state === 'editing') {
-        return this._initRegions();
+        this._initRegions();
+      }
+      if (this._ignition) {
+        if (this._domRegions.length) {
+          return this._ignition.show();
+        } else {
+          return this._ignition.hide();
+        }
       }
     };
 
@@ -8216,7 +8280,7 @@
       this._handleHighlightOn = (function(_this) {
         return function(ev) {
           var _ref;
-          if ((_ref = ev.keyCode) === 17 || _ref === 224) {
+          if ((_ref = ev.keyCode) === 17 || _ref === 224 || _ref === 91 || _ref === 93) {
             _this._ctrlDown = true;
             return;
           }
@@ -8292,7 +8356,7 @@
         if (hasEditableChildren) {
           continue;
         }
-        placeholder = new ContentEdit.Text('p', {}, '');
+        placeholder = this.createPlaceholderElement(region);
         region.attach(placeholder);
         _results.push(region._modified = lastModified);
       }

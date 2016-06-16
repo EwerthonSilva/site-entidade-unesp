@@ -34,6 +34,7 @@ define(DBO_FILE_UPLOAD_PATH, DBO_PATH."/upload/files");
 define(DBO_IMAGE_HTML_PATH, DBO_URL."/upload/images");
 define(DBO_FILE_HTML_PATH, DBO_URL."/upload/files");
 define(DBO_IMAGE_PLACEHOLDER, DBO_URL.'/../images/image-placeholder.png');
+define(DBO_TEMPLATE_PATH, DBO_PATH.'/../templates');
 
 /* SALTS */
 
@@ -89,7 +90,7 @@ class DboFieldType {
 		//se o usuário pediu placeholder, verifica se o arquivo existe antes de mais nada.
 		if($placeholder !== false)
 		{
-			if(!file_exists($path))
+			if(is_dir($path) || !file_exists($path))
 			{
 				$url = DBO_IMAGE_PLACEHOLDER;
 			}
@@ -138,30 +139,36 @@ class DboFieldType {
 			return json_decode($this->value, true);
 		}
 	}
-	function content()
+	function content($params = array())
 	{
+		extract($params);
 		if($this->data->tipo == 'content-tools')
 		{
-			return $this->html();
+			return $this->html($params);
 		}
 		else
 		{
 			return $this->data;
 		}
 	}
-	function html()
+	function html($params = array())
 	{
+		extract($params);
 		if($this->data->tipo == 'content-tools')
 		{
 			return dboContentTools($this->value, array(
-				'template' => $this->data->params['template'],
+				'template' => ($template ? $template : $this->data->params['template']),
 			));
+		}
+		else
+		{
+			return $this->value;
 		}
 	}
 	//esta função irá permitir editar os conteúdos diretamente no frontend. Por hora, soh retorna o valor padrão.
-	function frontEndField()
+	function frontEnd($params = array())
 	{
-		return $this->content();
+		return $this->content($params);
 	}
 }
 
@@ -2940,7 +2947,7 @@ class Dbo extends Obj
 							//checando se existe uma subgrid para exibicao do elemento filho
 							$return .= $this->getGridCellPart($grid_cell, 'field-start');
 
-							$return .= "<label style=\"".($this->isFixo($valor->coluna) || $valor->label_display == 'hidden' ? 'display: none; ' : ($valor->label_display == 'transparent' ? 'visibility: hidden; ' : ''))."\">".$valor->titulo.(($valor->valida)?(" <span class='required'></span>"):('')).(($valor->dica)?(" <span data-tooltip class='has-tip tip-top' title='".$valor->dica."'><i class=\"fa fa-question-circle\"></i></span>"):(''))."</label>";
+							$return .= "<label style=\"".($this->isFixo($valor->coluna) || $valor->label_display == 'hidden' ? 'display: none; ' : ($valor->label_display == 'transparent' ? 'visibility: hidden; ' : ''))."\">".htmlSpecialChars($valor->titulo).(($valor->valida)?(" <span class='required'></span>"):('')).(($valor->dica)?(" <span data-tooltip class='has-tip tip-top' title='".htmlSpecialChars($valor->dica)."'><i class=\"fa fa-question-circle\"></i></span>"):(''))."</label>";
 							$return .= "<span class='input input-".$valor->tipo."'>";
 
 							//checando se existe uma subgrid para exibicao do elemento filho
@@ -3112,7 +3119,7 @@ class Dbo extends Obj
 							if(intval($grid[$gc]) == 0 && $grid[$gc] != '|-' && $grid[$gc] != '-|' )
 							{
 								$grid_cell = $this->parseGridCell($grid[$gc]);
-								$return .= "<div class='large-12 columns ".$this->getGridCellPart($grid_cell, 'item-classes')."'><div class='section subheader'><span>".$this->getGridCellPart($grid_cell, 'item-size')."</span></div></div>\n"; $gc++;
+								$return .= "<div class='large-12 columns ".$this->getGridCellPart($grid_cell, 'item-classes')."'><div class='section subheader'><span>".htmlSpecialChars($this->getGridCellPart($grid_cell, 'item-size'))."</span></div></div>\n"; $gc++;
 								$return .= "</div> <!-- row -->\n\n<hr class=\"hr-subheader active ".$this->getGridCellPart($grid_cell, 'item-classes')."\">\n"; $gc++;
 								$return .= "<div class='row'>\n"; $gc++;
 							}
@@ -3134,7 +3141,7 @@ class Dbo extends Obj
 
 							$return .= $this->getGridCellPart($grid_cell, 'field-start');
 
-							$return .= "\t\t<label style=\"".($this->isFixo($valor->coluna) || $valor->label_display == 'hidden' ? 'display: none; ' : ($valor->label_display == 'transparent' ? 'visibility: hidden; ' : ''))."\">".$valor->titulo.(($valor->valida)?(" <span class='required'></span>"):('')).(($valor->dica)?(" <span data-tooltip class='has-tip tip-top' title='".$valor->dica."'><i class=\"fa fa-question-circle\"></i></span>"):(''))."</label>\n";
+							$return .= "\t\t<label style=\"".($this->isFixo($valor->coluna) || $valor->label_display == 'hidden' ? 'display: none; ' : ($valor->label_display == 'transparent' ? 'visibility: hidden; ' : ''))."\">".htmlSpecialChars($valor->titulo).(($valor->valida)?(" <span class='required'></span>"):('')).(($valor->dica)?(" <span data-tooltip class='has-tip tip-top' title='".htmlSpecialChars($valor->dica)."'><i class=\"fa fa-question-circle\"></i></span>"):(''))."</label>\n";
 							$return .= "\t\t<span class='input input-".$valor->tipo."'>\n";
 
 							$return .= $this->getGridCellPart($grid_cell, 'field-middle');
@@ -3247,7 +3254,7 @@ class Dbo extends Obj
 								<div class="row">
 									<div class="large-12 columns">
 										<div class="section subheader big">
-											<span class="<?= ((!$botao->autoload)?('trigger-load-subsection-iframe pointer'):('')) ?>" data-url="<?= ((!$botao->autoload)?($url):('')) ?>"><?= $botao->value ?> <i class="fa fa-<?= (($botao->autoload)?('chevron-down'):('chevron-up')) ?>"></i></span>
+											<span class="<?= ((!$botao->autoload)?('trigger-load-subsection-iframe pointer'):('')) ?>" data-url="<?= ((!$botao->autoload)?($url):('')) ?>"><?= htmlSpecialChars($botao->value) ?> <i class="fa fa-<?= (($botao->autoload)?('chevron-down'):('chevron-up')) ?>"></i></span>
 											<div class="helper arrow-left subsection-helper">Clique para visualizar</div>
 										</div>
 									</div>
@@ -4391,7 +4398,7 @@ class Dbo extends Obj
 						if (!$hasgrid) { $return .= "<div class='row'>"; }
 						$return .= "<div class='item columns ".(($hasgrid)?('large-'.$grid[$gc++]):(''))."'>\n";
 						//$return .= (($valor->dica)?("<span class='dica'>".$valor->dica."</span>"):(''));
-						$return .= "<label>".$valor->titulo."</label>\n";
+						$return .= "<label>".htmlSpecialChars($valor->titulo)."</label>\n";
 
 						//dando um destaque para o primeiro elemento, potencialmente o "titulo" do view atual.
 						if($valor->tipo == 'text' && !$first)

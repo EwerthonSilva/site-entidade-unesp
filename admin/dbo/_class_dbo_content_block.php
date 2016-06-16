@@ -40,10 +40,10 @@ if(!class_exists('dbo_content_block'))
 			//montando um objeto na mesma estrutura das definições do DboFieldType
 			$det = new Obj();
 			$det->tipo = $this->params['field_type'];
-			
+
 			//instancioando o field type e retornando o metodo
 			$f = new DboFieldType($this->value, $det);
-			return $f->$method($params);
+			return $f->$method(array_merge($params, dbo_content_block::getParams($this->params['name'])));
 		}
 
 		static function set($name, $value = null, $params = array())
@@ -61,7 +61,9 @@ if(!class_exists('dbo_content_block'))
 			$params['relation_type'] = 'content_block';
 			$params['name'] = $name;
 			$params['field_type'] = dbo_content_block::getFieldType($name, $params);
-
+			
+			//$params = array_merge($params, dbo_content_block::getParams($name, $params));
+			
 			//content blcoks de paginas e outros módulos
 			if($modulo && $modulo_id)
 			{
@@ -100,7 +102,7 @@ if(!class_exists('dbo_content_block'))
 			{
 				$params['classes'] = 'content-tools';
 			}
-			else
+			elseif($params['field_type'] != 'media')
 			{
 				$params['autosize'] = $params['autosize'] === null ? true : $params['autosize'];
 				$params['markdown'] = $params['markdown'] === null ? true : $params['markdown'];
@@ -163,6 +165,20 @@ if(!class_exists('dbo_content_block'))
 			else
 			{
 				return $_system['content_block']['global'][$key]['field_type'];
+			}
+		}
+
+		static function getParams($key, $params = array())
+		{
+			global $_system;
+			extract($params);
+			if($modulo == 'pagina')
+			{
+				return (array)$_system['content_block']['pagina']['slug'][$modulo_id][$key]['params'];
+			}
+			else
+			{
+				return (array)$_system['content_block']['global'][$key]['params'];
 			}
 		}
 

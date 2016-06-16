@@ -633,6 +633,7 @@ class dboUI
 		//---------------------------------------------------------------------------------------------
 		elseif($field_type == 'media')
 		{
+			$value = is_object($value) ? $value->value : $value;
 			?>
 			<div class="row">
 				<div class="large-12 columns" id="wrapper-midia-<?= $name ?>">
@@ -715,46 +716,158 @@ class dboUI
 		{
 			ob_start();
 			?>
-			editor = ContentTools.EditorApp.get();
-			editor.init('*[data-editable]', 'data-name');
-			editor.addEventListener('saved', function (ev) {
-				var regions = ev.detail().regions;
-				updateContentToolsInputs(regions);
-			});
-			function updateContentToolsInputs(regions) {
-				inputs = {};
-				for(var region in regions)
-				{
-					region.split('___').list('ct_input', 'ct_key');
-					if(!inputs[ct_input]){
-						inputs[ct_input] = {};
-						inputs[ct_input][ct_key] = regions[ct_input+'___'+ct_key];
-					}
-					else {
-						inputs[ct_input][ct_key] = regions[ct_input+'___'+ct_key];
-					}
+			<script>
+				var ct_active_element;
+				var ct_active_tool;
+
+				function ctInsertFromDboMediaManager(url, width, height) {
+				//function ctInsertFromDboMediaManager() {
+					// Create the image element
+					var image = new ContentEdit.Image({
+						src: url,
+						width: width,
+						height: height
+					});
+
+					// Insert the image
+					var insertAt = window.ct_active_tool._insertAt(window.ct_active_element);
+					insertAt[0].parent().attach(image, insertAt[1]);
+
+					// Set the image as having focus
+					image.focus();
+
+					// Call the given tool callback
+					//return callback(true);
+
+					//window.KCFinder = null;
 				}
-				for(var input in inputs)
-				{
-					json = {};
-					st = document.getElementById(input).value;
-					if(isJsonString(st)){
-						json = JSON.parse(st);
+			</script>
+			<?php
+			dboRegisterJS(ob_get_clean(), true, 'field_content_tools');
+			ob_start();
+			?>
+			<script>
+				// So this little bundle of variables is required because I'm using CoffeeScript
+				// constructs and this code will potentially not have access to these.
+
+				var __slice = [].slice,
+				__indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; },
+				__hasProp = {}.hasOwnProperty,
+				__extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
+				__bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
+
+				// Define out custom image tool
+				var DboMediaManagerTool = (function(_super) {
+					__extends(DboMediaManagerTool, _super);
+
+					function DboMediaManagerTool() {
+					  return DboMediaManagerTool.__super__.constructor.apply(this, arguments);
 					}
-					else {
-						if(st.length){
-							json[content] = st;
+
+					// Register the tool with ContentTools (in this case we overwrite the 
+					// default image tool).
+					ContentTools.ToolShelf.stow(DboMediaManagerTool, 'image');
+
+					// Set the label and icon we'll use 
+					DboMediaManagerTool.label = 'Image';
+					DboMediaManagerTool.icon = 'image';
+
+					DboMediaManagerTool.canApply = function(element, selection) {    
+						// So long as there's an image defined we can alwasy insert an image
+						return true;
+					};
+
+					DboMediaManagerTool.apply = function(element, selection, callback) {
+
+						// First, make the element a global variable
+						window.ct_active_element = element;
+						window.ct_active_tool = DboMediaManagerTool;
+
+						//opens the media manager modal
+						openColorBoxModal('dbo-media-manager.php?dbo_modal=1&destiny=content-tools', '100%', '100%');
+
+					};
+
+					return DboMediaManagerTool;
+
+				})(ContentTools.Tool);
+
+				/*var FIXTURE_TOOLS, req;
+				ContentTools.IMAGE_UPLOADER = ImageUploader.createImageUploader;
+				CloudinaryImageUploader.CLOUD_NAME = 'peixe-laranja';
+				CloudinaryImageUploader.UPLOAD_PRESET = 'result_sustentavel';
+				ContentTools.IMAGE_UPLOADER = function(dialog) {
+				  return CloudinaryImageUploader.createImageUploader(dialog);
+				};*/
+				
+				window.editor = ContentTools.EditorApp.get();
+				window.editorCls = ContentTools.EditorApp.getCls();
+
+				editorCls.prototype.createPlaceholderElement = function(region) {
+					var type = region.domElement().getAttribute('data-placeholder-type');
+					return new ContentEdit.Text(type || 'p', {}, '');
+				};
+
+				ContentTools.StylePalette.add([
+					new ContentTools.Style('Largura 50%', 'width-50', ['p', 'h1', 'h2']),
+					new ContentTools.Style('Largura 80%', 'width-80', ['p', 'h1', 'h2']),
+					new ContentTools.Style('Margem inferior 2x', 'margin-bottom-2x', ['p', 'h1', 'h2', 'iframe']),
+					new ContentTools.Style('Margem inferior 4x', 'margin-bottom-4x', ['p', 'h1', 'h2', 'iframe']),
+					new ContentTools.Style('Maiúsculas', 'uppercase', ['p', 'h1', 'h2']),
+					new ContentTools.Style('Citação', 'quote', ['p', 'h1', 'h2']),
+				]);			
+
+				editor.init('*[data-editable]', 'data-name');
+
+				editor.addEventListener('start', function() {
+					document.body.classList.add('ct-editing'); 
+				});
+
+				editor.addEventListener('stop', function() { 
+					document.body.classList.remove('ct-editing'); 
+				});
+
+				editor.addEventListener('saved', function (ev) {
+					var regions = ev.detail().regions;
+					updateContentToolsInputs(regions);
+				});
+
+				function updateContentToolsInputs(regions) {
+					inputs = {};
+					for(var region in regions)
+					{
+						region.split('___').list('ct_input', 'ct_key');
+						if(!inputs[ct_input]){
+							inputs[ct_input] = {};
+							inputs[ct_input][ct_key] = regions[ct_input+'___'+ct_key];
+						}
+						else {
+							inputs[ct_input][ct_key] = regions[ct_input+'___'+ct_key];
 						}
 					}
-					for(var key in inputs[input])
+					for(var input in inputs)
 					{
-						json[key] = inputs[input][key];
+						json = {};
+						st = document.getElementById(input).value;
+						if(isJsonString(st)){
+							json = JSON.parse(st);
+						}
+						else {
+							if(st.length){
+								json[content] = st;
+							}
+						}
+						for(var key in inputs[input])
+						{
+							json[key] = inputs[input][key];
+						}
+						document.getElementById(input).value = JSON.stringify(json);
 					}
-					document.getElementById(input).value = JSON.stringify(json);
 				}
-			}
+			</script>
 			<?
-			dboRegisterDboInit(singleLine(ob_get_clean()), true, 'field_content_tools');
+			//dboRegisterDocReady(singleLine(ob_get_clean()), true, 'field_content_tools');
+			dboRegisterDocReady(ob_get_clean(), true, 'field_content_tools');
 		}
 		elseif($field_type == 'price')
 		{

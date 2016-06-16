@@ -63,6 +63,10 @@ if(isDboAdminContext()) {
 	include_once(DBO_PATH.'/core/dbo_core_functions-admin.php');
 	@include_once(DBO_PATH.'/../functions-admin.php');
 }
+else
+{
+	@include_once(DBO_PATH.'/../functions-site.php');
+}
 
 /* this generates the color for some buttons in the interface. Don't touch it. */
 define (HEADER_R, hexdec(substr(COLOR_HEADER, 1, 2)));

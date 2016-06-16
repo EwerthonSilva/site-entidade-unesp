@@ -15,6 +15,8 @@
 	.no-print { display: none; }
 }
 
+iframe { max-width: 100%; }
+
 /* new clearfix */
 .clearfix:after,
 .cf:after { visibility: hidden; display: block; font-size: 0; content: " "; clear: both; height: 0; }
@@ -65,6 +67,11 @@ p:empty { display: none; }
 .help { cursor: help; }
 .pointer { cursor: pointer; }
 .underline { text-decoration: underline; }
+.uppercase { text-transform: uppercase; }
+.quote { 
+	&:before { content: '"'; color: #bbb; font-weight: bold; }
+	&:after { content: '"'; color: #bbb; font-weight: bold; }
+}
 
 .tal { text-align: left; }
 .tac { text-align: center; }
@@ -506,34 +513,37 @@ hr.tiny { margin: 0.50em 0; }
 
 // Center (default)
 [data-editable] image,
-[data-editable] [data-ce-tag=img],
+[data-editable] .ce-element--type-image,
 [data-editable] img,
 [data-editable] video {
     clear: both;
     display: block;
     margin-left: auto;
     margin-right: auto;
+	margin-bottom: 1em;
     max-width: 100%;
 }
 
 // Left align
 [data-editable] image.align-left,
-[data-editable] [data-ce-tag=img].align-left,
+[data-editable] .ce-element--type-image.align-left,
 [data-editable] img.align-left,
 [data-editable] video.align-left {
     clear: initial;
     float: left;
-    margin-right: 0.5em;
+    margin-right: 1em;
+	margin-bottom: .3em;
 }
 
 // Right align
 [data-editable] image.align-right,
-[data-editable] [data-ce-tag=img].align-right,
+[data-editable] .ce-element--type-image.align-right,
 [data-editable] img.align-right,
 [data-editable] video.align-right {
     clear: initial;
     float: right;
-    margin-left: 0.5em;
+    margin-left: 1em;
+	margin-bottom: .3em;
 }
 
 // Alignment styles for text in editable regions
@@ -551,6 +561,11 @@ hr.tiny { margin: 0.50em 0; }
 
 [data-editable] p:empty { display: block; }
 
+[data-editable] {
+	.ce-element--type-video { margin-bottom: 1.5rem; }
+	iframe { margin-bottom: 1.5rem; margin-left: auto; margin-right: auto; display: block; }
+}
+
 .ce-element {
 	&.ce-element--over { background-color: rgba($primary-color, .15); 
 		&.ce-element--type-image { outline: 4px solid rgba($primary-color, .15) !important; }
@@ -564,6 +579,13 @@ hr.tiny { margin: 0.50em 0; }
 .ct-dialog__body {
 	input[type="text"] { margin-bottom: 0; }
 	.ct-video-dialog__input { display: inline-block; }
+}
+
+@media #{$large} {
+	.width-80 { max-width: 80%; margin-left: auto; margin-right: auto; }
+	.width-50 { max-width: 50%; margin-left: auto; margin-right: auto; }
+	.margin-bottom-2x { margin-bottom: 2rem; }
+	.margin-bottom-4x { margin-bottom: 4rem; }
 }
 
 /* /Content Tools */

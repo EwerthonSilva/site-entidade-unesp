@@ -35,12 +35,20 @@
 
 			//setando todos os dados da página por POST
 			dboUI::smartSet($_POST, $pag);
+
+			//verificando se o tipo de campo é content-tools, para salvar do jeito certo!
+			if($pag->getEditorType() == 'content-tools')
+			{
+				$pag->texto = dboUI::fieldSQL('content-tools', $_POST['texto'], $pag, array(), $_POST);
+			}
+
 			$pag->setAutoFields();
 
 			if($pag->mais())
 			{
 				dboUI::smartSet($_POST, $pag->{$pag->client_object_key});
 			}
+
 
 			//setando o tipo de página pela url
 			$pag->tipo = $_GET['tipo'];
@@ -50,6 +58,9 @@
 			//------------------------------------------
 			//tratamento de casos especiais ------------
 			//------------------------------------------
+
+			//se a pessoa não digitou um título, colocar "sem titulo"
+			$pag->titulo = strlen(trim($_POST['titulo'])) ? $_POST['titulo'] : '(sem título)';
 
 			//setando o valor da slug da página
 			if(strlen(trim($_POST['slug'])) && $old_slug != trim($_POST['slug']))
@@ -64,9 +75,14 @@
 					menu::updateSlug($old_slug, $pag->slug);
 				}
 			}
-
-			//se a pessoa não digitou um título, colocar "sem titulo"
-			$pag->titulo = strlen(trim($_POST['titulo'])) ? $_POST['titulo'] : '(sem título)';
+			//a pessoa não esperou a slug ser criada antes de salvar, mas digitou um título
+			elseif($pag->titulo != '(sem título)' && !strlen(trim($pag->slug)))
+			{
+				$pag->slug = dboUniqueSlug($_POST['titulo'], 'database', array(
+					'table' => $pag->getTable(),
+					'column' => 'slug',
+				));
+			}
 
 			//se não colocou data, usar a data atual.
 			if($pag->status != 'rascunho' && $pag->status != 'pendente')

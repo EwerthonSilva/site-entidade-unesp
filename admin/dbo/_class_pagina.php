@@ -106,7 +106,10 @@ if(!class_exists('pagina'))
 			$custom_page = $tipo == 'pagina' ? false : true;
 
 			//verifica se é um módulo extendido
-			$ext_mod = $_system['pagina_tipo'][$tipo]['extension_module'];
+			if(!is_array($tipo))
+			{
+				$ext_mod = $_system['pagina_tipo'][$tipo]['extension_module'];
+			}
 
 			//se é extendido, seta o objeto host
 			if($ext_mod)
@@ -157,7 +160,7 @@ if(!class_exists('pagina'))
 			//verificando se deve listar um tipo ou todos os tipos de página
 			if($tipo !== false)
 			{
-				$part_where[] = "tipo = '".$tipo."'";
+				$part_where[] = "tipo IN ('".implode("','", (array)$tipo)."')";
 			}
 
 			//query parts
@@ -221,6 +224,13 @@ if(!class_exists('pagina'))
 
 		function texto()
 		{
+			//verifica se é content tools
+			if($this->getEditorType() == 'content-tools')
+			{
+				return $this->_texto->frontEnd(array(
+					'template' => $this->getTemplate(),
+				));
+			}
 			return dboContent($this->texto);
 		}
 
@@ -230,18 +240,23 @@ if(!class_exists('pagina'))
 			$more = $more ? $more : ' [...]';
 			if(strlen(trim($this->resumo)))
 			{
-				return textOnly($this->resumo);
+				return textOnly(trim($this->resumo));
 			}
 			else
 			{
-				return maxString(textOnly(dbo_strip_shortcodes(strip_tags($this->texto))), $size, array('more' => $more));
+				return maxString(trim(textOnly(dbo_strip_shortcodes(strip_tags($this->_texto->html())))), $size, array('more' => $more));
 			}
 		}
 
 		function permalink()
 		{
+			return SITE_URL.($this->slugPrefix() ? '/'.$this->slugPrefix() : '').'/'.$this->slug();
+		}
+
+		function slugPrefix()
+		{
 			global $_system;
-			return SITE_URL;
+			return $_system['pagina_tipo'][$this->tipo]['slug_prefix'];
 		}
 
 		static function startPaginaEngine()
@@ -281,8 +296,6 @@ if(!class_exists('pagina'))
 
 			if($_slug)
 			{
-				$_pagina_backup = false;
-
 				//verificamos se a página existe tentando pegar seu tipo no banco
 				$_pagina = new pagina();
 				$_pagina->query("SELECT tipo FROM pagina WHERE slug = '".dboescape($_slug)."'");
@@ -296,6 +309,10 @@ if(!class_exists('pagina'))
 						'tipo' => $_pagina->tipo,
 					));
 					//setando o tipo de página no contexto global
+
+					//depois da pagina carregada, inicia a possibilidade de backup
+					$_pagina_backup = false;
+
 					$_pagina_tipo = $_pagina->tipo;
 					//primeiro checa a especificidade por tipo e pagina
 					if(file_exists($_pagina->tipo.'-'.$_pagina->slug.'.php'))
@@ -453,7 +470,7 @@ if(!class_exists('pagina'))
 							$modulos[$key]['icon'] = "_icone_generico.png";
 						}
 					}
-					$modulos[$key]['titulo'] = ucfirst($details['titulo_plural']);
+					$modulos[$key]['titulo'] = ucfirst($details['titulo_big_button'] ? $details['titulo_big_button'] : $details['titulo_plural']);
 					$modulos[$key]['var'] = 'pagina-'.$slug;
 					$modulos[$key]['custom_url'] = 'dbo_admin.php?dbo_mod=pagina&dbo_pagina_tipo='.$slug;
 				}
@@ -768,11 +785,7 @@ if(!class_exists('pagina'))
 		function imagem($params = array())
 		{
 			extract($params);
-			$image = $this->imagemUrl($params);
-			if($image)
-			{
-				return '<img class="'.$classes.'" src="'.$image.'"/>';
-			}
+			return $this->_imagem_destaque->imagem($params);
 		}
 
 		function imagemAjustada($params = array())
@@ -920,12 +933,23 @@ if(!class_exists('pagina'))
 			return dbo_content_block::render($name, $params);
 		}*/
 
+		function getEditorType()
+		{
+			return PAGINA_EDITOR_TYPE;
+		}
+
+		function getTemplate()
+		{
+			return file_exists(DBO_TEMPLATE_PATH.'/pagina-'.$this->slug.'.php') ? 'pagina-'.$this->slug : 'pagina-blank';
+		}
+
 	} //class declaration
 } //if ! class exists
 
 //definindo o nome padrão para o arquivo de processamento de página
 define(PAGINA_ENGINE_FILE, 'pagina.php');
 define(PAGINA_ADMIN_FILE, 'dbo_admin.php');
+define(PAGINA_EDITOR_TYPE, 'content-tools');
 
 //funções para templating
 function pagina()
@@ -999,10 +1023,7 @@ function paginaTexto()
 function paginaPermalink()
 {
 	global $_pagina;
-	global $_system;
-
-	$slug_prefix = $_system['pagina_tipo'][$_pagina->tipo]['slug_prefix'];
-	return $_pagina->permalink().'/'.($slug_prefix ? $slug_prefix.'/' : '').$_pagina->slug();
+	return $_pagina->permalink();
 }
 
 function paginaImagem($params = array())
@@ -1163,6 +1184,13 @@ function siteDescricao()
 {
 	global $_conf;
 	return $_conf->site_descricao;
+}
+
+function siteBody($params = array())
+{
+	global $hooks;
+	extract($params);
+	$hooks->do_action('site_body');
 }
 
 function siteHead($params = array())

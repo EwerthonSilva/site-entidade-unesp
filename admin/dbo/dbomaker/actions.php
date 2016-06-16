@@ -171,6 +171,7 @@ function getDiskModules ($params = array())
 	$d->close();
 
 	$module_keys = array();
+	$module_keys_read_only = array();
 
 	foreach($arq_modulos as $chave => $valor)
 	{
@@ -245,16 +246,25 @@ function getDiskModules ($params = array())
 		{
 			$module_keys[safeArrayKey($module->order_by, $module_keys)] = $module;
 		}
+		else
+		{
+			$module_keys_read_only[safeArrayKey($module->order_by, $module_keys)] = $module;
+		}
 
 	}//foreach
 
 	//ordering by menu order
 	ksort($module_keys);
+	ksort($module_keys_read_only);
 
 	//and putting it in session.
 	foreach($module_keys as $module)
 	{
 		$_SESSION['dbomaker_modulos'][$module->modulo] = $module;
+	}
+	foreach($module_keys_read_only as $module)
+	{
+		$_SESSION['dbomaker_modulos_read_only'][$module->modulo] = $module;
 	}
 }
 
@@ -872,7 +882,7 @@ function showFieldControls ($mod, $field)
 	$campo = $_SESSION['dbomaker_modulos'][$mod]->campo[$field];
 	?>
 		<a href='<?= $mod ?>||<?= $campo->coluna ?>' class='field-<?= $field ?> draggable field' id='field-<?= encNameAjax($field) ?>' module='<?= $mod ?>' field='<?= $field ?>'>
-			<?= $campo->titulo ?>
+			<?= htmlSpecialChars($campo->titulo) ?>
 			<span class='wrapper-controls'>
 				<ul class='controls'>
 					<? showFieldControl($mod, $field, 'valida') ?>
@@ -948,7 +958,7 @@ function showField ($mod,$field)
 	?>
 
 	<div class='wrapper-field module-<?= $mod ?> field-<?= $field ?>'>
-		<h1><?= $campo->titulo ?></h1>
+		<h1><?= htmlSpecialChars($campo->titulo) ?></h1>
 
 		<? getFieldForm($mod,$field) ?>
 
@@ -1724,8 +1734,11 @@ function getFieldImageDetail ($campo, $w = '', $h = '', $prefix = '', $quality =
 
 function getOptionsModules ($active_module = '')
 {
-	global $_SESSION;
 	foreach($_SESSION['dbomaker_modulos'] as $chave => $valor)
+	{
+		echo "<option value='".$valor->modulo."' ".(($valor->modulo == $active_module)?('SELECTED'):('')).">".$valor->titulo."</option>";
+	}
+	foreach($_SESSION['dbomaker_modulos_read_only'] as $chave => $valor)
 	{
 		echo "<option value='".$valor->modulo."' ".(($valor->modulo == $active_module)?('SELECTED'):('')).">".$valor->titulo."</option>";
 	}
@@ -1733,14 +1746,27 @@ function getOptionsModules ($active_module = '')
 
 function getOptionsModuleFields ($module, $active_field = '')
 {
-	global $_SESSION;
 	$modulo = $_SESSION['dbomaker_modulos'][$module];
 
-	if(is_array($modulo->campo))
+	if($modulo)
 	{
-		foreach($modulo->campo as $chave => $valor)
+		if(is_array($modulo->campo))
 		{
-			echo "<option value='".$valor->coluna."' ".(($valor->coluna == $active_field)?('SELECTED'):('')).">".$valor->titulo."</option>";
+			foreach($modulo->campo as $chave => $valor)
+			{
+				echo "<option value='".$valor->coluna."' ".(($valor->coluna == $active_field)?('SELECTED'):('')).">".$valor->titulo."</option>";
+			}
+		}
+	}
+	else
+	{
+		$modulo = $_SESSION['dbomaker_modulos_read_only'][$module];
+		if(is_array($modulo->campo))
+		{
+			foreach($modulo->campo as $chave => $valor)
+			{
+				echo "<option value='".$valor->coluna."' ".(($valor->coluna == $active_field)?('SELECTED'):('')).">".$valor->titulo."</option>";
+			}
 		}
 	}
 }
@@ -1772,7 +1798,7 @@ function getNewFieldForm($mod)
 {
 	$module = $_SESSION['dbomaker_modulos'][$mod];
 	?>
-	<h1>Novo campo | Módulo: <?= $module->titulo ?></h1>
+	<h1>Novo campo | Módulo: <?= htmlSpecialChars($module->titulo) ?></h1>
 	<div class='wrapper-new-field-type'>
 		<form method='POST' action='actions.php' id='form-new-field'>
 			<ul class='field-types field-types-basic'>

@@ -10,6 +10,13 @@
 	.peixe-ajax-loader span { display: none; }
 </style>
 <?
+	
+	function calcThumbSize($width, $height, $x)
+	{
+		$y = intval($x*$height/$width);
+		return array($x,$y);
+	}
+
 	//verificando definições de tamanhos de crop e tamanhos de imagem
 	if(!isset($_system['media_manager']['crops']))
 	{
@@ -125,6 +132,7 @@
 									'where' => "imagem_destaque = '".$selected_file."'",
 								));
 								list($width, $height, $lixo, $lixo) = getimagesize($media_folder_path.$selected_file);
+								$thumb_size = calcThumbSize($width, $height, 250);
 								?>
 								<h6>Detalhes</h6>
 								<a href="#" id="title-upload" class="font-13 top-minus-2" style="padding-left: 10px;"><span class="underline">Enviar novo arquivo</span></a>
@@ -132,7 +140,7 @@
 									<div class="inner-wrap">
 										<div class="text-center">
 											<div id="main-pic">
-												<img src="<?= $media_folder_url.$selected_file ?>?=<?= $img_token ?>" id="selected-image" data-width="<?= $width ?>" data-height="<?= $height ?>" data-file="<?= $selected_file ?>" style="background-color: #fff;"/>
+												<img src="<?= $media_folder_url.$selected_file ?>?=<?= $img_token ?>" id="selected-image" data-width="<?= $width ?>" data-height="<?= $height ?>" data-file="<?= $selected_file ?>" style="background-color: #fff;" data-thumb-width="<?= $thumb_size[0] ?>" data-thumb-height="<?= $thumb_size[1] ?>"/>
 											</div>
 											<img src="<?= $media_folder_url.'thumbs/medium-'.$selected_file ?>?=<?= $img_token ?>" style="height: 0; width: 0; overflow: hidden;"/>
 											<img src="<?= $media_folder_url.'thumbs/large-'.$selected_file ?>?=<?= $img_token ?>" style="height: 0; width: 0; overflow: hidden;"/>
@@ -218,18 +226,23 @@
 																		</select>
 																	</td>
 																</tr>
-																<tr>
-																	<td>Linkar para</td>
-																	<td>
-																		<select class="font-12 no-margin">
-																			<option value="nenhum">Nenhum</option>
-																			<option value="arquivo">Arquivo original</option>
-																			<option value="pagina-anexo">Página de anexo</option>
-																			<option value="url">URL Personalizada</option>
-																		</select>
-																	</td>
-																</tr>
 																<?php
+																if($_GET['destiny'] != 'content-tools')
+																{
+																	?>
+																	<tr>
+																		<td>Linkar para</td>
+																		<td>
+																			<select class="font-12 no-margin">
+																				<option value="nenhum">Nenhum</option>
+																				<option value="arquivo">Arquivo original</option>
+																				<option value="pagina-anexo">Página de anexo</option>
+																				<option value="url">URL Personalizada</option>
+																			</select>
+																		</td>
+																	</tr>
+																	<?php
+																}
 															}
 														?>
 														<tr>
@@ -248,7 +261,7 @@
 												if($_GET['destiny'])
 												{
 													?>
-													<input type="button" name="" id="inserir-midia" value="Adicionar mídia" class="button no-margin radius" data-destiny="<?= $_GET['destiny'] ?>"/>
+													<input type="button" name="" id="inserir-midia" value="Adicionar mídia" class="button no-margin radius peixe-save" data-destiny="<?= $_GET['destiny'] ?>"/>
 													<?php
 												}
 											?>
@@ -398,7 +411,20 @@
 			button_update.attr('data-url', keepUrl('file='+file_name, button_update.data('url')));
 			parent.$.fn.colorbox.close();
 		}
-		else if(destiny == 'tinymce'){
+		else if(destiny == 'content-tools'){
+
+			var mp = $('#main-pic img');
+
+			var size = $('#size-selector').val();
+			var width = mp.data('thumb-width');
+			var height = mp.data('thumb-height');
+			//var caption = $('#legenda').val();
+
+			src = 'dbo/upload/dbo-media-manager/'+size+file_name;
+			window.parent.ctInsertFromDboMediaManager(src, width, height);
+			parent.$.fn.colorbox.close();
+
+		}else if(destiny == 'tinymce'){
 			//variaveis para montar a tag da imagem
 			var align = $('#position-selector .active i').data('value');
 			var size = $('#size-selector').val();
