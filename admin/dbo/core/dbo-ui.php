@@ -808,14 +808,20 @@ class dboUI
 					return new ContentEdit.Text(type || 'p', {}, '');
 				};
 
+				/* varios estilos padrão para o editor */
 				ContentTools.StylePalette.add([
-					new ContentTools.Style('Largura 50%', 'width-50', ['p', 'h1', 'h2']),
-					new ContentTools.Style('Largura 80%', 'width-80', ['p', 'h1', 'h2']),
-					new ContentTools.Style('Margem inferior 2x', 'margin-bottom-2x', ['p', 'h1', 'h2', 'iframe']),
-					new ContentTools.Style('Margem inferior 4x', 'margin-bottom-4x', ['p', 'h1', 'h2', 'iframe']),
-					new ContentTools.Style('Maiúsculas', 'uppercase', ['p', 'h1', 'h2']),
-					new ContentTools.Style('Citação', 'quote', ['p', 'h1', 'h2']),
+					new ContentTools.Style('Largura 50%', 'width-50', ['p', 'h1', 'h2', 'h3']),
+					new ContentTools.Style('Largura 80%', 'width-80', ['p', 'h1', 'h2', 'h3']),
+					new ContentTools.Style('Margem inferior 2x', 'margin-bottom-2x', ['p', 'h1', 'h2', 'h3', 'iframe']),
+					new ContentTools.Style('Margem inferior 4x', 'margin-bottom-4x', ['p', 'h1', 'h2', 'h3', 'iframe']),
+					new ContentTools.Style('Maiúsculas', 'uppercase', ['p', 'h1', 'h2', 'h3']),
+					new ContentTools.Style('Citação', 'quote', ['p', 'h1', 'h2', 'h3']),
+					new ContentTools.Style('Largura máxima', 'width-100', ['img']),
 				]);			
+
+				/* setando o editor para utilizar h2 e h3 */
+				ContentTools.Tools.Heading.tagName = 'h2';
+				ContentTools.Tools.Subheading.tagName = 'h3';
 
 				editor.init('*[data-editable]', 'data-name');
 

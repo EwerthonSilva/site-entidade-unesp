@@ -1,7 +1,7 @@
 <?
 
 /* ================================================================================================================== */
-/* DBO DEFINITION FILE FOR MODULE 'dbo_mail' ==================================== AUTO-CREATED ON 02/06/2016 18:47:52 */
+/* DBO DEFINITION FILE FOR MODULE 'dbo_mail' ==================================== AUTO-CREATED ON 24/06/2016 02:44:03 */
 /* ================================================================================================================== */
 
 
@@ -50,6 +50,7 @@ $module->campo[$field->coluna] = $field;
 $field = new Obj();
 $field->titulo = 'Slug';
 $field->coluna = 'slug';
+$field->perfil = array('Desenv');
 $field->pk = false;
 $field->isnull = false;
 $field->add = true;

@@ -37,6 +37,7 @@
 	//'genero' => 'o',
 	//'extension_module' => 'pagina_animal',
 	//'slug_prefix' => 'plantel', //incluido antes do slug no permalink
+	//'slug_date' => true, //mostra o ano e mes na slug da página
 	//'default_list_view' => 'gallery', //list | details | gallery
 	//'paginacao' => 20,
 	//'order_by' => 'titulo',

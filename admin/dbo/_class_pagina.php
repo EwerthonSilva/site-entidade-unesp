@@ -250,7 +250,11 @@ if(!class_exists('pagina'))
 
 		function permalink()
 		{
-			return SITE_URL.($this->slugPrefix() ? '/'.$this->slugPrefix() : '').'/'.$this->slug();
+			global $_system;
+			$function_name = 'pagina_'.$this->tipo.'_permalink';
+			if(!function_exists($function_name))
+				return SITE_URL.($this->slugPrefix() ? '/'.$this->slugPrefix() : '').'/'.($_system['pagina_tipo'][$this->tipo]['slug_date'] === true ? date('Y/m/', strtotime($this->data)) : '').$this->slug(); 
+			return $function_name($this);
 		}
 
 		function slugPrefix()
@@ -311,7 +315,7 @@ if(!class_exists('pagina'))
 					//setando o tipo de página no contexto global
 
 					//depois da pagina carregada, inicia a possibilidade de backup
-					$_pagina_backup = false;
+					$_pagina_backup = array();
 
 					$_pagina_tipo = $_pagina->tipo;
 					//primeiro checa a especificidade por tipo e pagina
@@ -1049,8 +1053,8 @@ function queryPaginas($params = array())
 	global $_pagina;
 	global $_pagina_backup;
 	
-	if($_pagina_backup === false)
-		$_pagina_backup = clone $_pagina;
+	if(is_array($_pagina_backup))
+		$_pagina_backup[] = clone $_pagina;
 
 	return $_pagina->queryPaginas($params);
 }
@@ -1060,9 +1064,9 @@ function resetQueryPaginas()
 	global $_pagina;
 	global $_pagina_backup;
 
-	if($_pagina_backup !== false)
+	if(is_array($_pagina_backup) && sizeof($_pagina_backup))
 	{
-		$_pagina = clone $_pagina_backup;
+		$_pagina = array_pop($_pagina_backup);
 		$_pagina_backup = false;
 	}
 }

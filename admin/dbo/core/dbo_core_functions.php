@@ -563,6 +563,7 @@
 		*  classes 
 		*  styles
 		*  size: small | medium | large
+		*  contain: false | true
 		*/
 		extract($params);
 
@@ -571,7 +572,7 @@
 
 		if($image)
 		{
-			return '<div style="background-size: cover; background-repeat: no-repeat; background-position: center center; background-image: url('.$image.'); padding-top: '.$height.'; max-width: '.$max_width.';'.$styles.'" class="'.$classes.'"><img src="'.$image.'" style="display: none;" alt=""></div>';
+			return '<div style="background-size: '.($contain ? 'contain' : 'cover').'; background-repeat: no-repeat; background-position: center center; background-image: url('.$image.'); padding-top: '.$height.'; max-width: '.$max_width.';'.$styles.'" class="'.$classes.'"><img src="'.$image.'" style="display: none;" alt=""></div>';
 		}
 	}
 	
@@ -2576,7 +2577,7 @@
 		global $_system;
 		echo dboGetRegisteredJS();
 		$hooks->do_action('dbo_footer');
-		if(!$_GET['dbo_mod'] && !$_GET['dbo_modal']) { dumpMid(); }
+		if(!$_GET['dbo_mod'] && !$_GET['dbo_modal'] && !$_GET['mid']) { dumpMid(); }
 		$end_time = (float) array_sum(explode(' ',microtime()));
 		if(!$_GET['dbo_modal'])
 		{

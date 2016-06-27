@@ -40,7 +40,7 @@
 			?>
 			<div class="row">
 				<div class="large-12 columns">
-					<a href="index.php" id="pretty-logo" style="position: absolute; top: <?= getPrettyHeaderSetting('logo_offset') ?>px; left: 15px; z-index: 50;"><img src="images/admin-logo.png" alt="" style="max-height: <?= getPrettyHeaderSetting('logo_height') ?>px;"></a>
+					<a href="<?= SITE_URL ?>" id="pretty-logo" style="position: absolute; top: <?= getPrettyHeaderSetting('logo_offset') ?>px; left: 15px; z-index: 50;" target="_blank"><img src="images/admin-logo.png" alt="" style="max-height: <?= getPrettyHeaderSetting('logo_height') ?>px;"></a>
 				</div>
 			</div>
 			<?php

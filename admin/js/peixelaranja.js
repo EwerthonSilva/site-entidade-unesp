@@ -720,6 +720,11 @@ $(document).ready(function(){
 		}, null, (c.attr('peixe-silent') ? 'silent' : ''), (typeof d == 'function' ? d : null))
 	});
 
+	$(document).on('click', '[peixe-push-state]', function(e){
+		var c = $(this);
+		history.pushState('', '', c.data('keep-url') ? keepUrl(c.data('keep-url')) : (c.attr('href'))?(c.attr('href')):((c.data('url'))?(c.data('url')):(document.URL)));
+	});
+
 	$(document).on('click', '.peixe-menu-item', function(){
 		var c = $(this);
 		var w = c.closest('.peixe-menu');

@@ -217,7 +217,7 @@ if(!class_exists('categoria'))
 							'tipo' => $_pagina_tipo,
 						));
 
-						$_pagina_backup = false;
+						$_pagina_backup = array();
 						
 						//testa especificidade pelas cutomizações do tempalte
 						if(file_exists($_pagina_tipo.'-categoria-'.$_categoria->slug.'.php'))
@@ -478,13 +478,13 @@ function categoriaImagem($params = array())
 	return $_categoria->imagem($params);
 }
 
-function categoriaImagemAjustada($params)
+function categoriaImagemAjustada($params = array())
 {
 	global $_categoria;
 	return $_categoria->imagemAjustada($params);
 }
 
-function categoriaImagemURL($params)
+function categoriaImagemURL($params = array())
 {
 	global $_categoria;
 	return $_categoria->imagemURL($params);

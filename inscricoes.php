@@ -46,7 +46,7 @@ elseif(siteConfig()->background_image)
 			<header>
 				<div class="row">
 					<div class="text-center large-12 columns">
-						<h2 style="white-space:nowrap"><?= $ev->nome ?></h2>
+						<h2><?= $ev->nome ?></h2>
 					</div>
 				</div>
 				<div class="row">

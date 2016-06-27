@@ -5786,6 +5786,9 @@
       this.parent().domElement().appendChild(this._domElement);
       this._domTags = this.constructor.createDiv(['ct-inspector__tags', 'ct-tags']);
       this._domElement.appendChild(this._domTags);
+      this._domCounter = this.constructor.createDiv(['ct-inspector__counter']);
+      this._domElement.appendChild(this._domCounter);
+      this.updateCounter();
       this._addDOMEventListeners();
       this._handleFocusChange = (function(_this) {
         return function() {
@@ -5803,6 +5806,42 @@
       ContentEdit.Root.get().unbind('blur', this._handleFocusChange);
       ContentEdit.Root.get().unbind('focus', this._handleFocusChange);
       return ContentEdit.Root.get().unbind('mount', this._handleFocusChange);
+    };
+
+    InspectorUI.prototype.updateCounter = function() {
+      var column, completeText, element, line, lines, region, sub, word_count, _i, _len, _ref;
+      if (!this.isMounted()) {
+        return;
+      }
+      completeText = '';
+      _ref = ContentTools.EditorApp.get().orderedRegions();
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        region = _ref[_i];
+        if (!region) {
+          continue;
+        }
+        completeText += region.domElement().textContent;
+      }
+      completeText = completeText.trim();
+      completeText = completeText.replace(/<\/?[a-z][^>]*>/gi, '');
+      completeText = completeText.replace(/[\u200B]+/, '');
+      completeText = completeText.replace(/['";:,.?¿\-!¡]+/g, '');
+      word_count = (completeText.match(/\S+/g) || []).length;
+      word_count = word_count.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+      element = ContentEdit.Root.get().focused();
+      if (!(element && element.type() === 'PreText' && element.selection().isCollapsed())) {
+        this._domCounter.textContent = word_count;
+        return;
+      }
+      line = 0;
+      column = 0;
+      sub = element.content.substring(0, element.selection().get()[0]);
+      lines = sub.text().split('\n');
+      line = lines.length;
+      column = lines[lines.length - 1].length;
+      line = line.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+      column = column.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+      return this._domCounter.textContent = "" + word_count + " / " + line + ":" + column;
     };
 
     InspectorUI.prototype.updateTags = function() {
@@ -5834,6 +5873,18 @@
         _results.push(tag.mount(this._domTags));
       }
       return _results;
+    };
+
+    InspectorUI.prototype._addDOMEventListeners = function() {
+      return this._updateCounterInterval = setInterval((function(_this) {
+        return function() {
+          return _this.updateCounter();
+        };
+      })(this), 250);
+    };
+
+    InspectorUI.prototype._removeDOMEventListeners = function() {
+      return clearInterval(this._updateCounterInterval);
     };
 
     return InspectorUI;
@@ -6180,7 +6231,7 @@
           }
         };
       })(this);
-      this._updateToolsTimeout = setInterval(this._updateTools, 100);
+      this._updateToolsInterval = setInterval(this._updateTools, 100);
       this._handleKeyDown = (function(_this) {
         return function(ev) {
           var Paragraph, element, os, redo, undo, version;
@@ -6265,7 +6316,7 @@
       }
       window.removeEventListener('keydown', this._handleKeyDown);
       window.removeEventListener('resize', this._handleResize);
-      return clearInterval(this._updateToolsTimeout);
+      return clearInterval(this._updateToolsInterval);
     };
 
     ToolboxUI.prototype._onDrag = function(ev) {
@@ -6503,6 +6554,11 @@
 
     DialogUI.prototype.mount = function() {
       var dialogCSSClasses, domBody, domHeader;
+      if (!!window.MSInputMethodContext && !!document.documentMode) {
+        if (document.activeElement) {
+          document.activeElement.blur();
+        }
+      }
       dialogCSSClasses = ['ct-widget', 'ct-dialog'];
       if (this._busy) {
         dialogCSSClasses.push('ct-dialog--busy');
@@ -6966,9 +7022,11 @@
         return;
       }
       detail = {
-        href: this._domInput.value.trim(),
-        target: this._target ? this._target : void 0
+        href: this._domInput.value.trim()
       };
+      if (this._target) {
+        detail.target = this._target;
+      }
       return this.dispatchEvent(this.createEvent('save', detail));
     };
 
@@ -8289,10 +8347,13 @@
               return;
             }
             _this._shiftDown = true;
-            return _this._highlightTimeout = setTimeout(function() {
+            _this._highlightTimeout = setTimeout(function() {
               return _this.highlightRegions(true);
             }, ContentTools.HIGHLIGHT_HOLD_DURATION);
+            return;
           }
+          clearTimeout(_this._highlightTimeout);
+          return _this.highlightRegions(false);
         };
       })(this);
       this._handleHighlightOff = (function(_this) {
@@ -8312,8 +8373,17 @@
           }
         };
       })(this);
+      this._handleVisibility = (function(_this) {
+        return function(ev) {
+          if (!document.hasFocus()) {
+            clearTimeout(_this._highlightTimeout);
+            return _this.highlightRegions(false);
+          }
+        };
+      })(this);
       document.addEventListener('keydown', this._handleHighlightOn);
       document.addEventListener('keyup', this._handleHighlightOff);
+      document.addEventListener('visibilitychange', this._handleVisibility);
       window.onbeforeunload = (function(_this) {
         return function(ev) {
           if (_this._state === 'editing') {
@@ -8892,9 +8962,11 @@
           if (detail.href) {
             element.a = {
               href: detail.href,
-              target: detail.target ? detail.target : '',
               "class": element.a ? element.a['class'] : ''
             };
+            if (detail.target) {
+              element.a.target = detail.target;
+            }
             for (_i = 0, _len = alignmentClassNames.length; _i < _len; _i++) {
               className = alignmentClassNames[_i];
               if (element.hasCSSClass(className)) {

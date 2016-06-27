@@ -68,6 +68,7 @@ p:empty { display: none; }
 .pointer { cursor: pointer; }
 .underline { text-decoration: underline; }
 .uppercase { text-transform: uppercase; }
+img.width-100 { width: 100% !important; height: auto !important; }
 .quote { 
 	&:before { content: '"'; color: #bbb; font-weight: bold; }
 	&:after { content: '"'; color: #bbb; font-weight: bold; }

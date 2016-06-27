@@ -681,115 +681,110 @@ class Dbo extends Obj
 
 	//gera uma matriz com os valores fixos para o modulo atual --------------------------------------------------------------------------------------
 
-	function makeBreadcrumb($params = array())
+	function getMidBreadcrumbStack($mid, $fixo, $params = array())
 	{
+
 		global $hooks;
 		extract($params);
-		if(!$this->hideComponent('breadcrumb'))
+		$parents = array();
+
+		$fixo_orig = $fixo;
+
+		while($this->getModuleParent($mid, $fixo))
 		{
-			$parents = array();
+			$parent_id = $this->getModuleParent($mid, $fixo);
+			$mid = $parent_id;
+			$fixo = $_SESSION[sysId()]['dbo_mid'][$parent_id][fixo];
+			$parents[] = $this->getModuleParentData($mid);
+		}
+		//preparando para gerar o bread_crumb
+		
+		$fixo = $this->decodeFixos($fixo_orig);
+		foreach($fixo as $key => $value)
+		{
+			$fixo_campo = $key;
+			$fixo_valor = $value;
+		}
+		$bread_crumb = array();
+		$obj = $this;
+		$atual = $this;
+		$i = 0;
 
-			$mid = $this->getMid();
-			$fixo = $_GET['dbo_fixo'];
+		foreach($parents as $mid => $module_data)
+		{
+			$obj = $obj->getJoinModule($fixo_campo);
+			$obj->{$atual->getJoinKey($fixo_campo)} = $fixo_valor;
+			$obj->load();
 
-			while($this->getModuleParent($mid, $fixo))
-			{
-				$parent_id = $this->getModuleParent($mid, $fixo);
-				$mid = $parent_id;
-				$fixo = $_SESSION[sysId()]['dbo_mid'][$parent_id][fixo];
-				$parents[] = $this->getModuleParentData($mid);
-			}
+			$bread_crumb[$i]['label'] = (($obj->__module_scheme->titulo_big_button)?($obj->__module_scheme->titulo_big_button):($obj->__module_scheme->titulo_plural));
+			$bread_crumb[$i]['valor'] = ((method_exists($obj, 'getBreadcrumbIdentifier'))?($obj->getBreadcrumbIdentifier()):($obj->{$atual->__module_scheme->campo[$fixo_campo]->join->valor}));
+			$bread_crumb[$i]['key'] = $fixo_valor;
+			$bread_crumb[$i]['modulo'] = $obj->__module_scheme->modulo;
+			$bread_crumb[$i]['fixo'] = $module_data[fixo];
+			$bread_crumb[$i]['mid'] = $module_data[mid];
 
-			//preparando para gerar o bread_crumb
-			$fixo = $this->decodeFixos($_GET['dbo_fixo']);
+			$fixo = $this->decodeFixos($module_data[fixo]);
 			foreach($fixo as $key => $value)
 			{
 				$fixo_campo = $key;
 				$fixo_valor = $value;
 			}
-			$bread_crumb = array();
-			$obj = $this;
-			$atual = $this;
-			$i = 0;
 
-			foreach($parents as $mid => $module_data)
-			{
-				$obj = $obj->getJoinModule($fixo_campo);
-				$obj->{$atual->getJoinKey($fixo_campo)} = $fixo_valor;
-				$obj->load();
+			$atual = $obj;
 
-				$bread_crumb[$i]['label'] = (($obj->__module_scheme->titulo_big_button)?($obj->__module_scheme->titulo_big_button):($obj->__module_scheme->titulo_plural));
-				$bread_crumb[$i]['valor'] = ((method_exists($obj, 'getBreadcrumbIdentifier'))?($obj->getBreadcrumbIdentifier()):($obj->{$atual->__module_scheme->campo[$fixo_campo]->join->valor}));
-				$bread_crumb[$i]['key'] = $fixo_valor;
-				$bread_crumb[$i]['modulo'] = $obj->__module_scheme->modulo;
-				$bread_crumb[$i]['fixo'] = $module_data[fixo];
-				$bread_crumb[$i]['mid'] = $module_data[mid];
+			$i++;
+		}
 
-				$fixo = $this->decodeFixos($module_data[fixo]);
-				foreach($fixo as $key => $value)
-				{
-					$fixo_campo = $key;
-					$fixo_valor = $value;
-				}
+		$bread_crumb = array_reverse($bread_crumb);
 
-				$atual = $obj;
+		$stack = array();
 
-				$i++;
-			}
-
-			$bread_crumb = array_reverse($bread_crumb);
-
-			$stack = array();
-
-			//verirficando se deve mostrar o item cadastros nos breadcrumbs
-			if(!$this->hideBreadcrumbsRoot())
-			{
-				$stack[] = array(
-					'tipo' => 'url',
-					'url' => 'cadastros.php',
-					'label' => DBO_TERM_CADASTROS,
-				);
-			}
-
-			//montando todo o caminho do breadcrumb até aqui
-			foreach($bread_crumb as $chave => $obj)
-			{
-				$stack[] = array(
-					'tipo' => 'url',
-					'url' => $this->keepUrl(array('dbo_mod='.$obj['modulo']."&mid=".$obj[mid]."&dbo_fixo=".$obj[fixo], "!pag&!dbo_new!&!dbo_update&!dbo_delete&!dbo_view")),
-					'label' => $obj['label'],
-				);
-				$stack[] = array(
-					'tipo' => 'url',
-					'url' => $this->keepUrl(array('dbo_update='.$obj['key'].'&dbo_mod='.$obj['modulo']."&mid=".$obj[mid]."&dbo_fixo=".$obj[fixo], "!pag&!dbo_new!&!dbo_delete")),
-					'label' => $obj['valor'],
-				);
-			}
-
-			//mostranto o modulo atual
+		//verirficando se deve mostrar o item cadastros nos breadcrumbs
+		if(!$this->hideBreadcrumbsRoot())
+		{
 			$stack[] = array(
 				'tipo' => 'url',
-				'url' => $this->keepUrl('!dbo_update&!dbo_view'),
-				'label' => (($this->__module_scheme->titulo_big_button)?($this->__module_scheme->titulo_big_button):($this->__module_scheme->titulo_plural)),
+				'url' => 'cadastros.php',
+				'label' => DBO_TERM_CADASTROS,
 			);
-
-			//se estiver editando um item, mostra ele
-			if($_GET['dbo_update'])
-			{
-				$obj = $this->newSelf();
-				$obj->id = $_GET['dbo_update'];
-				$obj->load();
-				$stack[] = array(
-					'tipo' => 'url',
-					'url' => $obj->keepUrl(),
-					'label' => $obj->getBreadcrumbIdentifier(),
-				);
-			}
-
-			echo dboBreadcrumbs(array(
-				'stack' => $stack,
-			));
 		}
+
+		//montando todo o caminho do breadcrumb até aqui
+		foreach($bread_crumb as $chave => $obj)
+		{
+			$stack[] = array(
+				'tipo' => 'url',
+				'url' => $this->keepUrl(array('dbo_mod='.$obj['modulo']."&mid=".$obj[mid]."&dbo_fixo=".$obj[fixo], "!pag&!dbo_new!&!dbo_update&!dbo_delete&!dbo_view")),
+				'label' => $obj['label'],
+			);
+			$stack[] = array(
+				'tipo' => 'url',
+				'url' => $this->keepUrl(array('dbo_update='.$obj['key'].'&dbo_mod='.$obj['modulo']."&mid=".$obj[mid]."&dbo_fixo=".$obj[fixo], "!pag&!dbo_new!&!dbo_delete")),
+				'label' => $obj['valor'],
+			);
+		}
+
+		//mostranto o modulo atual
+		$stack[] = array(
+			'tipo' => 'url',
+			'url' => $this->keepUrl('!dbo_update&!dbo_view'),
+			'label' => (($this->__module_scheme->titulo_big_button)?($this->__module_scheme->titulo_big_button):($this->__module_scheme->titulo_plural)),
+		);
+
+		//se estiver editando um item, mostra ele
+		if($_GET['dbo_update'])
+		{
+			$obj = $this->newSelf();
+			$obj->id = $_GET['dbo_update'];
+			$obj->load();
+			$stack[] = array(
+				'tipo' => 'url',
+				'url' => $obj->keepUrl(),
+				'label' => $obj->getBreadcrumbIdentifier(),
+			);
+		}
+
+		return $stack;
 	}
 
 	//carrega os dados -------------------------------------------------------------------------------------------------------------------------------
@@ -1672,14 +1667,12 @@ class Dbo extends Obj
 
 	function getModuleParentData($mid)
 	{
-		global $_SESSION;
 		return $_SESSION[sysId()]['dbo_mid'][$mid];
 	}
 
 	//checa o pai --------------------------------------------------------------------------------------------------------------------------
 	function setModuleParent($mid, $fixo)
 	{
-		global $_SESSION;
 		$new_mid = $this->makeMid();
 		$this->setMid($new_mid);
 		$_SESSION[sysId()]['dbo_mid'][$new_mid]['parent'] = $mid;
@@ -3493,7 +3486,15 @@ class Dbo extends Obj
 										{
 										?>
 											<div class='wrapper-module-fixos'>
-												<? $this->makeBreadCrumb() ?>
+												<? 
+													if(!$this->hideComponent('breadcrumb'))
+													{
+														$stack = $this->getMidBreadcrumbStack($this->getMid(), $_GET['dbo_fixo']);
+														echo dboBreadcrumbs(array(
+															'stack' => $stack,
+														));
+													}
+												?>
 											</div>
 										<?
 										}
