@@ -434,6 +434,10 @@ function menuDeCategorias($params = array())
 
 	if($pagina_tipo)
 	{
+		if(!$_category_tree[$pagina_tipo])
+		{
+			carregaArvoreDeCategorias($pagina_tipo, $params);
+		}
 		return categoria::renderTreeMenu($_category_tree[$pagina_tipo], $params);
 	}
 	$keys = array_keys($_category_tree);

@@ -2,6 +2,7 @@
 
 //variables used here
 $peixe-helper-background-color: #333 !default;
+$unresolve-time: 0.5s !default;
 
 //printing
 @media print {
@@ -12,6 +13,11 @@ $peixe-helper-background-color: #333 !default;
 
 //consertando o maldito modulo de segurança do BB
 html > object { display: none !important; }
+
+//configurações para o body se ocultar para carregandos de scripts
+body { transition: opacity $unresolve-time ease; 
+	&.unresolved { opacity: 0; }
+}
 
 //consertando larguras de embed
 iframe { max-width: 100%; }
@@ -95,6 +101,9 @@ div[media-manager-element="image-container"] { max-width: 100%;
 		dd { color: #999; font-style: italic; margin: 0; padding-top: 5px; font-size: 12px; }
 	}
 }
+
+//honeypot for forms
+.pot { position: absolute; width: rem-calc(1) !important; height: rem-calc(1) !important; overflow: hidden; opacity: .01; }
 
 //color helpers
 .color {

@@ -31,6 +31,14 @@ if(!class_exists('pagina'))
 			}
 		}
 
+		//chamando metodos que não existem.
+		//o padrão é pagina_<tipo-da-pagina>_<metodo>
+		function __call($name, $args)
+		{
+			$method_name = 'pagina_'.$this->tipo.'_'.$name;
+			return $method_name($this, $args);
+		}
+
 		//your methods here
 		static function smartLoad($params = array())
 		{

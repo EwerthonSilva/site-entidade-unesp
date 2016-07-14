@@ -102,7 +102,10 @@
 
 		$mail = new PHPMailer;
 
-		//$mail->SMTPDebug = 3;                               // Enable verbose debug output
+		if(DBO_MAIL_DEBUG === true)
+		{
+			$mail->SMTPDebug = 3;                               // Enable verbose debug output
+		}
 
 		$mail->CharSet = 'UTF-8';
 		if(DBO_MAIL_IS_SMTP !== false)
