@@ -23,7 +23,7 @@ else{
 		!strlen(trim($_POST['numero']))				||
 		!strlen(trim($_POST['bairro']))				||
 		!strlen(trim($_POST['cidade']))				||
-		!strlen(trim($_POST['estado']))				||
+		!strlen(trim($_POST['uf']))				||
 		!strlen(trim($_POST['cpf']))          ||
 		!strlen(trim($_POST['faculdade']))
 		){
@@ -74,7 +74,6 @@ else{
 			}
 
 			$json_result['message'] = "<div class='success'>Cadastro efetuado com sucesso!</div>";
-			$json_result['message']='<div class="success">Seu voto foi computado.</div>';
 			ob_start();
 			?>
 			<div class="row">
