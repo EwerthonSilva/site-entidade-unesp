@@ -379,6 +379,72 @@ $module->campo[$field->coluna] = $field;
 
 /*==========================================*/
 
+$field = new Obj();
+$field->titulo = 'A imagem contém texto?';
+$field->coluna = 'imagem_com_texto';
+$field->dica = 'Se sua imagem contém texto, as textos adicionais são desativados.';
+$field->pk = false;
+$field->isnull = false;
+$field->add = true;
+$field->valida = false;
+$field->edit = true;
+$field->view = true;
+$field->lista = true;
+$field->filter = true;
+$field->order = true;
+$field->type = 'INT(11)';
+$field->interaction = '';
+$field->tipo = 'radio';
+$field->valores = array(
+	'0' => 'Não',
+	'1' => 'Sim',
+);
+$module->campo[$field->coluna] = $field;
+
+/*==========================================*/
+
+$field = new Obj();
+$field->titulo = 'Texto adicional da esquerda';
+$field->coluna = 'banner_text_left';
+$field->pk = false;
+$field->isnull = false;
+$field->add = true;
+$field->valida = false;
+$field->edit = true;
+$field->view = true;
+$field->lista = false;
+$field->filter = false;
+$field->order = false;
+$field->type = 'TEXT';
+$field->interaction = '';
+$field->classes = 'autosize';
+$field->tipo = 'textarea';
+$field->rows = 3;
+$module->campo[$field->coluna] = $field;
+
+/*==========================================*/
+
+$field = new Obj();
+$field->titulo = 'Texto adicional da direita';
+$field->coluna = 'banner_text_right';
+$field->pk = false;
+$field->isnull = false;
+$field->add = true;
+$field->valida = false;
+$field->edit = true;
+$field->view = true;
+$field->lista = false;
+$field->filter = false;
+$field->order = false;
+$field->type = 'TEXT';
+$field->interaction = '';
+$field->classes = 'autosize';
+$field->tipo = 'textarea';
+$field->rows = 3;
+$module->campo[$field->coluna] = $field;
+
+/*==========================================*/
+
 /* GRID FOR THE FORM LAYOUT ========================================================================================= */
 
 $grid = array();
@@ -400,6 +466,8 @@ $grid[] = array('6','6');
 $grid[] = array('12');
 $grid[] = array('Informações específicas');
 $grid[] = array('12');
+$grid[] = array('12');
+$grid[] = array('6','6');
 
 $module->grid = $grid;
 

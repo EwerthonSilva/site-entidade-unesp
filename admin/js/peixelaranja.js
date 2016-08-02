@@ -746,4 +746,7 @@ $(document).ready(function(){
 	$('body:not(:has(.peixe-screen-freezer))').prepend('<div class="peixe-screen-freezer"></div>');
 	$('body:not(:has(.wrapper-message))').prepend('<div class="wrapper-message closed"></div>');
 
+	//fade no body apos carregar os scripts
+	$('body.unresolved').removeClass('unresolved');
+
 }) //doc.ready

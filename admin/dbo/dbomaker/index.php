@@ -3,6 +3,7 @@
 	$_SESSION['dbomaker_controls']['show_field_basic'] = TRUE;
 	$_SESSION['dbomaker_controls']['show_field_advanced'] = FALSE;
 	$_SESSION['dbomaker_controls']['show_field_type'] = FALSE;
+	
 ?>
 <div class='toolbar'>
 	<div class='bg'>

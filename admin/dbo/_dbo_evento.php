@@ -87,6 +87,26 @@ $module->campo[$field->coluna] = $field;
 /*==========================================*/
 
 $field = new Obj();
+$field->titulo = 'Instruções de Pagamento';
+$field->coluna = 'instrucao_pagamento';
+$field->pk = false;
+$field->isnull = false;
+$field->add = true;
+$field->valida = false;
+$field->edit = true;
+$field->view = true;
+$field->lista = false;
+$field->filter = false;
+$field->order = false;
+$field->type = 'TEXT';
+$field->interaction = '';
+$field->classes = 'autosize';
+$field->tipo = 'textarea';
+$field->rows = 5;
+$module->campo[$field->coluna] = $field;
+
+/*==========================================*/
+$field = new Obj();
 $field->titulo = 'Imagem de Fundo';
 $field->coluna = 'background_image';
 $field->pk = false;
@@ -110,6 +130,8 @@ $field->image[] = $image;
 $module->campo[$field->coluna] = $field;
 
 /*==========================================*/
+
+
 
 /* GRID FOR THE FORM LAYOUT ========================================================================================= */
 

@@ -169,14 +169,20 @@ function getDiskModules ($params = array())
 		}
 	}
 	$d->close();
-
+	
 	$module_keys = array();
 	$module_keys_read_only = array();
 
 	foreach($arq_modulos as $chave => $valor)
 	{
 		$arq = file_get_contents('../'.$valor);
+
 		eval("?>".$arq."<?");
+
+		//verificando se o módulo é importado da central de acessos
+
+		$module->imported_module = strstr($arq, 'require(CENTRAL_DE_ACESSOS_PATH') ? true : false;
+
 		$partes = array();
 		$partes = explode("FUNÇÕES AUXILIARES", $arq);
 		$partes = explode("// ----------------------------------------------------------------------------------------------------------\n", $partes['1']);
@@ -287,7 +293,7 @@ function showModules ($params = array())
 			}
 		}
 	?>
-		<a title='Order: <?= $count++ ?>' href='<?= $modulo->modulo ?>' class='sortable draggable <?= $class ?> module-<?= $modulo->modulo ?> module' module='<?= $modulo->modulo ?>' id='module-<?= encNameAjax($modulo->modulo) ?>'><?= $modulo->titulo ?></a>
+		<a title='Order: <?= $count++ ?> <?= $modulo->imported_module ? '| Módulo integrado com a Central de Acessos, deve ser editado por lá.' : '' ?>' href='<?= $modulo->modulo ?>' class='sortable draggable <?= $class ?> module-<?= $modulo->modulo ?> module <?= $modulo->imported_module ? 'imported' : '' ?>' module='<?= $modulo->modulo ?>' id='module-<?= encNameAjax($modulo->modulo) ?>'><?= $modulo->titulo ?></a>
 	<?
 	}
 	?><div class='new-module button-new' id="button-novo-modulo">Novo <u>M</u>ódulo</div><?
@@ -307,10 +313,30 @@ function showModule ($mod)
 				<div class='anchor sortable sort-fields' module='<?= $mod ?>'>
 				<? showFields($mod) ?>
 				</div>
-				<div class='new-field button-new' rel='<?= $mod ?>' tabindex="0" id="button-new-field">Novo Campo (<u>d</u>)</div>
+				<?php
+					if(!$module->imported_module)
+					{
+						?>
+						<div class='new-field button-new' rel='<?= $mod ?>' tabindex="0" id="button-new-field">Novo Campo (<u>d</u>)</div>
+						<?php
+					}
+					else
+					{
+						?>
+						<div class='button-new integrado'>Módulo integrado</div>
+						<?php
+					}
+				?>
 			</div>
 
-			<div class='button-next hidden button-salvar' rel='#form-module' sending='Enviando...' original_value='Salvar' id="button-salvar-modulo" tabindex="0"><span><u>S</u>alvar</span></div>
+			<?php
+				if(!$module->imported_module)
+				{
+					?>
+					<div class='button-next hidden button-salvar' rel='#form-module' sending='Enviando...' original_value='Salvar' id="button-salvar-modulo" tabindex="0"><span><u>S</u>alvar</span></div>
+					<?php
+				}
+			?>
 
 		</div>
 	<?
@@ -1253,7 +1279,14 @@ function getFieldForm ($mod,$field)
 
 		</div><!-- field-type-details -->
 
-		<div class='button-next hidden button-salvar' rel='#form-field' sending='Enviando...' original_value='Salvar' tabindex="0"><span><u>S</u>alvar</span></div>
+		<?php
+			if(!$_SESSION['dbomaker_modulos'][$mod]->imported_module)
+			{
+				?>
+				<div class='button-next hidden button-salvar' rel='#form-field' sending='Enviando...' original_value='Salvar' tabindex="0"><span><u>S</u>alvar</span></div>
+				<?php
+			}
+		?>
 
 		<input type='hidden' name='runUpdateField' value='1'/>
 		<input type='hidden' name='active_module' value='<?= $mod ?>'/>
@@ -3063,6 +3096,8 @@ function writeModuleFile($mod)
 	$file_sufix = '.php';
 
 	$module = $_SESSION['dbomaker_modulos'][$mod];
+
+	if($module->imported_module) return true;
 
 	if($fh = fopen('../'.$file_prefix.$mod.$file_sufix, 'w'))
 	{

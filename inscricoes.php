@@ -26,7 +26,14 @@ $ev = new evento($_GET['evento']);
 	body {
 		background-repeat: no-repeat;
 		background-attachment: fixed;
-		background-size: cover;
+		background-size: 100% 100%;
+		width: 80%;
+		margin-left: 10%;
+
+	}
+
+	.row{
+
 	}
 	</style>
 </head>
@@ -56,6 +63,11 @@ elseif(siteConfig()->background_image)
 					</div>
 				</div>
 			</header>
+			<?php
+			$pal= new palestra("WHERE evento = '".$ev->id."' ORDER BY data, horario");
+			if($pal->size())
+			{
+				?>
 			<div class="row">
 				<div class="large-12 columns">
 					<p style="text-align: justify"><?= $ev->descricao ?></p>
@@ -69,10 +81,7 @@ elseif(siteConfig()->background_image)
 					<form id="form-inscricao" class="no-margin peixe-json" action="<?=SecureUrl('ajax-inscricoes.php?action=insert-inscricao&evento='.$ev->id)?>" method="post" peixe-log>
 						<div class="row">
 							<div class="large-12 columns">
-								<?php
-								$pal= new palestra("WHERE evento = '".$ev->id."' ORDER BY data, horario");
-								if($pal->size())
-								{
+								<?
 									do {
 
 										$array_atividades[$pal->data][$pal->horario][$pal->id] = array(
@@ -84,7 +93,6 @@ elseif(siteConfig()->background_image)
 
 									}while ($pal->fetch());
 
-								}
 								foreach($array_atividades as $data => $horarios)
 								{
 									echo '<h4>'.date('d/m', strtotime($data)).'</h4>';
@@ -137,14 +145,14 @@ elseif(siteConfig()->background_image)
 											<label for="email">E-mail</label>
 											<input type="email" name="email" required="">
 										</div>
-										<div id="forma-pagamento-input" class="large-4 columns">
+										<!-- <div id="forma-pagamento-input" class="large-4 columns">
 											<label for="forma_pagamento">Forma de pagamento</label>
 											<select name="forma_pagamento">
 												<option value="à vista">À vista</option>
 												<option value="2x">2x</option>
 												<option value="3x">3x</option>
 											</select>
-										</div>
+										</div> -->
 									</div>
 									<div class="row">
 										<div class="large-6 columns">
@@ -262,6 +270,24 @@ elseif(siteConfig()->background_image)
 						</form>
 					</div>
 				</div>
+				<?
+			}else{
+				?>
+
+				<div class="row">
+				  <div class="large-12 columns text-center">
+				  		<h4>
+								O Evento selecionado não existe ou foi removido.
+							</h4>
+							<p>
+								Favor contactar os Adminsitradores.
+
+							</p>
+				  </div>
+				</div>
+				<?
+			}
+			?>
 			</div>
 		</div>
 		<script src="js/app.js"></script>

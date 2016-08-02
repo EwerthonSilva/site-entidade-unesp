@@ -1,0 +1,18 @@
+<IfModule mod_rewrite.c>
+
+	RewriteEngine On
+
+	# Primeiro tratando categorias com slug
+	RewriteRule ^[a-zA-Z0-9-_/]*/categorias/([a-zA-Z0-9-_/]+)$ categoria.php?slug=$1&%{QUERY_STRING} [NC,L]
+
+	# Depois categorias genericas
+	RewriteRule ^([a-zA-Z0-9-_/]*)/categorias/?$ categoria.php?slug_prefix=$1&%{QUERY_STRING} [NC,L]
+
+	# Depois slugs com qualquer hierarquia
+	RewriteRule ^[a-zA-Z0-9-_/]+/([a-zA-Z0-9-_]+)/?$ pagina.php?slug=$1&%{QUERY_STRING} [NC,L]
+
+	# Depois slugs básicas
+	RewriteCond %{REQUEST_FILENAME} !-d
+	RewriteRule ^([a-zA-Z0-9-_]+)/?$ pagina.php?slug=$1&%{QUERY_STRING} [NC,L]
+
+</IfModule>

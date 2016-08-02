@@ -75,7 +75,7 @@ if(!class_exists('config'))
 
 						directionsDisplay = new google.maps.DirectionsRenderer();
 						geocoder = new google.maps.Geocoder();
-						
+
 						var mapOptions = {
 							center: new google.maps.LatLng(latitude, longitude),
 							zoom: 16,
@@ -100,7 +100,7 @@ if(!class_exists('config'))
 							labelClass: "map-label", // the CSS class for the label
 							labelInBackground: true
 						});
-					
+
 					}
 				}
 
@@ -112,7 +112,7 @@ if(!class_exists('config'))
 					console.log(start);
 					console.log(end);
 					var request = {
-					   origin:start, 
+					   origin:start,
 					   destination:end,
 					   travelMode: google.maps.DirectionsTravelMode.DRIVING
 					};
@@ -123,7 +123,7 @@ if(!class_exists('config'))
 					   directionsDisplay.setDirections(response);
 					 }
 				   });
-				}			
+				}
 
 				$(document).ready(function(){
 					initializeMap('<?= $latitude ?>', '<?= $longitude ?>', '<?= $map_marker_texto ?>');
@@ -140,7 +140,7 @@ if(!class_exists('config'))
 			?>
 			<script>
 				function shareTwitter(url, text) {
-					open('http://twitter.com/share?url=' + url + '&text=' + text, 'tshare', 'height=400,width=550,resizable=1,toolbar=0,menubar=0,status=0,location=0');	
+					open('http://twitter.com/share?url=' + url + '&text=' + text, 'tshare', 'height=400,width=550,resizable=1,toolbar=0,menubar=0,status=0,location=0');
 				}
 
 				function shareFacebook(url, text, image) {
@@ -149,7 +149,7 @@ if(!class_exists('config'))
 
 				function shareGooglePlus(url) {
 					open('https://plus.google.com/share?url=' + url, 'gshare', 'height=270,width=630,resizable=0,toolbar=0,menubar=0,status=0,location=0,scrollbars=0');
-				}			
+				}
 			</script>
 			<?php
 			return ob_get_clean();
@@ -200,8 +200,8 @@ if(!class_exists('config'))
 					$title = $data['title'] ? $data['title'] : ucfirst($slug);
 					$icon = $data['icon'] ? $data['icon'] : $slug;
 					$url = $data['url'] ? $data['url'] : $midias_sociais[$item]['url'];
-
 					$return .= '<li class="'.$slug.'"><a href="'.$url.'" target="_blank"><i class="fa '.($fixed_width ? 'fa-fw' : '').' fa-'.$icon.'"></i><span>'.$title.'</span></a></li>';
+
 				}
 			}
 			return $return;

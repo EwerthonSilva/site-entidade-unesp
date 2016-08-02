@@ -211,7 +211,16 @@ div#canvas > .column-3 { width: 120px; }
 .toolbar .trash-hover { background: #A94145 url('images/trash-open.png') center center no-repeat; }
 
 .help { cursor: help; }
+
+#wrapper-modules a.imported { background: #CAB284; position: relative; padding-right: 25px; }
+#wrapper-modules a.imported.active { background: #735822; }
+#wrapper-modules a.imported:after { content: '\f0c1'; font-family: 'FontAwesome'; position: absolute; top: 10px; right: 10px; }
+
+.button-new.integrado { background-color: #CAB284; cursor: default; }
+.button-new.integrado:hover { background: #CAB284; }
+
 /*
+
 
 #A94145
 
