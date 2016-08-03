@@ -982,9 +982,6 @@ class dboUI
 		}
 		elseif($field_type == 'joinNN')
 		{
-			?>
-			<script src="">alert('aqui')</script>
-			<?
 			$join = (array)$join;
 			ob_start();
 			if($join['select2'])

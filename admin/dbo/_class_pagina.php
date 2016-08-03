@@ -1208,6 +1208,7 @@ function siteBody($params = array())
 function siteHead($params = array())
 {
 	global $_conf;
+	global $hooks;
 	extract($params);
 
 	$og = array();	
@@ -1247,6 +1248,8 @@ function siteHead($params = array())
 		<meta property="<?= $prop ?>" content="<?= $content ?>" />
 		<?php
 	}
+
+	$hooks->do_action('site_head');
 
 	return ob_get_clean();
 }

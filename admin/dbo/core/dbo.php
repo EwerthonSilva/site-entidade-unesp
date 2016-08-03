@@ -82,6 +82,12 @@ class DboFieldType {
 			$url = DBO_URL."/upload/images/".($size ? $size.'-' : '').$this->value;
 			$path = DBO_PATH."/upload/images/".($size ? $size.'-' : '').$this->value;
 		}
+		elseif($this->data->tipo == 'file')
+		{
+			list($nome, $arquivo) = explode("\n", $this->value);
+			$url = DBO_URL."/upload/files/".$arquivo;
+			$path = DBO_PATH."/upload/files/".$arquivo;
+		}
 		elseif($this->data->tipo == 'plugin' && $this->data->plugin->name == 'jcrop_dbo')
 		{
 			$url = DBO_URL."/upload/images/".($size ? $size.'_' : 'c1_').$this->value;

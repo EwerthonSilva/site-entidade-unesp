@@ -21,6 +21,12 @@ body { overflow-y: scroll; overflow-x: hidden;
 	}
 } 
 
+/* jquery auto-complete */
+.ui-autocomplete { border: 1px solid #CCC; background: #FFF; max-width: 100%; padding: 10px; z-index: 9999; 
+	li.ui-menu-item { font-size: 13px !important; border: 1px solid #FFF; margin: 0px !important; transition: none; }
+}
+
+
 label { text-transform: uppercase; cursor: default; font-size: 11px; color: #888;
 	i { font-size: 14px; margin-top: -3px; }
 }
