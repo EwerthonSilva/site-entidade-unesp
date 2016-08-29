@@ -652,7 +652,6 @@ class Dbo extends Obj
 	}
 
 	//pega uma instancia do modulo do join do campo passado para o objeto atual----------------------------------------------------------------------
-
 	public function getJoinModule ($campo, $instance = true)
 	{
 		$class = $this->__module_scheme->campo[$campo]->join->modulo;
@@ -666,11 +665,22 @@ class Dbo extends Obj
 		}
 	}
 
-	//pega a chave estrangeira do do join para o campo atual ----------------------------------------------------------------------------------------
+	//retorna se o campo é um join ou não ----------------------------------------------------------------------------------------------------------
+	public function isJoin ($campo)
+	{
+		return $this->__module_scheme->campo[$campo]->tipo == 'join';
+	}
 
+	//pega a chave estrangeira do do join para o campo atual ----------------------------------------------------------------------------------------
 	public function getJoinKey ($campo)
 	{
 		return $this->__module_scheme->campo[$campo]->join->chave;
+	}
+
+	//retorna o nome do campo que deve ser exibido --------------------------------------------------------------------------------------------------
+	public function getJoinLabel ($campo)
+	{
+		return $this->__module_scheme->campo[$campo]->join->valor;
 	}
 
 	//-----------------------------------------------------------------------------------------------------------------------------------------------
@@ -1256,10 +1266,14 @@ class Dbo extends Obj
 			}
 
 			//corrigindo ids em tabelas NxN
-			if(is_array($this->__dbo_ui_flag['pending_join_table']) && sizeof($this->__dbo_ui_flag['pending_join_table']) && $this->__dbo_ui_flag['temp_id'])
+			if(is_array($this->__dbo_ui_flag['pending_join_table']) && sizeof($this->__dbo_ui_flag['pending_join_table']))
 			{
 				$this->dboUIFixPendingTables();
 			}
+			/*if(is_array($this->__dbo_ui_flag['pending_join_table']) && sizeof($this->__dbo_ui_flag['pending_join_table']) && $this->__dbo_ui_flag['temp_id'])
+			{
+				$this->dboUIFixPendingTables();
+			}*/
 
 			return $this->id;
 		}
@@ -1417,13 +1431,28 @@ class Dbo extends Obj
 	{
 		foreach($this->__dbo_ui_flag['pending_join_table'] as $tabela_acerto => $dados_acerto)
 		{
-			$obj = new dbo($tabela_acerto);
-			$obj->{$dados_acerto['key']} = $this->__dbo_ui_flag['temp_id'];
-			$obj->loadAll();
-			do {
-				$obj->{$dados_acerto['key']} = $this->id;
-				$obj->update();
-			} while($obj->fetch());
+			foreach($dados_acerto['dados'] as $dados)
+			{
+				$obj = new dbo($tabela_acerto);
+				$obj->{$dados_acerto['fk']} = $this->id;
+				foreach($dados as $key => $value)
+				{
+					$obj->{$key} = $value;
+				}
+				$obj->save();
+			}
+			unset($this->__dbo_ui_flag['pending_join_table'][$tabela_acerto]);
+			/*foreach($dados_acerto['dados'] as $value)
+			{
+				$obj = new dbo($tabela_acerto);
+				$obj->{$dados_acerto['fk']} = $this->id;
+				for
+				$obj->loadAll();
+				do {
+					$obj->{$dados_acerto['key']} = $this->id;
+					$obj->update();
+				} while($obj->fetch());
+			}*/
 		}
 	}
 	
@@ -2862,6 +2891,8 @@ class Dbo extends Obj
 	{
 		extract($params);
 
+		$id_formulario = $id_formulario ? $id_formulario : "form-".uniqid();
+
 		if($this->ok())
 		{
 			//campos a serem usados no eval();
@@ -2878,7 +2909,6 @@ class Dbo extends Obj
 			else
 			{
 				//setando um id para o formulario, usado na validacao e mascaras.
-				$id_formulario = "form-".time().rand(1,100);
 
 				//checando se há algo a se colocar depois do formulario (campos por exemplo)
 				$function_name = 'form_'.$this->__module_scheme->modulo."_before";
@@ -3041,6 +3071,7 @@ class Dbo extends Obj
 		extract($params);
 
 		$load_autoadmin_data = $load_autoadmin_data === false ? false : true;
+		$id_formulario = $id_formulario ? $id_formulario : "form-".uniqid();
 		
 		if($this->ok())
 		{
@@ -3068,9 +3099,6 @@ class Dbo extends Obj
 			}
 			else
 			{
-
-				//setando um id para o formulario, usado na validacao e mascaras.
-				$id_formulario = "form-".time().rand(1,100);
 
 				//checando se há algo a se colocar depois do formulario (campos por exemplo)
 				$function_name = 'form_'.$this->__module_scheme->modulo."_before";
@@ -3294,8 +3322,9 @@ class Dbo extends Obj
 	*/
 	function autoAdmin($params = array())
 	{
-
 		extract($params);
+
+		$id_formulario = $id_formulario ? $id_formulario : 'form-'.uniqid();
 
 		dboAdminPostCode();
 
@@ -3547,8 +3576,9 @@ class Dbo extends Obj
 												{
 												?>
 													<span class='button-new' rel='<?= $scheme->modulo ?>'>
-														<a class="button <?= (($_GET['hide_admin_header_separator'])?(''):('no-margin-for-small')) ?> <?= ((!$_GET['dbo_modal'])?('top-less-15'):('')) ?> radius small trigger-dbo-auto-admin-inserir" href='<?= $this->keepUrl(array('dbo_new=1', '!dbo_update&!dbo_delete&!dbo_view')) ?>'  style="<?= (($_GET['dbo_update'] || $_GET['dbo_new'])?('display: none;'):('')) ?>"><i class="fa fa-plus"></i> Cadastrar nov<?= $scheme->genero ?></a>
 														<a style="<?= (($_GET['dbo_update'] || $_GET['dbo_new'])?(''):('display: none;')) ?>" class="button <?= (($_GET['hide_admin_header_separator'])?(''):('no-margin-for-small')) ?> <?= ((!$_GET['dbo_modal'])?('top-less-15'):('')) ?> radius secondary small trigger-dbo-auto-admin-cancelar-insercao-edicao" href='<?= $this->keepUrl(array('!dbo_update&!dbo_delete&!dbo_view&!dbo_new')) ?>'><i class="fa fa-arrow-left"></i> Voltar</a>
+														<a class="button <?= (($_GET['hide_admin_header_separator'])?(''):('no-margin-for-small')) ?> <?= ((!$_GET['dbo_modal'])?('top-less-15'):('')) ?> radius small trigger-dbo-auto-admin-inserir" href='<?= $this->keepUrl(array('dbo_new=1', '!dbo_update&!dbo_delete&!dbo_view')) ?>'  style="<?= (($_GET['dbo_update'] || $_GET['dbo_new'])?('display: none;'):('')) ?>"><i class="fa fa-plus"></i> Cadastrar nov<?= $scheme->genero ?></a>
+														<a style="<?= (($_GET['dbo_update'] || $_GET['dbo_new'])?(''):('display: none;')) ?>" class="button <?= (($_GET['hide_admin_header_separator'])?(''):('no-margin-for-small')) ?> <?= ((!$_GET['dbo_modal'])?('top-less-15'):('')) ?> radius small trigger-dbo-auto-admin-cancelar-insercao-edicao" href='<?= $this->keepUrl(array('!dbo_update&!dbo_delete&!dbo_view', 'dbo_new=1')) ?>' title="Cadastrar nov<?= $scheme->genero ?>"><i class="fa fa-plus"></i></a>
 													</span>
 												<?
 												}
@@ -3609,7 +3639,9 @@ class Dbo extends Obj
 											</div>
 										</div><!-- row -->
 										<?php
-										echo $this->getInsertForm();
+										echo $this->getInsertForm(array(
+											'id_formulario' => $id_formulario,
+										));
 									}
 								}
 							?>
@@ -3661,13 +3693,12 @@ class Dbo extends Obj
 											</div><!-- col -->
 										</div><!-- row -->
 										<?php
-										$this->getUpdateForm();
+										$this->getUpdateForm(array(
+											'id_formulario' => $id_formulario,
+										));
 									}
 							}
 						}
-					?>
-
-					<?
 						//shows the list if you're not in the update or insert form.
 						if(!$_GET['dbo_new'] && !$_GET['dbo_update'])
 						{
@@ -3768,7 +3799,9 @@ class Dbo extends Obj
 
 				<?
 				/* Scripts para o autoadmin */
-				if(!$_GET['noscript']) { $this->localScripts(); }
+				if(!$_GET['noscript']) { $this->localScripts(array(
+					'id_formulario' => $id_formulario,
+				)); }
 			}//modulo
 		} //ok()
 	} // autoAdmin()
@@ -3778,11 +3811,14 @@ class Dbo extends Obj
 	* Função para impressão dos JS necessários para o funcionamento do auto-admin ===================================================================
 	* ===============================================================================================================================================
 	*/
-	function localScripts ()
+	function localScripts ($params = array())
 	{
+		extract($params);
 		$scheme = $this->__module_scheme;
 		?>
 		<script type='text/javascript' charset='utf-8'>
+
+			var form_<?= str_replace('-', '_', $id_formulario) ?>_dirty = false;
 
 			//para carregar coisas com ajax
 			function ajaxLoad(alvo, url, conteudo)
@@ -4063,7 +4099,22 @@ class Dbo extends Obj
 					$(this).closest('.item').find('input').val('');
 				});
 
+				$(document).on('input change', '#<?= $id_formulario ?> :input', function(){
+					form_<?= str_replace('-', '_', $id_formulario) ?>_dirty = true;
+				});
+
 			})
+
+			window.addEventListener("beforeunload", function (e) {
+				if(form_<?= str_replace('-', '_', $id_formulario) ?>_dirty) {
+					var confirmationMessage = 'Parece que você não salvou seu formulário. '
+											+ 'Se você sair em salvar, suas alterações serão perdidas.';
+
+					(e || window.event).returnValue = confirmationMessage; //Gecko + IE
+					return confirmationMessage; //Gecko + Webkit, Safari, Chrome etc.
+				}
+			});
+
 		</script>
 		<?
 	}
@@ -4139,6 +4190,7 @@ class Dbo extends Obj
 			}
 
 			$(document).on('submit', '#<?= $id_form ?>', function(){
+				form_<?= str_replace('-', '_', $id_form) ?>_dirty = false;
 				if(!validationEngine($(this))){
 					return false;
 				}

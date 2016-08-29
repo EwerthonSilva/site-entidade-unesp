@@ -19,8 +19,8 @@ $module->paginacao = '10';
 $module->update = true;
 $module->delete = true;
 $module->insert = 'Nova Pessoa';
-$module->preload_insert_form = false;
-$module->auto_view = true;
+$module->preload_insert_form = true;
+$module->auto_view = false;
 $module->permissoes_custom = '
 	painel-cadastros | Permissão que dá acesso ao painel principal de cadastros do site
 ';
@@ -64,8 +64,19 @@ $field->filter = false;
 $field->order = false;
 $field->type = 'VARCHAR(255)';
 $field->interaction = '';
-$field->tipo = 'media';
-$field->formatos = imagem;
+$field->tipo = 'image';
+	$image = new Obj();
+	$image->width = 1200;
+	$image->height = 1200;
+	$image->prefix = '';
+	$image->quality = 80;
+$field->image[] = $image;
+	$image = new Obj();
+	$image->width = 400;
+	$image->height = 400;
+	$image->prefix = 'small-';
+	$image->quality = 80;
+$field->image[] = $image;
 $module->campo[$field->coluna] = $field;
 
 /*==========================================*/

@@ -123,63 +123,71 @@ function peixeJSON(action, args, callback, log, method, error_message, mode) {
 			if(log == true){
 				console.log(data);
 			}
-			try{
-				var result = $.parseJSON(data);
-				if(result.message){
-					setPeixeMessage(result.message);
-					showPeixeMessage();
-				}
-				if(result.reload){
-					var html = '';
-					url = typeof result.reload_url == 'undefined' ? peixe_current_url : result.reload_url;
-					peixeGet(url, function(d) {
-						html = $.parseHTML(d);
-						result.reload.forEach(function(value) {
-							peixeReload(value, html);
-						});
-						(result.reload_eval ? eval(result.reload_eval) : null);
-					}, null, mode)
-				}
-				if(result.html){
-					for(var key in result.html)
-					{
-						$(key).fadeHtml(result.html[key]);
-					}
-				}
-				if(result.callback){
-					result.callback.forEach(function(value) {
-						if (typeof window[value] == 'function') {
-							window[value]();
-						}
-					});
-				}
-				if(result.eval){
-					eval(result.eval)
-				}
-				//tratando o callback customizado
-				if(typeof callback == 'function'){
-					callback(result);
-				}
-				else if(typeof window[callback] == 'function'){
-					window[callback](result);
-				}
-				else if(typeof callback == 'string'){
-					eval(callback);
-				}
-				if(result.redirect){
-					window.location = result.redirect;
-				}
-			}catch(e){
-				if(error_message){
-					alert(error_message);
-				} else {
-					alert(e); //error in the above string(in this case,yes)!
-				}
+			result = peixeExecJSON(data, error_message, mode);
+			if(typeof callback == 'function'){
+				callback(result);
+			}
+			else if(typeof window[callback] == 'function'){
+				window[callback](result);
+			}
+			else if(typeof callback == 'string'){
+				eval(callback);
 			}
 		},
 		mode
 	)
 	return false;
+}
+
+function peixeExecJSON(data, error_message, mode) {
+	try {
+		var result = $.parseJSON(data);
+		if(result.message){
+			setPeixeMessage(result.message);
+			showPeixeMessage();
+		}
+		if(result.reload){
+			var html = '';
+			url = typeof result.reload_url == 'undefined' ? peixe_current_url : result.reload_url;
+			peixeGet(url, function(d) {
+				html = $.parseHTML(d);
+				result.reload.forEach(function(value) {
+					peixeReload(value, html);
+				});
+				(result.reload_eval ? eval(result.reload_eval) : null);
+			}, null, mode)
+		}
+		if(result.html){
+			for(var key in result.html)
+			{
+				$(key).fadeHtml(result.html[key]);
+			}
+		}
+		if(result.parent){
+			parent.peixeExecJSON(JSON.stringify(result.parent), error_message, mode);
+		}
+		if(result.callback){
+			result.callback.forEach(function(value) {
+				if (typeof window[value] == 'function') {
+					window[value]();
+				}
+			});
+		}
+		if(result.eval){
+			eval(result.eval)
+		}
+		//tratando o callback customizado
+		if(result.redirect){
+			window.location = result.redirect;
+		}
+		return result;
+	}catch(e){
+		if(error_message){
+			alert(error_message);
+		} else {
+			alert(e); //error in the above string(in this case,yes)!
+		}
+	}
 }
 
 function removePeixeMessage() {

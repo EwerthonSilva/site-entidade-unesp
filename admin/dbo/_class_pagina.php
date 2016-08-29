@@ -436,7 +436,7 @@ if(!class_exists('pagina'))
 					$icon = ' <i class="fa fa-caret-up"></i>';
 				}
 			}
-			return '<a href="'.$this->getUrlOrderBy($coluna).'" class="peixe-reload" peixe-reload="#list-table,#pagination,#list-view-selector">'.$titulo.$icon.'</a>';
+			return '<a href="'.$this->getUrlOrderBy($coluna).'" class="peixe-reload" peixe-reload="#list-table,#list-pagination,.pagination,#list-view-selector,.list-numero-itens">'.$titulo.$icon.'</a>';
 		}
 
 		//seta detalhes desta pagina no campo detail. Os detalhes são armazenados como um objeto JSON encodado
@@ -953,6 +953,62 @@ if(!class_exists('pagina'))
 		function getTemplate()
 		{
 			return file_exists(DBO_TEMPLATE_PATH.'/pagina-'.$this->slug.'.php') ? 'pagina-'.$this->slug : 'pagina-blank';
+		}
+
+		function getListIdentifier($column)
+		{
+			if($column == 'autor')
+			{
+				return $this->_autor->nome;
+			}
+			return $this->{$column};
+		}
+
+		function getListLabel($column, $pagina_scheme)
+		{
+			global $_system;
+			if($column == 'nome_autor')
+			{
+				return 'Autor';
+			}
+			elseif($column == 'categorias')
+			{
+				return 'Categorias';
+			}
+			elseif(strpos($column, 'ext_') === 0)
+			{
+				if(!$pagina_scheme['extension_module_object'])
+				{
+					$ext = new $pagina_scheme['extension_module'];
+					$pagina_scheme['extension_module_object'] = new $ext();
+				}
+				$column = preg_replace('/^ext_/is', '', $column);
+				return $pagina_scheme['extension_module_object']->__module_scheme->campo[$column]->titulo;
+			}
+			else
+			{
+				return $this->__module_scheme->campo[$column]->titulo;
+			}
+		}
+
+		function getListColumnStyles($column)
+		{
+			if($column == 'nome_autor' || $column == 'categorias')
+			{
+				return ' width: 15%; ';
+			}
+			elseif($column == 'data')
+			{
+				return ' width: 10%; ';
+			}
+			elseif($column == 'titulo')
+			{
+				return '';
+			}
+			else
+			{
+				return ' width: 10%; ';
+			}
 		}
 
 	} //class declaration

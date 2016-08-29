@@ -1,36 +1,7 @@
 <?
 	require_once('lib/includes.php');
 
-	$_system['media_manager']['image_sizes'] = array_merge($_system['media_manager']['default_image_sizes'], (array)$_system['media_manager']['image_sizes']);
-
-	//função que cria os thumbs da imagem em questão
-	function resampleThumbs($file_name, $file_path, $params = array())
-	{
-		require_once(DBO_PATH."/core/classes/simpleimage.php");
-		global $_system;
-		extract($params);
-
-		$image_info = getimagesize($file_path.$file_name);
-
-		foreach($_system['media_manager']['image_sizes'] as $slug => $data)
-		{
-			//pula a miniatura no caso específico
-			if($aplicar_crop == 'todos_menos_miniatura' && $slug == 'small') continue;
-
-			//faz somente a minutura no caso específico
-			if($aplicar_crop == 'miniatura' && $slug != 'small') continue;
-
-			$image = new SimpleImage();
-			$image->load($file_path.$file_name);
-			if($image_info[0] >= $image_info[1]) {
-				$image->resizeToWidth($data['max_width']);
-			} else {
-				$image->resizeToHeight($data['max_height']);
-			}
-			$caminho_arquivo = $file_path.'thumbs/'.$slug."-".preg_replace('/-_-dbomediamanagertempkey-_-[0-9]+$/is', '', $file_name);
-			$image->save($caminho_arquivo, $data['quality']); //salvando o arquivo no server
-		}
-	}
+	
 
 	if(!secureUrl())
 	{
@@ -68,7 +39,7 @@
 		$new_file_name = dboFileName($uploaded_file_data[name], array('file_path' => $file_path));
 
 		/*$file_data = exif_read_data($uploaded_file_data[tmp_name]);
-		
+
 		//tenta extrair as informações do exif do arquivo.
 		//============= DEBUG ================
 		echo "<PRE>";
@@ -135,7 +106,7 @@
 	//fazendo o crop da imagem
 	elseif($_GET['action'] == 'do-crop')
 	{
-		
+
 		//gera uma chave temporária caso o crop vá ser aplicado somente na miniatura.
 		$temp_key = $_POST['aplicar_crop'] == 'miniatura' ? '-_-dbomediamanagertempkey-_-'.time().rand(1,1000) : '';
 
@@ -196,7 +167,7 @@
 		if(strlen(trim($temp_key))) @unlink($file_path.$_GET['file'].$temp_key);
 
 		$json_result['eval'] = 'stopCrop(); setTimeout(function(){ reloadAfterCrop(); }, 100)';
-		
+
 	}
 	elseif($_GET['action'] == 'update-media-image')
 	{

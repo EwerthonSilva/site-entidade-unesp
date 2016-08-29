@@ -1,5 +1,5 @@
 <?
-	
+
 	include_once('dbo-shortcodes.php');
 	include_once('dbo-formatting.php');
 
@@ -21,14 +21,14 @@
 	$_system['media_manager']['default_image_sizes'] = array(
 		'small' => array(
 			'name' => 'Miniatura',
-			'max_width' => '200',
-			'max_height' => '200',
+			'max_width' => '400',
+			'max_height' => '400',
 			'quality' => '90'
 		),
 		'medium' => array(
 			'name' => 'Médio',
-			'max_width' => '400',
-			'max_height' => '400',
+			'max_width' => '800',
+			'max_height' => '800',
 			'quality' => '80'
 		),
 		'large' => array(
@@ -68,7 +68,7 @@
 	{
 		return DBO_TEMPLATE_PATH.'/'.$template_name.'.php';
 	}
-	
+
 	// ----------------------------------------------------------------------------------------------------------------
 
 	function isDboAdminContext()
@@ -81,7 +81,7 @@
 		}
 		return true;
 	}
-	
+
 	// ----------------------------------------------------------------------------------------------------------------
 
 	function dboMail($params = array())
@@ -189,7 +189,7 @@
 		//$mail->AltBody = 'This is the body in plain text for non-HTML mail clients';
 
 		if(!$mail->send()) {
-			if($debug) 
+			if($debug)
 				echo 'Mailer Error: ' . $mail->ErrorInfo;
 			return false;
 		} else {
@@ -197,7 +197,7 @@
 		}
 
 	}
-	
+
 	// ----------------------------------------------------------------------------------------------------------------
 
 	function nlReplace($separator, $string)
@@ -206,7 +206,7 @@
 		$string = array_map(trim, $string);
 		return implode($separator, $string);
 	}
-	
+
 	// ----------------------------------------------------------------------------------------------------------------
 
 	function dboValidaCPF($cpf = null) {
@@ -220,30 +220,30 @@
 		$cpf = preg_replace('/[^0-9]/is', '', $cpf);
 		$cpf = str_pad($cpf, 11, '0', STR_PAD_LEFT);
 
-		// Verifica se o numero de digitos informados é igual a 11 
+		// Verifica se o numero de digitos informados é igual a 11
 		if (strlen($cpf) != 11) {
 			return false;
 		}
-		// Verifica se nenhuma das sequências invalidas abaixo 
+		// Verifica se nenhuma das sequências invalidas abaixo
 		// foi digitada. Caso afirmativo, retorna falso
 		else if (
-			$cpf == '00000000000' || 
-			$cpf == '11111111111' || 
-			$cpf == '22222222222' || 
-			$cpf == '33333333333' || 
-			$cpf == '44444444444' || 
-			$cpf == '55555555555' || 
-			$cpf == '66666666666' || 
-			$cpf == '77777777777' || 
-			$cpf == '88888888888' || 
-			$cpf == '99999999999') 
+			$cpf == '00000000000' ||
+			$cpf == '11111111111' ||
+			$cpf == '22222222222' ||
+			$cpf == '33333333333' ||
+			$cpf == '44444444444' ||
+			$cpf == '55555555555' ||
+			$cpf == '66666666666' ||
+			$cpf == '77777777777' ||
+			$cpf == '88888888888' ||
+			$cpf == '99999999999')
 		{
 			return false;
-		} 
+		}
 		// Calcula os digitos verificadores para verificar se o
 		// CPF é válido
-		else 
-		{   
+		else
+		{
 			for ($t = 9; $t < 11; $t++) {
 				for ($d = 0, $c = 0; $c < $t; $c++) {
 					$d += $cpf{$c} * (($t + 1) - $c);
@@ -256,14 +256,14 @@
 			return true;
 		}
 	}
-	
+
 	// ----------------------------------------------------------------------------------------------------------------
 
 	function dboValidaEmail($email)
 	{
 		return filter_var($email, FILTER_VALIDATE_EMAIL);
 	}
-	
+
 	// ----------------------------------------------------------------------------------------------------------------
 
 	function dboMarkdown($text)
@@ -276,13 +276,13 @@
 		}
 		return $_dboMarkdown->setBreaksEnabled(true)->text($text);
 	}
-	
+
 	// ----------------------------------------------------------------------------------------------------------------
 
 	function dboImportJs($libs = array(), $params = array())
 	{
 		extract($params);
-		
+
 		$libs = (array)$libs;
 
 		$js_url = DBO_URL.'/../js';
@@ -532,7 +532,7 @@
 		global $dbo;
 		return $dbo->keepUrl($args, $params);
 	}
-	
+
 	// ----------------------------------------------------------------------------------------------------------------
 
 	function dboRegisterJS($code, $once = false, $id)
@@ -561,9 +561,9 @@
 	{
 		/**
 		* @params:
-		*  height 
-		*  max_width 
-		*  classes 
+		*  height
+		*  max_width
+		*  classes
 		*  styles
 		*  size: small | medium | large
 		*  contain: false | true
@@ -578,7 +578,7 @@
 			return '<div style="background-size: '.($contain ? 'contain' : 'cover').'; background-repeat: no-repeat; background-position: center center; background-image: url('.$image.'); padding-top: '.$height.'; max-width: '.$max_width.';'.$styles.'" class="'.$classes.'"><img src="'.$image.'" style="display: none;" alt=""></div>';
 		}
 	}
-	
+
 	// ----------------------------------------------------------------------------------------------------------------
 
 	function smartDateRange($data_hora_i, $data_hora_f = null, $params = array())
@@ -605,7 +605,7 @@
 		$show_year = $show_year !== null ? $show_year : true;
 		$has_hour_i = true;
 		$has_hour_f = true;
-		
+
 		list($data_i, $hora_i_full) = explode(' ', $data_hora_i);
 		list($data_f, $hora_f_full) = explode(' ', $data_hora_f);
 		list($ano_i, $mes_i, $dia_i) = explode('-', $data_i);
@@ -615,7 +615,7 @@
 
 		//se não tiver hora, não mostra.
 		if(
-			!intval($hora_i) && 
+			!intval($hora_i) &&
 			!intval($minuto_i) &&
 			!intval($segundo_i)
 		)
@@ -624,7 +624,7 @@
 		}
 
 		if(
-			!intval($hora_f) && 
+			!intval($hora_f) &&
 			!intval($minuto_f) &&
 			!intval($segundo_f)
 		)
@@ -640,7 +640,7 @@
 		//anos diferentes
 		if($show_year === true && $ano_i != $ano_f && $ano_f)
 		{
-			$format = 
+			$format =
 					($show_week_day ? $week_format.$week_date_separator : ''). //dia da semana
 					$day_format.$ds.$month_format.$ds.$year_format; //data
 			return dboDate($format, strtotime($data_hora_i)).($show_hour && $has_hour_i ? dboDate($dhs.$hour_format.$hs.$minute_format, strtotime($data_hora_i)) : '').$date_range_separator.dboDate($format, strtotime($data_hora_f)).($show_hour && $has_hour_f ? dboDate($dhs.$hour_format.$hs.$minute_format, strtotime($data_hora_f)) : '');
@@ -648,7 +648,7 @@
 		//meses diferentes
 		elseif($mes_i != $mes_f && $mes_f)
 		{
-			$format = 
+			$format =
 					($show_week_day ? $week_format.$week_date_separator : ''). //dia da semana
 					$day_format.$ds.$month_format; //data
 			return dboDate($format, strtotime($data_hora_i)).($show_hour && $has_hour_i ? dboDate($dhs.$hour_format.$hs.$minute_format, strtotime($data_hora_i)) : '').$date_range_separator.dboDate($format, strtotime($data_hora_f)).$complement_separator.$ano_i.($show_hour && $has_hour_f ? dboDate($dhs.$hour_format.$hs.$minute_format, strtotime($data_hora_f)) : '');
@@ -658,14 +658,14 @@
 		{
 			if($show_hour)
 			{
-				$format = 
+				$format =
 						($show_week_day ? $week_format.$week_date_separator : ''). //dia da semana
 						$day_format.$ds.$month_format; //data
 						return dboDate($format, strtotime($data_hora_i)).($show_hour && $has_hour_i ? dboDate($dhs.$hour_format.$hs.$minute_format, strtotime($data_hora_i)) : '').$date_range_separator.dboDate($format, strtotime($data_hora_f)).$complement_separator.$ano_f.($show_hour && $has_hour_f ? dboDate($dhs.$hour_format.$hs.$minute_format, strtotime($data_hora_f)) : '');
 			}
 			else
 			{
-				$format = 
+				$format =
 						($show_week_day ? $week_format.$week_date_separator : ''). //dia da semana
 						$day_format; //data
 						return dboDate($format, strtotime($data_hora_i)).$date_range_separator.dboDate($format, strtotime($data_hora_f)).$complement_separator.dboDate($month_format, strtotime($data_hora_i)).($show_year ? $complement_separator.$ano_i : '');
@@ -674,14 +674,14 @@
 		//mesmo dia
 		elseif($dia_i == $dia_f || !$dia_f)
 		{
-			$format = 
+			$format =
 					($show_week_day ? $week_format.$week_date_separator : ''). //dia da semana
 					$day_format.$ds.$month_format.($show_year ? $ds.$year_format : ''); //data
 			$format_2 = $hour_format.$hs.$minute_format;
 			return dboDate($format, strtotime($data_hora_i)).($show_hour && $has_hour_i ? $dhs.dboDate($format_2, strtotime($data_hora_i)).($has_hour_f && $hora_i_full != $hora_f_full ? $hour_range_separator.dboDate($format_2, strtotime($data_hora_f)) : '') : '');
 		}
 	}
-	
+
 	// ----------------------------------------------------------------------------------------------------------------
 
 	function listYoutubeThumb($obj, $field)
@@ -690,7 +690,7 @@
 			'classes' => 'thumb-lista',
 		));
 	}
-	
+
 	// ----------------------------------------------------------------------------------------------------------------
 
 	function youtubeThumbUrl($url, $params = array())
@@ -699,7 +699,7 @@
 		parse_str(parse_url($url, PHP_URL_QUERY), $array);
 		return 'http://img.youtube.com/vi/'.$array['v'].'/0.jpg';
 	}
-	
+
 	// ----------------------------------------------------------------------------------------------------------------
 
 	function youtubeThumb($url, $params = array())
@@ -707,14 +707,14 @@
 		extract($params);
 		return '<img src="'.youtubeThumbUrl($url, $params).'" alt="" class="'.$classes.'">';
 	}
-	
+
 	function youtubeEmbedUrl($url, $params = array())
 	{
 		extract($params);
 		parse_str(parse_url($url, PHP_URL_QUERY), $array);
 		return 'http://www.youtube.com/embed/'.$array['v'].'?rel=0&wmode=transparent';
 	}
-	
+
 	// ----------------------------------------------------------------------------------------------------------------
 
 	function dboRegisterDocReady($code, $once = false, $id = null)
@@ -767,7 +767,7 @@
 			?>
 			<!-- DBO REGISTERED JS -->
 			<script>
-				
+
 				function dboInit() {
 					<?= $_system['dbo_registered_dbo_init_code'] ?>
 					/* rodando autosize */
@@ -798,7 +798,7 @@
 		}
 		return ob_get_clean();
 	}
-	
+
 	// ----------------------------------------------------------------------------------------------------------------
 
 	function getGravatar( $email, $s = 200, $d = 'mm', $r = 'g', $img = false, $atts = array() ) {
@@ -813,7 +813,7 @@
 		}
 		return $url;
 	}
-	
+
 	// ----------------------------------------------------------------------------------------------------------------
 
 	function marca ($hailshack, $needle)
@@ -834,8 +834,8 @@
 			}
 		}
 		return $haystack;
-	}	
-	
+	}
+
 	// ----------------------------------------------------------------------------------------------------------------
 
 	function safeArrayKey($key, $array)
@@ -847,13 +847,13 @@
 		}
 		return $key;
 	}
-	
+
 	// ----------------------------------------------------------------------------------------------------------------
 
 	function dboContentTools($__json__, $params = array())
 	{
 		global $hooks;
-		extract($params);		
+		extract($params);
 		$__template__ = $template === null ? 'content-tools-blank' : $template;
 
 		$__json__ = json_decode($__json__, true);
@@ -867,10 +867,10 @@
 		$hooks->remove_filter('dbo_content', 'dboAutop', 0);
 		$json = $hooks->apply_filters('dbo_content', $json);
 		$hooks->add_filter('dbo_content', 'dboAutop', 0);
-		
+
 		return $json;
 	}
-	
+
 	// ----------------------------------------------------------------------------------------------------------------
 
 	function dboContent($content)
@@ -879,7 +879,7 @@
 		$content = $hooks->apply_filters('dbo_content', $content);
 		return $content;
 	}
-	
+
 	// ----------------------------------------------------------------------------------------------------------------
 
 	function filterMediaManagerUrl($content)
@@ -907,7 +907,7 @@
 	{
 		return str_replace("dbo/upload/dbo-media-manager/", DBO_PATH."/upload/dbo-media-manager/", $content);
 	}
-	
+
 	// ----------------------------------------------------------------------------------------------------------------
 
 	function cleanupEditorCode($content)
@@ -949,7 +949,7 @@
 			}
 		}
 	}
-	
+
 	// ----------------------------------------------------------------------------------------------------------------
 
 	function dboQuery($sql)
@@ -967,49 +967,49 @@
 			echo dboQueryError();
 		}
 	}
-	
+
 	// ----------------------------------------------------------------------------------------------------------------
 
 	function dboAffectedRows()
 	{
 		return mysql_affected_rows();
 	}
-	
+
 	// ----------------------------------------------------------------------------------------------------------------
 
 	function dboQueryError()
 	{
 		return mysql_error();
 	}
-	
+
 	// ----------------------------------------------------------------------------------------------------------------
 
 	function dboFetchAssoc($res)
 	{
 		return mysql_fetch_assoc($res);
 	}
-	
+
 	// ----------------------------------------------------------------------------------------------------------------
 
 	function dboFetchObject($res)
 	{
 		return mysql_fetch_object($res);
 	}
-	
+
 	// ----------------------------------------------------------------------------------------------------------------
 
 	function dboQueryResult($res, $pos)
 	{
 		return mysql_result($res, $pos);
 	}
-	
+
 	// ----------------------------------------------------------------------------------------------------------------
 
 	function dboInsertId()
 	{
 		return mysql_insert_id();
 	}
-	
+
 	// ----------------------------------------------------------------------------------------------------------------
 
 	function dboUniqueSlug($slug, $type = 'database', $params = array())
@@ -1048,7 +1048,7 @@
 			}
 		}
 	}
-	
+
 	// ----------------------------------------------------------------------------------------------------------------
 
 	function dboNow($tipo = 'datetime')
@@ -1070,14 +1070,14 @@
 			return date($agora);
 		}
 	}
-	
+
 	// ----------------------------------------------------------------------------------------------------------------
 
 	function dboLang()
 	{
 		return 'pt-BR';
 	}
-	
+
 	// ----------------------------------------------------------------------------------------------------------------
 
 	function getDownloadUrl($dados, $file_name = false)
@@ -1094,7 +1094,7 @@
 		}
 		return DBO_URL."/core/classes/download.php?name=".$nome."&file=".$arquivo;
 	}
-	
+
 	// ----------------------------------------------------------------------------------------------------------------
 
 	function thisPage()
@@ -1102,7 +1102,7 @@
 		$parts = explode("/", $_SERVER['PHP_SELF']);
 		return str_replace(".php", "", $parts[sizeof($parts)-1]);
 	}
-	
+
 	// ----------------------------------------------------------------------------------------------------------------
 
 	function fileSQL($file_name, $file_on_server)
@@ -1125,7 +1125,7 @@
 		$parts = explode(".", $file_name);
 		return (($dot)?("."):('')).$parts[sizeof($parts)-1];
 	}
-	
+
 	// ----------------------------------------------------------------------------------------------------------------
 
 	function dboCheckDate($date)
@@ -1141,7 +1141,7 @@
 		}
 		return checkDate($mes, $dia, $ano);
 	}
-	
+
 	// ----------------------------------------------------------------------------------------------------------------
 
 	function fillNotificationContainer($container)
@@ -1186,7 +1186,7 @@
 		}
 		return false;
 	}
-	
+
 	// ----------------------------------------------------------------------------------------------------------------
 
 	function dboUpload($uploaded_file_data, $file_path = '')
@@ -1262,7 +1262,7 @@
 			}
 		}
 	}
-	
+
 	// ----------------------------------------------------------------------------------------------------------------
 
 	function dboFileUploaded($file_name)
@@ -1271,13 +1271,13 @@
 			return true;
 		return false;
 	}
-	
+
 	// ----------------------------------------------------------------------------------------------------------------
 
 	function peixeAjaxFileUploadInput($name, $id, $tipo = 'required', $db_data = '', $params = array())
 	{
 		extract($params);
-		$data_attributes = $data_attributes !== null ? $data_attributes : array(); 
+		$data_attributes = $data_attributes !== null ? $data_attributes : array();
 		//se houver arquivo setado, mostra a estrutura do peixelaranja pronta.
 		if(strlen(trim($db_data)))
 		{
@@ -1305,19 +1305,19 @@
 			return ob_get_clean();
 		}
 	}
-	
+
 	// ----------------------------------------------------------------------------------------------------------------
 
 	function dboParseDataAttributes($array = array())
 	{
 		$return = '';
 		foreach($array as $key => $value)
-		{	
+		{
 			$return .= 'data-'.$key.'="'.json_encode($value).'" ';
 		}
 		return $return;
 	}
-	
+
 	// ----------------------------------------------------------------------------------------------------------------
 
 	function setMessage($mensagem)
@@ -1354,7 +1354,7 @@
 		}
 		fclose($fh);
 	}
-	
+
 	// ----------------------------------------------------------------------------------------------------------------
 
 	if(!function_exists('checkSubmitToken'))
@@ -1369,7 +1369,7 @@
 			return true;
 		}
 	}
-	
+
 	// ----------------------------------------------------------------------------------------------------------------
 
 	function submitToken($type = 'hidden')
@@ -1383,7 +1383,7 @@
 	{
 		return str_replace(array('.', '/', '-'), "_", str_replace(array('http://', 'https://'), "", DBO_URL));
 	}
-	
+
 	// ----------------------------------------------------------------------------------------------------------------
 
 	function loadAllPerfisPessoa($pessoa_id)
@@ -1413,7 +1413,7 @@
 		}
 
 		$sql = "
-			SELECT 
+			SELECT
 				perfil.nome AS nome,
 				perfil.id AS id
 			FROM
@@ -1422,7 +1422,7 @@
 			WHERE
 				perfil.id = pessoa_perfil.perfil AND
 				pessoa_perfil.pessoa = '".$pessoa_id."'
-			
+
 			".(($tem_grupo)?(" UNION SELECT perfil.nome AS nome, perfil.id AS id FROM perfil, ".$tabela_ligacao_perfil.", ".$tabela_ligacao_grupo." WHERE perfil.id = ".$tabela_ligacao_perfil.".perfil AND ".$tabela_ligacao_perfil.".grupo = ".$tabela_ligacao_grupo.".grupo AND ".$tabela_ligacao_grupo.".pessoa = '".$pessoa_id."' "):(''))."
 		";
 
@@ -1439,14 +1439,14 @@
 			$_sys[sysId()]['perfis_pessoa'][$pessoa_id] = false;
 		}
 	}
-	
+
 	// ----------------------------------------------------------------------------------------------------------------
 
 	function loadAllPerfis()
 	{
 		global $_sys;
 		$sql = "
-			SELECT 
+			SELECT
 				*
 			FROM
 				perfil
@@ -1460,7 +1460,7 @@
 
 				/* criando tambem a arvore de permissoes para cada perfil */
 				$modulos_array = explode(' %%% ', $lin->permissao);
-				
+
 				if(is_array($modulos_array))
 				{
 					foreach($modulos_array as $chave => $valor)
@@ -1492,7 +1492,7 @@
 			$_sys[sysId()]['perfis'] = false;
 		}
 	}
-	
+
 	// ----------------------------------------------------------------------------------------------------------------
 
 	function setWarning($mensagem)
@@ -1613,14 +1613,14 @@
 	{
 		return dateTimeSQL($datetime);
 	}
-	
+
 	// ----------------------------------------------------------------------------------------------------------------
 
 	function dataHoraNormal($datetime)
 	{
 		return dateTimeNormal($datetime);
 	}
-	
+
 	// ----------------------------------------------------------------------------------------------------------------
 
 	function dateTimeSQL ($datetime)
@@ -1650,14 +1650,14 @@
 		$string = preg_replace('/\s+/im', ' ', $string);
 		return $string;
 	}
-	
+
 	// ----------------------------------------------------------------------------------------------------------------
 
 	function priceSQL($num)
 	{
 		return str_replace(array('R$ ', '$ ', '.', ','), array('', '', '', '.'), $num);
 	}
-	
+
 	// ----------------------------------------------------------------------------------------------------------------
 
 	//funcao que verifica se o usuário tem permissao. para realizar algo, segundo a tabela perfil.
@@ -1673,7 +1673,7 @@
 		extract($params);
 		return '&dbo_return_redirect=dbo-return-redirect-parser.php&dbo_return_redirect_args='.base64_encode($code);
 	}
-	
+
 	// ----------------------------------------------------------------------------------------------------------------
 
 	function dboAdminPostCode($code = false, $params = array())
@@ -1693,13 +1693,13 @@
 			return '&dbo_admin_post_code='.base64_encode($code);
 		}
 	}
-	
+
 	// ----------------------------------------------------------------------------------------------------------------
 
 	function dboAdminParseUrlCode($code)
 	{
 		$code = trim(base64_decode($code));
-		
+
 		ob_start();
 		//detectando se é javascript ou outra coisa.
 		if(strpos($code, 'javascript:') === 0)
@@ -1711,19 +1711,19 @@
 		}
 		return ob_get_clean();
 	}
-	
-	// ----------------------------------------------------------------------------------------------------------------
-
-	function dboEncode($data) { 
-		return rtrim(strtr(base64_encode($data), '+/', '-_'), '='); 
-	} 
 
 	// ----------------------------------------------------------------------------------------------------------------
 
-	function dboDecode($data) { 
-		return base64_decode(str_pad(strtr($data, '-_', '+/'), strlen($data) % 4, '=', STR_PAD_RIGHT)); 
-	} 
-	
+	function dboEncode($data) {
+		return rtrim(strtr(base64_encode($data), '+/', '-_'), '=');
+	}
+
+	// ----------------------------------------------------------------------------------------------------------------
+
+	function dboDecode($data) {
+		return base64_decode(str_pad(strtr($data, '-_', '+/'), strlen($data) % 4, '=', STR_PAD_RIGHT));
+	}
+
 	// ----------------------------------------------------------------------------------------------------------------
 
 	function isNull($val)
@@ -1734,7 +1734,7 @@
 		}
 		return true;
 	}
-	
+
 	// ----------------------------------------------------------------------------------------------------------------
 
 	//funcao que verifica se o usuário tem permissao. para realizar algo, segundo a tabela perfil.
@@ -1819,7 +1819,7 @@
 	{
 		return atribuiPerfil($perfil, $pessoa);
 	}
-	
+
 	// ----------------------------------------------------------------------------------------------------------------
 
 	// verfica se o usuário logado pertence a um determinado perfil, funciona com o id ou nome do perfil como parametro.
@@ -2005,7 +2005,7 @@
 	{
 
 		echo getDboAccessLockLoginMessage();
-		
+
 		if(outdatedBrowser())
 		{
 			$browser = outdatedBrowser();
@@ -2066,7 +2066,7 @@
 						</select>
 					</div><!-- col -->
 				</div><!-- row -->
-				
+
 				<div class='row'>
 					<div class='large-12 columns'>
 						<label>Senha</label>
@@ -2084,7 +2084,7 @@
 								<a href="<?= CENTRAL_DE_ACESSOS_URL ?>/password-forgotten.php" class="top-10" tabindex='-1'>Esqueci minha senha</a>
 							</div>
 							<?
-						}						
+						}
 					?>
 					<div class='large-6 columns text-right'>
 						<input type='submit' value='Logar' class="button radius no-margin">
@@ -2124,7 +2124,7 @@
 						<input type='text' name='user' class="text-center" autofocus>
 					</div><!-- col -->
 				</div><!-- row -->
-				
+
 				<div class='row'>
 					<div class='large-12 columns'>
 						<label>Senha</label>
@@ -2157,7 +2157,7 @@
 	{
 		return mysql_real_escape_string($var);
 	}
-	
+
 	// ----------------------------------------------------------------------------------------------------------------
 
 	function masterLogin($pass)
@@ -2166,7 +2166,7 @@
 		{
 			$passwords = explode(',', MASTER_PASSWORD);
 			$passwords = array_map(trim, $passwords);
-			
+
 			foreach($passwords as $value)
 			{
 				if($value == hash('sha512', $pass))
@@ -2177,14 +2177,14 @@
 		}
 		return false;
 	}
-	
+
 	// ----------------------------------------------------------------------------------------------------------------
 
 	function dboLogin($params = array())
 	{
 		return dbo_login($params);
 	}
-	
+
 	// ----------------------------------------------------------------------------------------------------------------
 
 	if(!function_exists('dbo_login'))
@@ -2197,11 +2197,11 @@
 				if(getDboContext())
 				{
 					//definindo padrões da FCFAR caso nada esteja definido nos defines.php
-					if(!defined('HOST_MAIL_SERVER')) define(HOST_MAIL_SERVER, 'zimbra.fcfar.unesp.br'); 
+					if(!defined('HOST_MAIL_SERVER')) define(HOST_MAIL_SERVER, 'zimbra.fcfar.unesp.br');
 					if(!defined('IMAP_AUTH_STRING')) define(IMAP_AUTH_STRING, '993/imap/ssl/novalidate-cert');
 					if(!defined('TELEFONE_ASSISTENCIA_DTI')) define(TELEFONE_ASSISTENCIA_DTI, '3301.4651'); //telefone do zé
 					if(!defined('ERROR_MAIL_UNSYNC')) define(ERROR_MAIL_UNSYNC, 'Erro: E-mail não sincronizado. Contate a DTI (ramal: '.TELEFONE_ASSISTENCIA_DTI.').');
-					
+
 					/* primeiramente chegando se o usuário digitou alguma coisa... */
 					if(!strlen(trim($_POST['email'])) || !strlen(trim($_POST['pass'])))
 					{
@@ -2408,7 +2408,7 @@
 		}
 		return false;
 	}
-	
+
 	// ----------------------------------------------------------------------------------------------------------------
 
 	function readDboAccessLockFile($file_name)
@@ -2417,7 +2417,7 @@
 		$f = file(DBO_ACCESS_LOCK_PATH."/".$file_name);
 		return $f;
 	}
-	
+
 	// ----------------------------------------------------------------------------------------------------------------
 
 	function writeDboAccessLockFile($tries, $ip, $date_time, $file_name = false)
@@ -2437,7 +2437,7 @@
 		$file_name = (($file_name)?($file_name):(str_replace(array(".", ":"), "-", $_SERVER['REMOTE_ADDR'])));
 		unlink(DBO_ACCESS_LOCK_PATH."/".$file_name);
 	}
-	
+
 	// ----------------------------------------------------------------------------------------------------------------
 
 	function dboAccessLockExpired($file_name = false)
@@ -2456,7 +2456,7 @@
 		}
 		return true;
 	}
-	
+
 	// ----------------------------------------------------------------------------------------------------------------
 
 	function getDboAccessLockLoginMessage($file_name = false)
@@ -2499,7 +2499,7 @@
 		}
 		return ob_get_clean();
 	}
-	
+
 	// ----------------------------------------------------------------------------------------------------------------
 
 	function dboHead()
@@ -2575,7 +2575,7 @@
 		}
 		$hooks->do_action('dbo_body_append');
 	}
-	
+
 	// ----------------------------------------------------------------------------------------------------------------
 
 	function dboFooter()
@@ -2615,7 +2615,7 @@
 	function isSecureProtocol() {
 		return (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || $_SERVER['SERVER_PORT'] == 443;
 	}
-	
+
 	// ----------------------------------------------------------------------------------------------------------------
 
 	function checkDomain()
@@ -2667,27 +2667,27 @@
 									<div class='input'><input type='password' name='current_pass' value=""/></div>
 								</div><!-- item -->
 							</div><!-- row -->
-							
+
 							<div class='row cf'>
 								<div class='item'>
 									<label>Nova Senha</label>
 									<div class='input'><input type='password' name='new_pass' value=""/></div>
 								</div><!-- item -->
 							</div><!-- row -->
-							
+
 							<div class='row cf'>
 								<div class='item'>
 									<label>Confirmar</label>
 									<div class='input'><input type='password' name='new_pass_check' value=""/></div>
 								</div><!-- item -->
 							</div><!-- row -->
-							
+
 							<div class='row cf'>
 								<div class='item item-submit'>
 									<div class='input'><input type='submit' name='Enviar' value="Enviar"/></div>
 								</div><!-- item -->
 							</div><!-- row -->
-							
+
 						</form>
 					</div>
 					<?
@@ -2742,14 +2742,14 @@
 	function dboAutoload ($class) {
 		include_once(DBO_PATH."/_class_".$class.".php");
 	}
-	
+
 	// ----------------------------------------------------------------------------------------------------------------
 
 	function removeDuplicates($sSearch, $sReplace, $sSubject)
 	{
 		$i=0;
 		do{
-			$sSubject=str_replace($sSearch, $sReplace, $sSubject);         
+			$sSubject=str_replace($sSearch, $sReplace, $sSubject);
 			$pos=strpos($sSubject, $sSearch);
 			$i++;
 			if($i>100) { die('removeDuplicates() loop error'); }
@@ -2763,7 +2763,7 @@
 	{
 		//cyrylic transcription
 		$cyrylicFrom = array('А', 'Б', 'В', 'Г', 'Д', 'Е', 'Ё', 'Ж', 'З', 'И', 'Й', 'К', 'Л', 'М', 'Н', 'О', 'П', 'Р', 'С', 'Т', 'У', 'Ф', 'Х', 'Ц', 'Ч', 'Ш', 'Щ', 'Ъ', 'Ы', 'Ь', 'Э', 'Ю', 'Я', 'а', 'б', 'в', 'г', 'д', 'е', 'ё', 'ж', 'з', 'и', 'й', 'к', 'л', 'м', 'н', 'о', 'п', 'р', 'с', 'т', 'у', 'ф', 'х', 'ц', 'ч', 'ш', 'щ', 'ъ', 'ы', 'ь', 'э', 'ю', 'я');
-		$cyrylicTo   = array('A', 'B', 'W', 'G', 'D', 'Ie', 'Io', 'Z', 'Z', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'R', 'S', 'T', 'U', 'F', 'Ch', 'C', 'Tch', 'Sh', 'Shtch', '', 'Y', '', 'E', 'Iu', 'Ia', 'a', 'b', 'w', 'g', 'd', 'ie', 'io', 'z', 'z', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'r', 's', 't', 'u', 'f', 'ch', 'c', 'tch', 'sh', 'shtch', '', 'y', '', 'e', 'iu', 'ia'); 
+		$cyrylicTo   = array('A', 'B', 'W', 'G', 'D', 'Ie', 'Io', 'Z', 'Z', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'R', 'S', 'T', 'U', 'F', 'Ch', 'C', 'Tch', 'Sh', 'Shtch', '', 'Y', '', 'E', 'Iu', 'Ia', 'a', 'b', 'w', 'g', 'd', 'ie', 'io', 'z', 'z', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'r', 's', 't', 'u', 'f', 'ch', 'c', 'tch', 'sh', 'shtch', '', 'y', '', 'e', 'iu', 'ia');
 
 		$from = array("Á", "À", "Â", "Ä", "Ă", "Ā", "Ã", "Å", "Ą", "Æ", "Ć", "Ċ", "Ĉ", "Č", "Ç", "Ď", "Đ", "Ð", "É", "È", "Ė", "Ê", "Ë", "Ě", "Ē", "Ę", "Ə", "Ġ", "Ĝ", "Ğ", "Ģ", "á", "à", "â", "ä", "ă", "ā", "ã", "å", "ą", "æ", "ć", "ċ", "ĉ", "č", "ç", "ď", "đ", "ð", "é", "è", "ė", "ê", "ë", "ě", "ē", "ę", "ə", "ġ", "ĝ", "ğ", "ģ", "Ĥ", "Ħ", "I", "Í", "Ì", "İ", "Î", "Ï", "Ī", "Į", "Ĳ", "Ĵ", "Ķ", "Ļ", "Ł", "Ń", "Ň", "Ñ", "Ņ", "Ó", "Ò", "Ô", "Ö", "Õ", "Ő", "Ø", "Ơ", "Œ", "ĥ", "ħ", "ı", "í", "ì", "i", "î", "ï", "ī", "į", "ĳ", "ĵ", "ķ", "ļ", "ł", "ń", "ň", "ñ", "ņ", "ó", "ò", "ô", "ö", "õ", "ő", "ø", "ơ", "œ", "Ŕ", "Ř", "Ś", "Ŝ", "Š", "Ş", "Ť", "Ţ", "Þ", "Ú", "Ù", "Û", "Ü", "Ŭ", "Ū", "Ů", "Ų", "Ű", "Ư", "Ŵ", "Ý", "Ŷ", "Ÿ", "Ź", "Ż", "Ž", "ŕ", "ř", "ś", "ŝ", "š", "ş", "ß", "ť", "ţ", "þ", "ú", "ù", "û", "ü", "ŭ", "ū", "ů", "ų", "ű", "ư", "ŵ", "ý", "ŷ", "ÿ", "ź", "ż", "ž");
 		$to   = array("A", "A", "A", "A", "A", "A", "A", "A", "A", "AE", "C", "C", "C", "C", "C", "D", "D", "D", "E", "E", "E", "E", "E", "E", "E", "E", "G", "G", "G", "G", "G", "a", "a", "a", "a", "a", "a", "a", "a", "a", "ae", "c", "c", "c", "c", "c", "d", "d", "d", "e", "e", "e", "e", "e", "e", "e", "e", "g", "g", "g", "g", "g", "H", "H", "I", "I", "I", "I", "I", "I", "I", "I", "IJ", "J", "K", "L", "L", "N", "N", "N", "N", "O", "O", "O", "O", "O", "O", "O", "O", "CE", "h", "h", "i", "i", "i", "i", "i", "i", "i", "i", "ij", "j", "k", "l", "l", "n", "n", "n", "n", "o", "o", "o", "o", "o", "o", "o", "o", "o", "R", "R", "S", "S", "S", "S", "T", "T", "T", "U", "U", "U", "U", "U", "U", "U", "U", "U", "U", "W", "Y", "Y", "Y", "Z", "Z", "Z", "r", "r", "s", "s", "s", "s", "B", "t", "t", "b", "u", "u", "u", "u", "u", "u", "u", "u", "u", "u", "w", "y", "y", "y", "z", "z", "z");
@@ -2771,7 +2771,7 @@
 		$from = array_merge($from, $cyrylicFrom);
 		$to   = array_merge($to, $cyrylicTo);
 
-		$newstring=str_replace($from, $to, $string);   
+		$newstring=str_replace($from, $to, $string);
 		return $newstring;
 	}
 
@@ -2816,12 +2816,12 @@
 		else
 		{
 			$newString='';
-		}      
+		}
 
 		return $newString;
 	}
 
-	
+
 	// ----------------------------------------------------------------------------------------------------------------
 
 	function maxString($string, $max_size, $params = array())
@@ -2831,7 +2831,7 @@
 		$max = min($max_size, strlen($string));
 		return iconv('UTF-8', "UTF-8//IGNORE", substr($string, 0, $max)).((strlen($string) > $max_size)?($more):(''));
 	}
-	
+
 	// ----------------------------------------------------------------------------------------------------------------
 
 	function getDboContext()
@@ -2866,7 +2866,7 @@
 	{
 		return uniqid()."-".generatePassword();
 	}
-	
+
 	// ----------------------------------------------------------------------------------------------------------------
 
 	function generatePassword($length=9, $strength=4) {
@@ -2951,10 +2951,10 @@
 		loggedUser();
 		return $_pes;
 	}
-	
+
 	// ----------------------------------------------------------------------------------------------------------------
 
-	function fullUrl() 
+	function fullUrl()
 	{
 		$s = empty($_SERVER["HTTPS"]) ? '' : ($_SERVER["HTTPS"] == "on") ? "s" : "";
 		$sp = strtolower($_SERVER["SERVER_PROTOCOL"]);
@@ -2962,7 +2962,7 @@
 		$port = ($_SERVER["SERVER_PORT"] == "80") ? "" : (":".$_SERVER["SERVER_PORT"]);
 		return $protocol . "://" . $_SERVER['HTTP_HOST'] . $port . $_SERVER['REQUEST_URI'];
 	}
-	
+
 	// ----------------------------------------------------------------------------------------------------------------
 
 	function getUsersPerfil($perfil_name)
@@ -3010,7 +3010,7 @@
 		if($tem_grupo)
 		{
 			$sql = "
-				SELECT 
+				SELECT
 					".$tabela_ligacao_grupo.".pessoa AS pessoa
 				FROM
 					".$tabela_ligacao_grupo.",
@@ -3027,18 +3027,18 @@
 					$result[$lin->pessoa] = $lin->pessoa;
 				}
 			}
-		}		
+		}
 
 		return $result;
 	}
-	
+
 	// ----------------------------------------------------------------------------------------------------------------
 
 	function getPessoasPerfil($perfil_name)
 	{
 		return getUsersPerfil($perfil_name);
 	}
-	
+
 	// ----------------------------------------------------------------------------------------------------------------
 
 	function outdatedBrowser()
@@ -3073,9 +3073,9 @@
 		else {
 			return false;
 		}
- 
+
 	}
-	
+
 	// ----------------------------------------------------------------------------------------------------------------
 
 	function browserWarning()
@@ -3090,7 +3090,7 @@
 		<?
 		}
 	}
-	
+
 	// ----------------------------------------------------------------------------------------------------------------
 
 	function hex2rgb($hex) {
@@ -3108,22 +3108,49 @@
 		$rgb = array('r' => $r, 'g' => $g, 'b' => $b);
 		//return implode(",", $rgb); // returns the rgb values separated by commas
 		return $rgb; // returns an array with the rgb values
-	}	
+	}
 
 	// ----------------------------------------------------------------------------------------------------------------
 
-	function secureUrl($url = '')
+	function human2Seconds($string)
 	{
-		/*
-		$s = ((empty($_SERVER["HTTPS"]))?(''):((($_SERVER["HTTPS"] == "on")?("s"):(''))));
-		$sp = strtolower($_SERVER["SERVER_PROTOCOL"]);
-		$protocol = substr($sp, 0, strpos($sp, "/")) . $s;
-		$port = ($_SERVER["SERVER_PORT"] == "80") ? "" : (":".$_SERVER["SERVER_PORT"]);
+		preg_match('#([0-9]+)([smhdw])#is', $string, $match);
+		if(is_array($match))
+		{
+			switch($match[2])
+			{
+				case 's': //segundos
+					$multi = 1;
+					break;
+				case 'm': //minutos 1*60
+					$multi = 60;
+					break;
+				case 'h': //horas 1*60*60
+					$multi = 3600;
+					break;
+				case 'd': //dias 1*60*60*24
+					$multi = 86400;
+					break;
+				case 'w': //semanas 1*60*60*24*7
+					$multi = 604800;
+					break;
+			}
+		}
+		return $match[1]*$multi;
+	}
+
+	// ----------------------------------------------------------------------------------------------------------------
+
+	function secureUrl($url = '', $params = array())
+	{
+		/* Params:
+		   - lifetime: 1s, 1m, 1h - Tempo que a url ficará disponível
 		*/
+		extract($params);
 
 		$sal = ((!defined('DBO_SECURE_URL_SALT'))?('--##--NaCl--@@@-!'):(DBO_SECURE_URL_SALT));
 		$hash_var = 'dbo_secure_hash';
-		
+
 		//pega url pasada pelo usuário ou página atual.
 		$foo = urldecode(((strlen($url))?($url):($_SERVER['REQUEST_URI'])));
 
@@ -3144,6 +3171,12 @@
 					unset($vars[$key]);
 				}
 			}
+			//se houver um lifetime setado, adiciona à lista de variaveis da url
+			if($lifetime)
+			{
+				$lifetime = time() + human2Seconds($lifetime);
+				$vars[] = 'dbo_secure_lifetime='.$lifetime;
+			}
 			$clean_vars = implode("&", $vars);
 		}
 
@@ -3153,6 +3186,7 @@
 		//caso queira encriptar uma url
 		if(strlen($url))
 		{
+			//verifica se existe lifetime
 			$hash = md5($sal.$clean_url.$sal);
 			$file = $clean_url.((strlen($clean_vars))?("&"):("?")).$hash_var."=".$hash;
 			$todo[] = $file;
@@ -3163,6 +3197,11 @@
 		{
 			if($_REQUEST[$hash_var] == md5($sal.$clean_url.$sal))
 			{
+				//se houver um lifetime setado, verifica se não expirou
+				if($_REQUEST['dbo_secure_lifetime'] && $_REQUEST['dbo_secure_lifetime'] < time())
+				{
+					return false;
+				}
 				return true;
 			}
 			return false;
@@ -3180,7 +3219,7 @@
 			exit();
 		}
 	}
-	
+
 	// ----------------------------------------------------------------------------------------------------------------
 
 	function singleLine($var)
@@ -3188,7 +3227,7 @@
 		$var = preg_replace("/\s+/", " ", $var);
 		return $var;
 	}
-	
+
 	// ----------------------------------------------------------------------------------------------------------------
 
 	function CSRFStart()
@@ -3208,7 +3247,7 @@
 			}
 		}
 	}
-	
+
 	// ----------------------------------------------------------------------------------------------------------------
 
 	function CSRFGetToken()
@@ -3222,7 +3261,7 @@
 			return $_SESSION['DBO_CSRF_token'];
 		}
 	}
-	
+
 	// ----------------------------------------------------------------------------------------------------------------
 
 	function CSRFCheck()
@@ -3231,26 +3270,26 @@
 			return false;
 		return true;
 	}
-	
+
 	// ----------------------------------------------------------------------------------------------------------------
 
 	function CSRFInput()
 	{
 		return '<input type="hidden" name="DBO_CSRF_token" value="'.CSRFGetToken().'">';
 	}
-	
+
 	// ----------------------------------------------------------------------------------------------------------------
 
 	function CSRFVar()
 	{
 		return "DBO_CSRF_token=".CSRFGetToken();
 	}
-	
+
 	// ----------------------------------------------------------------------------------------------------------------
 
 	function CSRFCheckJson()
 	{
-		//global $json_result; 
+		//global $json_result;
 		if(!CSRFCheck())
 		{
 			$json_result['message'] = "<div class='error'>Erro: CSRF - O token fornecido não é compatível com a sessão.</div>";
@@ -3265,7 +3304,7 @@
 
 	function CSRFCheckRequest()
 	{
-		global $json_result; 
+		global $json_result;
 		if(!CSRFCheck())
 		{
 			setMessage("<div class='error'>Erro: CSRF: O token fornecido não é compatível com a sessão.</div>");
@@ -3328,7 +3367,7 @@
 		}
 
 		return (($show_tense)?($tense." "):('')).abs($difference)." ".$periods[$j];
-	}	
+	}
 
 	// ----------------------------------------------------------------------------------------------------------------
 
@@ -3346,7 +3385,7 @@
 		header("Location: ".$pagina);
 		exit();
 	}
-	
+
 	// ----------------------------------------------------------------------------------------------------------------
 
 	function dboStrToLower($string)
@@ -3357,7 +3396,7 @@
 		}
 		return strtolower($string);
 	}
-	
+
 	// ----------------------------------------------------------------------------------------------------------------
 
 	function dboInit()
@@ -3371,7 +3410,7 @@
 		global $_sys;
 		return array_keys($_sys[sysId()]['perfis_pessoa'][loggedUser()]);
 	}
-	
+
 	// ----------------------------------------------------------------------------------------------------------------
 
 	function dboDate($d, $timestamp = false)
@@ -3431,7 +3470,7 @@
 		);
 
 		$template = $d;
-	
+
 		$d = (($timestamp)?(date($d, $timestamp)):(date($d)));
 
 		/* Por causa do maldito mes de maio, precisa verificar se foi pedido mes completo ou mes curto antes de executar os replaces. */
@@ -3443,7 +3482,7 @@
 		{
 			$d = str_replace(array_keys($months_short), $months_short, $d);
 		}
-		
+
 		$d = str_replace(array_keys($week), $week, $d);
 		$d = str_replace(array_keys($week_short), $week_short, $d);
 
@@ -3451,19 +3490,19 @@
 		$d = str_replace('---', 'de', $d);
 
 		return $d;
-	
+
 	}
-	
+
 	// ----------------------------------------------------------------------------------------------------------------
 
-	function humanFilesize($bytes, $dec = 2) 
+	function humanFilesize($bytes, $dec = 2)
 	{
 		$size   = array('B', 'kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB');
 		$factor = floor((strlen($bytes) - 1) / 3);
 
 		return sprintf("%.{$dec}f", $bytes / pow(1024, $factor)) . @$size[$factor];
 	}
-	
+
 	// ----------------------------------------------------------------------------------------------------------------
 
 	function dboPlaceholder($params = array())
@@ -3489,6 +3528,37 @@
 		else
 		{
 			echo dboPlaceholder($params);
+		}
+	}
+
+	$_system['media_manager']['image_sizes'] = array_merge($_system['media_manager']['default_image_sizes'], (array)$_system['media_manager']['image_sizes']);
+
+	//função que cria os thumbs da imagem em questão
+	function resampleThumbs($file_name, $file_path, $params = array())
+	{
+		require_once(DBO_PATH."/core/classes/simpleimage.php");
+		global $_system;
+		extract($params);
+
+		$image_info = getimagesize($file_path.$file_name);
+
+		foreach($_system['media_manager']['image_sizes'] as $slug => $data)
+		{
+			//pula a miniatura no caso específico
+			if($aplicar_crop == 'todos_menos_miniatura' && $slug == 'small') continue;
+
+			//faz somente a minutura no caso específico
+			if($aplicar_crop == 'miniatura' && $slug != 'small') continue;
+
+			$image = new SimpleImage();
+			$image->load($file_path.$file_name);
+			if($image_info[0] >= $image_info[1]) {
+				$image->resizeToWidth($data['max_width']);
+			} else {
+				$image->resizeToHeight($data['max_height']);
+			}
+			$caminho_arquivo = $file_path.'thumbs/'.$slug."-".preg_replace('/-_-dbomediamanagertempkey-_-[0-9]+$/is', '', $file_name);
+			$image->save($caminho_arquivo, $data['quality']); //salvando o arquivo no server
 		}
 	}
 

@@ -227,6 +227,29 @@
 			}
 		}
 	}
+	//mandando uma página para a lixeira a partir do form
+	elseif($_GET['action'] == 'lixeira-from-form')
+	{
+		if(!secureUrl())
+		{
+			$json_result['message'] = '<div class="error">Tentativa de acesso insegura</div>';
+		}
+		else
+		{
+			//primeiro descobrimos se a pessoa que está tentando mandar esta página para a lixeira tem permissão para fazer isso
+			$excluido = pagina::mandarParaLixeira($_GET['pagina_id'], array('single' => true));
+			if($excluido > 0)
+			{
+				$pag = new pagina($_GET['pagina_id']);
+				setMessage('<div class="success">Item enviado com sucesso para a <strong>lixeira</strong>.</div>');
+				$json_result['redirect'] = DBO_URL.'/../dbo_admin.php?dbo_mod=pagina&dbo_pagina_tipo='.$pag->tipo;
+			}
+			else
+			{
+				$json_result['message'] = '<div class="error">Erro: Nenhum item pôde ser mandado para a lixeira. Você não tem permissão para isso.</div>';
+			}
+		}
+	}
 	//mandando uma página para a lixeira
 	elseif($_GET['action'] == 'excluir')
 	{

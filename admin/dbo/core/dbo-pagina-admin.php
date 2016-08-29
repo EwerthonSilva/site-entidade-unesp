@@ -367,7 +367,7 @@
 													if($pag->status != 'rascunho-automatico' && $pag->status != 'lixeira')
 													{
 														?>
-														<a href="#" class="top-9"><i class="fa fa-trash font-14 fa-fw"></i> Lixeira</a>
+														<a href="<?= secureUrl('dbo/core/dbo-pagina-ajax.php?action=lixeira-from-form&pagina_id='.$pag->id.'&'.CSRFVar()) ?>" class="top-9 peixe-json" data-confirm="Tem certeza que deseja enviar este item para a lixeira?"><i class="fa fa-trash font-14 fa-fw"></i> Lixeira</a>
 														<?
 													}
 												?>
@@ -429,6 +429,8 @@
 		</form>
 		<script>
 
+			var form_pagina_dirty = false;
+
 			function closeClosestWrapperPubOption(obj) {
 				obj.closest('.wrapper-pub-option').slideUp('fast', function(){
 					$(this).prev('p').find('.trigger-pub-option').show();
@@ -487,6 +489,7 @@
 				$(document).on('click', '.trigger-form-submit', function(){
 					clicado = $(this);
 					form = $('#form-pagina');
+					form_pagina_dirty = false;
 
 					//atualizando o status dependendo de qual botão clicar.
 					if(clicado.data('status')){
@@ -618,6 +621,24 @@
 					$('#texto').scrollLock();
 				}, 1000);
 
+				$(document).on('input', '#form-pagina :input', function(){
+					form_pagina_dirty = true;
+				});
+
+				$(document).on('change', '#form-pagina input[type="radio"], #form-pagina input[type="checkbox"]', function(){
+					form_pagina_dirty = true;
+				});
+
+				window.addEventListener("beforeunload", function (e) {
+					if(form_pagina_dirty) {
+						var confirmationMessage = 'Parece que você não salvou seu formulário. '
+												+ 'Se você sair em salvar, suas alterações serão perdidas.';
+
+						(e || window.event).returnValue = confirmationMessage; //Gecko + IE
+						return confirmationMessage; //Gecko + Webkit, Safari, Chrome etc.
+					}
+				});
+
 			}) //doc.ready
 		</script>
 		<?
@@ -691,6 +712,7 @@
 		$paginacao = $paginacao === null ? 20 : $paginacao;
 		$order_by = $order_by !== null ? $order_by : 'titulo';
 		$order = $order !== null ? $order : 'ASC';
+		$list_columns = $list_columns !== null ? $list_columns : array('titulo', 'categorias', 'nome_autor', 'data');
 
 		ob_start();
 		?>
@@ -728,8 +750,11 @@
 				?>
 			</div>
 			<div class="large-3 columns text-right">
-				<?= ((hasPermission('insert', 'pagina-'.$tipo) && !$_GET['dbo_new'] && !$_GET['dbo_update'])?('<a href="'.$dbo->keepUrl('dbo_new=1').'" class="button small radius no-margin top-less-15 trigger-nova-pagina"><i class="fa fa-plus"></i> Nov'.$genero.' '.$titulo.'</a>'):('')) ?>
-				<?= (($_GET['dbo_new'] || $_GET['dbo_update'])?('<a href="'.$dbo->keepUrl('!dbo_new&!dbo_update').'" class="button small radius no-margin top-less-15 secondary"><i class="fa fa-arrow-left"></i> Voltar</a>'):('')) ?>
+				<?php
+					$insert_button = '<a href="'.$dbo->keepUrl('dbo_new=1').'" title="Adicionar nov'.$genero.'" class="button small radius no-margin top-less-15 trigger-nova-pagina"><i class="fa fa-plus"></i>[placeholder]</a>';
+				?>
+				<?= ((hasPermission('insert', 'pagina-'.$tipo) && !$_GET['dbo_new'] && !$_GET['dbo_update'])?(str_replace('[placeholder]', ' Nov'.$genero.' '.$titulo.'', $insert_button)):('')) ?>
+				<?= (($_GET['dbo_new'] || $_GET['dbo_update'])?('<a href="'.$dbo->keepUrl('!dbo_new&!dbo_update').'" class="button small radius no-margin top-less-15 secondary"><i class="fa fa-arrow-left"></i> Voltar</a> '.str_replace(array('[placeholder]', ' seco '), array('', ' secondary '), $insert_button)):('')) ?>
 			</div>
 		</div>
 		<hr class="small">
@@ -782,9 +807,54 @@
 								//partes do SQL
 								$sql_part_status = ($_GET['pagina_status'] != 'lixeira')?(($_GET['pagina_status'])?(" AND pag.status = '".dboescape($_GET['pagina_status'])."' "):(" AND pag.status != 'lixeira' ")):(" AND pag.status = 'lixeira' ");
 
-
 								//data
 								$sql_part_data = (!empty($_GET['m']) ? " AND DATE_FORMAT(data, '%Y-%m') = '".dboescape($_GET['m'])."' " : '');
+
+
+								//verificando se a pagina tem modulo extendido
+								if($extension_module)
+								{
+									$ext_columns = array();
+									$ext_columns_joins = array();
+									$ext = new $extension_module();
+									foreach($list_columns as $key => $column)
+									{
+										if(strpos($column, 'ext_') === 0)
+										{
+											$column = preg_replace('/^ext_/is', '', $column);
+											//se for um join, é preciso criar uma lista separada com informações o LEFT JOIN de terceiro nivel no SQL
+											if($ext->isJoin($column))
+											{
+												$ext_columns_joins[$column] = array(
+													'alias' => $ext->getTable().'_join_'.$key,
+													'module' => $ext->getJoinModule($column, false),
+													'key' => $ext->getJoinKey($column),
+													'label' => $ext->getJoinLabel($column),
+												);
+												$ext_columns[$key] = $ext_columns_joins[$column]['alias'].'.'.$ext_columns_joins[$column]['label'];
+											}
+											else
+											{
+												$ext_columns[$key] = $ext->getTable().'.'.$column;
+											}
+										}
+									}
+									//criando colunas mais simples de valor direto, sem joins
+									foreach((array)$ext_columns as $key => $column)
+									{
+										$sql_part_extension_module .= ", ".$column." AS ".$list_columns[$key];
+									}
+									//tratando os joins agora...
+									foreach((array)$ext_columns_joins as $key => $info)
+									{
+										$join_mod = $info['module'];
+										$join_mod = new $join_mod();
+										$sql_part_extension_module_joins .= "
+											LEFT JOIN ".$join_mod->getTable()." ".$info['alias']." ON
+												".$info['alias'].".".$info['key']." = ".$extension_module.".".$key."
+										";
+									}
+								}
 
 								//search
 								if(!empty($_GET['s']))
@@ -793,11 +863,19 @@
 									$terms = explode(" ", $_GET['s']);
 									foreach($terms as $term)
 									{
-										$parts[] = "
-											(pag.titulo LIKE '%".dboescape($term)."%' OR pag.texto LIKE '%".dboescape($term)."%')
-										";
+										$search_conditions = array();
+										//sempre busca no titulo e no texto
+										$search_conditions[] = " pag.titulo LIKE '%".dboescape($term)."%' ";
+										$search_conditions[] = " pag.texto LIKE '%".dboescape($term)."%' ";
+										//se houver campos extendidos na listagem, tem que buscar neles também.
+										foreach((array)$ext_columns as $column)
+										{
+											//campo extendido, sempre buscável
+											$search_conditions[] = " ".$column." LIKE '%".dboescape($term)."%' ";
+										}
+										$parts[] = "( ".implode(" OR \n", $search_conditions)." \n)";
 									}
-									$sql_part_search = " AND ".implode(" AND ", $parts);
+									$sql_part_search = "\n AND ".implode("\n AND ", $parts);
 								}
 
 								//sql categorias
@@ -847,10 +925,12 @@
 								$meses = array();
 								$sql = "
 									SELECT 
-										DATE_FORMAT(data, '%Y-%m') AS mes 
+										DATE_FORMAT(pag.data, '%Y-%m') AS mes 
 										FROM ".$pag->getTable()." pag
+										".($ext ? " JOIN ".$ext->getTable()." ON ".$ext->getTable().".".$ext->getPK()." = pag.id " : "")."
+										".$sql_part_extension_module_joins."
 									WHERE 
-										tipo = '".$tipo."'
+										pag.tipo = '".$tipo."'
 										".$sql_part_status."
 										".$sql_part_search."
 										AND pag.status != 'rascunho-automatico'
@@ -873,12 +953,15 @@
 										pag.*,
 										aut.nome AS nome_autor
 										".$sql_part_categoria_select."
+										".$sql_part_extension_module."
 									FROM ".$pag->getTable()." pag
 									LEFT JOIN ".$_pes->getTable()." aut ON
 										pag.autor = aut.id
 										".$sql_part_categoria_join."
+										".($ext ? " JOIN ".$ext->getTable()." ON ".$ext->getTable().".".$ext->getPK()." = pag.id " : "")."
+										".$sql_part_extension_module_joins."
 									WHERE
-										tipo = '".$tipo."' 
+										pag.tipo = '".$tipo."' 
 										".$sql_part_categoria_where."
 										".$sql_part_status."
 										".$sql_part_data."
@@ -1017,10 +1100,21 @@
 									<thead>
 										<tr>
 											<th style="width: 30px;"><input type="checkbox" name="" id="" value="" class="no-margin top-2 trigger-check-all"/></th>
-											<th><?= $pag->getLinkOrderBy('titulo', 'Título') ?></th>
-											<?php if($tipo != 'pagina') { ?><th style="width: 15%;">Categoria</th><?php } ?>
-											<th style="width: 15%;"><?= $pag->getLinkOrderBy('nome_autor', 'Autor') ?></th>
-											<th style="width: 10%;"><?= $pag->getLinkOrderBy('data', 'Data') ?></th>
+											<?php
+												foreach($list_columns as $column)
+												{
+													if($column == 'categorias' && $tipo == 'pagina')
+													{
+														continue;
+													}
+													else
+													{
+														?>
+														<th style="<?= $pag->getListColumnStyles($column) ?>"><?= $pag->getLinkOrderBy($column, $pag->getListLabel($column, $_system['pagina_tipo'][$tipo])) ?></th>
+														<?php
+													}
+												}
+											?>
 										</tr>
 									</thead>
 									<tbody id="list-table-rows">
@@ -1037,82 +1131,105 @@
 																<td><input type="checkbox" name="selected[]" id="" value="<?= $pag->id ?>" class="no-margin top-2 stop-propagation list-checkable"/></td>
 																<?php
 															}
-														?>
-														<td style="<?= $list_view == 'gallery' ? 'background-image: url('.$pag->imagemUrl(array('size' => 'small', 'show_placeholder' => true)).')' : '' ?>">
-															<?php
-																if($list_view == 'gallery')
+															$first = true;
+															foreach($list_columns as $column)
+															{
+																if($first)
 																{
 																	?>
-																	<input type="checkbox" name="selected[]" id="selected-<?= $pag->id ?>" value="<?= $pag->id ?>" class="no-margin top-2 stop-propagation list-checkable"/><label for="selected-<?= $pag->id ?>"></label>
+																	<td style="<?= $list_view == 'gallery' ? 'background-image: url('.$pag->imagemUrl(array('size' => 'small', 'show_placeholder' => true)).')' : '' ?>">
+																		<?php
+																			if($list_view == 'gallery')
+																			{
+																				?>
+																				<input type="checkbox" name="selected[]" id="selected-<?= $pag->id ?>" value="<?= $pag->id ?>" class="no-margin top-2 stop-propagation list-checkable"/><label for="selected-<?= $pag->id ?>"></label>
+																				<?php
+																			}
+																		?>
+																		<span class="info">
+																			<?= $pag->destaque() ? '<a href="'.secureUrl('dbo/core/dbo-pagina-ajax.php?action=remover-destaque&pagina_id='.$pag->id.'&'.CSRFVar()).'" title="Remover destaque" class="peixe-json peixe-reload" data-keep-url="'.keepUrl().'" peixe-reload="#list-item-'.$pag->id.'"><i class="fa fa-star destaque"></i></a>' : '' ?> 
+
+																			<?= $pag->inativo() ? '<a href="'.secureUrl('dbo/core/dbo-pagina-ajax.php?action=ativar&pagina_id='.$pag->id.'&'.CSRFVar()).'" title="Ativar" class="peixe-json peixe-reload" data-keep-url="'.keepUrl().'" peixe-reload="#list-item-'.$pag->id.'"><i class="fa fa-lock color alert"></i></a>' : '' ?>
+
+																			<strong><a href="<?= $dbo->keepUrl('dbo_update='.$pag->id); ?>" style="padding-bottom: 4px; display: inline-block;"><?= $pag->getListIdentifier($column) ?></a></strong><?= $pag->status != 'publicado' ? '<span class="color medium"> &#8212; '.ucfirst($pag->status).'</span>' : '' ?><br />
+																			<?php
+																				if($list_view == 'details')
+																				{
+																					echo '<span class="font-12">'.$pag->resumo().'</span>';
+																				}
+																			?>
+																			<div style="height: 13px;">
+																				<span class="hover-info font-12">
+																				<?php
+																					if($_GET['pagina_status'] == 'lixeira')
+																					{
+																						?>
+																						<a href="<?= secureUrl('dbo/core/dbo-pagina-ajax.php?action=restaurar&pagina_id='.$pag->id.'&'.CSRFVar()) ?>" class="peixe-json">Retaurar</a>
+																						<span class="color light">&nbsp;|&nbsp;</span>
+																						<a href="<?= secureUrl('dbo/core/dbo-pagina-ajax.php?action=excluir&pagina_id='.$pag->id.'&'.CSRFVar()) ?>" class="color alert peixe-json" data-confirm='Tem certeza que deseja excluir <?= $genero ?> <?= $titulo ?> "<?= $pag->titulo ?>" definitivamente?\n\nEsta ação é irreversível.'>Excluir definitivamente</a>
+																						<?php
+																					}
+																					else
+																					{
+																						?>
+																						<a href="<?= $dbo->keepUrl('dbo_update='.$pag->id); ?>">Editar</a>
+																						<span class="color light">&nbsp;|&nbsp;</span>
+																						<a href="<?= secureUrl('dbo/core/dbo-pagina-ajax.php?action=lixeira&pagina_id='.$pag->id.'&'.CSRFVar()) ?>" class="color alert peixe-json" data-confirm='Tem certeza que deseja enviar <?= $genero ?> <?= $titulo ?> "<?= $pag->titulo ?>" para a lixeira?'>Lixeira</a> 
+																						<span class="color light">&nbsp;|&nbsp;</span>
+																						<a href="<?= $pag->permalink(); ?>" target="_blank">Visualizar</a> 
+																						
+																						<?php
+																							$keep_url = keepUrl();
+																							if(!$pag->destaque())
+																							{
+																								?> <span class="color light">&nbsp;|&nbsp;</span> <a href="<?= secureUrl('dbo/core/dbo-pagina-ajax.php?action=destacar&pagina_id='.$pag->id.'&'.CSRFVar()) ?>" title="Destacar" class="peixe-json peixe-reload" data-keep-url="<?= $keep_url ?>" peixe-reload="#list-item-<?= $pag->id ?>"><i class="fa fa-star"></i></a><?php
+																							}
+																						?>
+																						
+																						<?php
+																							if(!$pag->inativo())
+																							{
+																								?> <span class="color light">&nbsp;|&nbsp;</span> <a href="<?= secureUrl('dbo/core/dbo-pagina-ajax.php?action=desativar&pagina_id='.$pag->id.'&'.CSRFVar()) ?>" title="Desativar" class="peixe-json peixe-reload" data-keep-url="<?= $keep_url ?>" peixe-reload="#list-item-<?= $pag->id ?>"><i class="fa fa-unlock-alt"></i></a><?php
+																							}
+																						?>
+																						<?php
+																					}
+																				?>
+																				</span>
+																			</div>
+																		</span>
+																	</td>
 																	<?php
 																}
-															?>
-															<span class="info">
-																<?= $pag->destaque() ? '<a href="'.secureUrl('dbo/core/dbo-pagina-ajax.php?action=remover-destaque&pagina_id='.$pag->id.'&'.CSRFVar()).'" title="Remover destaque" class="peixe-json peixe-reload" data-keep-url="'.keepUrl().'" peixe-reload="#list-item-'.$pag->id.'"><i class="fa fa-star destaque"></i></a>' : '' ?> 
-
-																<?= $pag->inativo() ? '<a href="'.secureUrl('dbo/core/dbo-pagina-ajax.php?action=ativar&pagina_id='.$pag->id.'&'.CSRFVar()).'" title="Ativar" class="peixe-json peixe-reload" data-keep-url="'.keepUrl().'" peixe-reload="#list-item-'.$pag->id.'"><i class="fa fa-lock color alert"></i></a>' : '' ?>
-
-																<strong><a href="<?= $dbo->keepUrl('dbo_update='.$pag->id); ?>" style="padding-bottom: 4px; display: inline-block;"><?= $pag->titulo ?></a></strong><?= $pag->status != 'publicado' ? '<span class="color medium"> &#8212; '.ucfirst($pag->status).'</span>' : '' ?><br />
-																<?php
-																	if($list_view == 'details')
+																else
+																{
+																	//categorias ---------------------------------------------------------
+																	if($column == 'categorias')
 																	{
-																		echo '<span class="font-12">'.$pag->resumo().'</span>';
+																		if($tipo == 'pagina') continue;
+																		?>
+																		<td class="font-12"><?= $pag->categorias ? $pag->categorias : '<span class="color medium">&#8212; Sem categoria &#8212;</span>' ?></td> 
+																		<?php
 																	}
-																?>
-																<div style="height: 13px;">
-																	<span class="hover-info font-12">
-																	<?php
-																		if($_GET['pagina_status'] == 'lixeira')
-																		{
-																			?>
-																			<a href="<?= secureUrl('dbo/core/dbo-pagina-ajax.php?action=restaurar&pagina_id='.$pag->id.'&'.CSRFVar()) ?>" class="peixe-json">Retaurar</a>
-																			<span class="color light">&nbsp;|&nbsp;</span>
-																			<a href="<?= secureUrl('dbo/core/dbo-pagina-ajax.php?action=excluir&pagina_id='.$pag->id.'&'.CSRFVar()) ?>" class="color alert peixe-json" data-confirm='Tem certeza que deseja excluir <?= $genero ?> <?= $titulo ?> "<?= $pag->titulo ?>" dfinitivamente?\n\nEsta ação é irreversível.'>Excluir definitivamente</a>
-																			<?php
-																		}
-																		else
-																		{
-																			?>
-																			<a href="<?= $dbo->keepUrl('dbo_update='.$pag->id); ?>">Editar</a>
-																			<span class="color light">&nbsp;|&nbsp;</span>
-																			<a href="<?= secureUrl('dbo/core/dbo-pagina-ajax.php?action=lixeira&pagina_id='.$pag->id.'&'.CSRFVar()) ?>" class="color alert peixe-json" data-confirm='Tem certeza que deseja enviar <?= $genero ?> <?= $titulo ?> "<?= $pag->titulo ?>" para a lixeira?'>Lixeira</a> 
-																			<span class="color light">&nbsp;|&nbsp;</span>
-																			<a href="<?= $pag->permalink(); ?>" target="_blank">Visualizar</a> 
-																			
-																			<?php
-																				$keep_url = keepUrl();
-																				if(!$pag->destaque())
-																				{
-																					?> <span class="color light">&nbsp;|&nbsp;</span> <a href="<?= secureUrl('dbo/core/dbo-pagina-ajax.php?action=destacar&pagina_id='.$pag->id.'&'.CSRFVar()) ?>" title="Destacar" class="peixe-json peixe-reload" data-keep-url="<?= $keep_url ?>" peixe-reload="#list-item-<?= $pag->id ?>"><i class="fa fa-star"></i></a><?php
-																				}
-																			?>
-																			
-																			<?php
-																				if(!$pag->inativo())
-																				{
-																					?> <span class="color light">&nbsp;|&nbsp;</span> <a href="<?= secureUrl('dbo/core/dbo-pagina-ajax.php?action=desativar&pagina_id='.$pag->id.'&'.CSRFVar()) ?>" title="Desativar" class="peixe-json peixe-reload" data-keep-url="<?= $keep_url ?>" peixe-reload="#list-item-<?= $pag->id ?>"><i class="fa fa-unlock-alt"></i></a><?php
-																				}
-																			?>
-																			<?php
-																		}
-																	?>
-																	</span>
-																</div>
-															</span>
-														</td>
-														<?php
-															if($tipo != 'pagina')
-															{
-																?>
-																<td class="font-12"><?= $pag->categorias ? $pag->categorias : '<span class="color medium">&#8212; Sem categoria &#8212;</span>' ?></td> 
-																<?php
+																	elseif($column == 'data')
+																	{
+																		?>
+																		<td class="font-12">
+																			<?= dboDate('d/M/Y', strtotime($pag->data)) ?><br />
+																			<span class="color medium"><?= $pag->getValue('status', $pag->status) ?></span>
+																		</td>
+																		<?php
+																	}
+																	else
+																	{
+																		?>
+																		<td class="font-12"><?= $pag->getListIdentifier($column) ?></td>
+																		<?php
+																	}
+																}
+																$first = false;
 															}
 														?>
-														<td class="font-12"><?= $pag->nome_autor ?></td>
-														<td class="font-12">
-															<?= dboDate('d/M/Y', strtotime($pag->data)) ?><br />
-															<span class="color medium"><?= $pag->getValue('status', $pag->status) ?></span>
-														</td>
 													</tr>
 													<?
 												}while($pag->fetch());
@@ -1130,10 +1247,21 @@
 									<tfoot>
 										<tr>
 											<th style="width: 30px;"><input type="checkbox" name="" id="" value="" class="no-margin top-2 trigger-check-all"/></th>
-											<th><?= $pag->getLinkOrderBy('titulo', 'Título') ?></th>
-											<?php if($tipo != 'pagina') { ?><th style="width: 15%;">Categoria</th><?php } ?>
-											<th style="width: 20%;"><?= $pag->getLinkOrderBy('nome_autor', 'Autor') ?></th>
-											<th style="width: 10%;"><?= $pag->getLinkOrderBy('data', 'Data') ?></th>
+											<?php
+												foreach($list_columns as $column)
+												{
+													if($column == 'categorias' && $tipo == 'pagina')
+													{
+														continue;
+													}
+													else
+													{
+														?>
+														<th style="<?= $pag->getListColumnStyles($column) ?>"><?= $pag->getLinkOrderBy($column, $pag->getListLabel($column, $_system['pagina_tipo'][$tipo])) ?></th>
+														<?php
+													}
+												}
+											?>
 										</tr>
 									</tfoot>
 								</table>
@@ -1185,11 +1313,11 @@
 
 						function triggerSearch() {
 							s = $('#list-search input').val();
-							target = keepUrl('s='+s);
+							target = keepUrl('!pag&s='+s);
 							peixeUpdateCurrentUrl(target);
 							peixeGet(peixe_current_url, function(d){
 								d = $.parseHTML(d);
-								['#list-table-rows','#list-pagination','#list-pagination-bottom'].forEach(function(v){
+								['#list-table-rows','#list-pagination','#list-pagination-bottom','.list-numero-itens'].forEach(function(v){
 									peixeReload(v, d);
 								})
 							})
@@ -1466,11 +1594,12 @@
 			<? $hooks->do_action('dbo_'.$tipo.'_javascript_prepend', $pag, $params); ?>
 
 			//função para salvar a página quando der CTRL + S no editor de texto.
-			function smartSave() {
+			/*function smartSave() {
+				console.log('smart save');
 				form = $('#form-pagina');
 				peixeJSON(form.attr('action'), form.serialize(), '', true);
 				return false;
-			}
+			}*/
 
 			//mostrando ou ocultando campos do formulário
 			function togglePaginaFormField(id) {

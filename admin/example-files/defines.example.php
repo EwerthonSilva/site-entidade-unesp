@@ -45,6 +45,14 @@
 	//'slug_prefix' => 'plantel', //incluido antes do slug no permalink
 	//'slug_date' => true, //mostra o ano e mes na slug da página
 	//'default_list_view' => 'gallery', //list | details | gallery
+	//'list_columns' => array( //lista de colunas da listagem. Para modulos extendidos, usar o prefixo "ext_" para a coluna
+		//'titulo',
+		//'ext_raca',
+		//'ext_peso',
+		//'categorias',
+		//'nome_autor',
+		//'data',
+	//),
 	//'paginacao' => 20,
 	//'order_by' => 'titulo',
 	//'cockpit_order_by' => -2000,

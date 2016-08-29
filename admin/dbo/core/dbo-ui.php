@@ -187,7 +187,7 @@ class dboUI
 						<?
 					}
 				?>
-			</span>		
+			</span>
 			<input type="hidden" name="__dbo_ui_flag[empty][<?= $name ?>]" value="<?= $name ?>"/>
 			<?
 		}
@@ -339,14 +339,14 @@ class dboUI
 
 					$mod_selected = $join['modulo'];
 					$mod_selected = new $mod_selected();
-				
+
 					//handler para o ID do campo
 					$id_handler = uniqid();
 
 					//variaveis necessárias para o javascript
 					$url_dbo_ui_joins_ajax = DBO_URL."/core/dbo-ui-joins-ajax.php";
 					$tamanho_minimo = (($join['tamanho_minimo'])?($join['tamanho_minimo']):(3));
-					
+
 					?>
 						<input type="text" name="<?= $name ?>_select2_aux" value="<?= htmlSpecialChars($join_retorno) ?>" data-name="<?= $titulo ?>" data-target="#<?= $id_handler ?>" class="<?= (($required)?('required'):('')) ?> <?= $classes ?>"/>
 						<input type="hidden" name="<?= $name ?>" id="<?= $id_handler ?>" value="<?= $value ?>" class="<?= $classes ?>"/>
@@ -449,7 +449,7 @@ class dboUI
 			$join = (array)$join;
 			$mod_aux = $join['modulo'];
 			$obj_join = new $mod_aux();
-			
+
 			$cadastrados_array = array();
 
 			//setando restricoes...
@@ -562,13 +562,14 @@ class dboUI
 		elseif($field_type == 'image')
 		{
 			?>
-			<div id="wrapper-imagem-<?= $name ?>">
+			<div id="wrapper-imagem-<?= $name ?>" style="position: relative;">
 				<?
 					$file_exists = file_exists(DBO_PATH."/upload/images/".$value) && strlen($value);
 					if($file_exists)
 					{
+						$croppeUrl = secureUrl(DBO_URL.'/../dbo-cropper.php?dbo_modal=1&src='.$value.'&modulo='.$modulo.'&coluna='.$coluna.'&allow_canvas_expansion='.($allow_canvas_expansion ? 'true' : 'false'));
 						?>
-						<a rel="lightbox[album]" href="<?= DBO_URL."/upload/images/".$value ?>"><img src="<?= DBO_URL."/upload/images/".$value ?>" alt="" class="thumb-lista" style="<?= $full ? 'max-width: 100%;' : '' ?>"></a>
+						<a rel="lightbox[album]" href="<?= DBO_URL."/upload/images/".$value ?>"><img src="<?= DBO_URL."/upload/images/".$value ?>" alt="" class="thumb-lista" style="<?= $full ? 'max-width: 100%;' : '' ?>"><a href="<?=$croppeUrl?>" rel="modal" class="dbo-cropper-edit-button" title="Editar imagem"><i class="fa fa-crop"></i></a></a>
 						<?
 					}
 				?>
@@ -654,7 +655,7 @@ class dboUI
 		}
 		return ob_get_clean();
 	}
-	
+
 	static function jsSnippet($foo)
 	{
 		if($foo == 'trigger-clear-closest-input')
@@ -764,15 +765,15 @@ class dboUI
 					  return DboMediaManagerTool.__super__.constructor.apply(this, arguments);
 					}
 
-					// Register the tool with ContentTools (in this case we overwrite the 
+					// Register the tool with ContentTools (in this case we overwrite the
 					// default image tool).
 					ContentTools.ToolShelf.stow(DboMediaManagerTool, 'image');
 
-					// Set the label and icon we'll use 
+					// Set the label and icon we'll use
 					DboMediaManagerTool.label = 'Image';
 					DboMediaManagerTool.icon = 'image';
 
-					DboMediaManagerTool.canApply = function(element, selection) {    
+					DboMediaManagerTool.canApply = function(element, selection) {
 						// So long as there's an image defined we can alwasy insert an image
 						return true;
 					};
@@ -799,7 +800,7 @@ class dboUI
 				ContentTools.IMAGE_UPLOADER = function(dialog) {
 				  return CloudinaryImageUploader.createImageUploader(dialog);
 				};*/
-				
+
 				window.editor = ContentTools.EditorApp.get();
 				window.editorCls = ContentTools.EditorApp.getCls();
 
@@ -817,7 +818,7 @@ class dboUI
 					new ContentTools.Style('Maiúsculas', 'uppercase', ['p', 'h1', 'h2', 'h3']),
 					new ContentTools.Style('Citação', 'quote', ['p', 'h1', 'h2', 'h3']),
 					new ContentTools.Style('Largura máxima', 'width-100', ['img']),
-				]);			
+				]);
 
 				/* setando o editor para utilizar h2 e h3 */
 				ContentTools.Tools.Heading.tagName = 'h2';
@@ -826,11 +827,11 @@ class dboUI
 				editor.init('*[data-editable]', 'data-name');
 
 				editor.addEventListener('start', function() {
-					document.body.classList.add('ct-editing'); 
+					document.body.classList.add('ct-editing');
 				});
 
-				editor.addEventListener('stop', function() { 
-					document.body.classList.remove('ct-editing'); 
+				editor.addEventListener('stop', function() {
+					document.body.classList.remove('ct-editing');
 				});
 
 				editor.addEventListener('saved', function (ev) {
@@ -884,13 +885,13 @@ class dboUI
 				centsSeparator: ',',
 				thousandsSeparator: '.'
 			});
-			
+
 			$('.price.price-generico').priceFormat({
 				prefix: '$ ',
 				centsSeparator: ',',
 				thousandsSeparator: '.'
 			});
-			
+
 			$('.price.price-dolar').priceFormat({
 				prefix: 'US$ ',
 				centsSeparator: '.',
@@ -1038,10 +1039,10 @@ class dboUI
 					wrapper.find('.media-controls-update').fadeOut('fast', function(){
 						wrapper.find('.media-controls-insert').fadeIn('fast');
 					});
-				} 
+				}
 			});
 			<?
-			dboRegisterDocReady(singleLine(ob_get_clean()), true, 'field_media'); 
+			dboRegisterDocReady(singleLine(ob_get_clean()), true, 'field_media');
 		}
 	}
 
@@ -1060,7 +1061,7 @@ class dboUI
 			if($obj->hasField($field))
 			{
 				$details = (array)$obj->getDetails($field);
-				
+
 				//setando os parametros
 				foreach($params as $chave_parametro => $valor_parametro)
 				{
@@ -1140,7 +1141,7 @@ class dboUI
 			}
 		}
 		elseif($field_type == 'price')
-		{			
+		{
 			if(!$formato || $formato == 'real' || $formato == 'generico')
 			{
 				$replace_from = array('R$ ', '$ ', '.', ',');
@@ -1202,26 +1203,44 @@ class dboUI
 				if(!$obj->id)
 				{
 
-					if(!$obj->__dbo_ui_flag['temp_id'])
+					/*if(!$obj->__dbo_ui_flag['temp_id'])
 					{
 						//cria um ID temporário para as inserções nas tabelas NxN
-						$obj->__dbo_ui_flag['temp_id'] = rand(100000000, 999999999);
-					}
+						$obj->__dbo_ui_flag['temp_id'] = uniqid();
+					}*/
 
 					//marca as tabelas que precisam ser acertadas depois da operação.
-					$obj->__dbo_ui_flag['pending_join_table'][$join['tabela_ligacao']]['key'] = $join['chave1'];
+					//$obj->__dbo_ui_flag['pending_join_table'][$join['tabela_ligacao']]['key'] = $join['chave1'];
 
-					foreach($raw_value as $chave2 => $valor2)
+					if(is_array($raw_value) && sizeof($raw_value))
 					{
-						$obj_nn = new Dbo($join['tabela_ligacao']);
-						$obj_nn->{$join['chave1']} = $obj->__dbo_ui_flag['temp_id'];
-						$obj_nn->{$join['chave2']} = $valor2;
-						if(isset($join['relacao_adicional_coluna']) && strlen(trim($join['relacao_adicional_funcao'])))
+
+						//salva quem é a FK no array
+						$obj->__dbo_ui_flag['pending_join_table'][$join['tabela_ligacao']]['fk'] = $join['chave1'];
+
+						foreach($raw_value as $chave2 => $valor2)
 						{
-							$func = $join['relacao_adicional_funcao'];
-							$obj_nn->{$join['relacao_adicional_coluna']} = $func($obj);
+
+							$dados = array();
+							$dados[$join['chave2']] = $valor2;
+							if(isset($join['relacao_adicional_coluna']) && strlen(trim($join['relacao_adicional_funcao'])))
+							{
+								$func = $join['relacao_adicional_funcao'];
+								$dados[$join['relacao_adicional_coluna']] = $func($obj);
+							}
+
+							$obj->__dbo_ui_flag['pending_join_table'][$join['tabela_ligacao']]['dados'][] = $dados;
+
+							/*$obj_nn = new Dbo($join['tabela_ligacao']);
+							$obj_nn->{$join['chave1']} = $obj->__dbo_ui_flag['temp_id'];
+							$obj_nn->{$join['chave2']} = $valor2;
+							if(isset($join['relacao_adicional_coluna']) && strlen(trim($join['relacao_adicional_funcao'])))
+							{
+								$func = $join['relacao_adicional_funcao'];
+								$obj_nn->{$join['relacao_adicional_coluna']} = $func($obj);
+							}
+							$obj_nn->save();*/
 						}
-						$obj_nn->save();
 					}
 				//update
 				} else {
@@ -1277,9 +1296,11 @@ class dboUI
 			{
 				//setando o caminho do arquivo no server
 				$hosted_file_path = DBO_PATH.'/upload/files/'.$raw_value;
-				
+
 				//classe para fazer resize das imagens
-				include_once(DBO_PATH."/core/classes/simpleimage.php"); 
+				include_once(DBO_PATH."/core/classes/simpleimage.php");
+
+
 
 				foreach($image as $chave2 => $valor2) //processando o resize para todos os tamanhos das imagens
 				{
@@ -1315,6 +1336,11 @@ class dboUI
 		}
 		elseif($field_type == 'file')
 		{
+			list($file_name, $server_name) = explode("\n", $obj->{$coluna});
+			if(!$raw_value || ($raw_value != $server_name && strlen(trim($server_name))))
+			{
+				@unlink(DBO_PATH.'/upload/files/'.$server_name);
+			}
 			if(strlen(trim($raw_value)))
 			{
 				$file_path = DBO_PATH.'/upload/files/'.$raw_value;

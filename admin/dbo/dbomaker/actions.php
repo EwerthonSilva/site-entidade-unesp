@@ -435,7 +435,7 @@ function getModuleForm ($module)
 
 					<div class='row standard'>
 						<div class='item'>
-							<label>Pré-carregar Insert?</label>
+							<label title="Pré-carregar o formulário de inserção junto com a listagem?">Pré-carregar Insert?</label>
 							<div class='input'>
 								<input type='radio' name='preload_insert_form' value='1' <?= (!isset($module->preload_insert_form) || $module->preload_insert_form === true)?('CHECKED'):('') ?>> Sim &nbsp;&nbsp;&nbsp;
 								<input type='radio' name='preload_insert_form' value='0' <?= ($module->preload_insert_form === false)?('CHECKED'):('') ?>> Não
@@ -445,10 +445,10 @@ function getModuleForm ($module)
 
 					<div class='row standard'>
 						<div class='item'>
-							<label>Auto-visualização?</label>
+							<label title="Retornar à listagem depois de uma inserção ou edição?">Retornar à listagem?</label>
 							<div class='input'>
-								<input type='radio' name='auto_view' value='1' <?= (!isset($module->auto_view) || $module->auto_view === true)?('CHECKED'):('') ?>> Sim &nbsp;&nbsp;&nbsp;
-								<input type='radio' name='auto_view' value='0' <?= ($module->auto_view === false)?('CHECKED'):('') ?>> Não
+								<input type='radio' name='auto_view' value='1' <?= ($module->auto_view === true)?('CHECKED'):('') ?>> Sim &nbsp;&nbsp;&nbsp;
+								<input type='radio' name='auto_view' value='0' <?= (!isset($module->auto_view) || $module->auto_view === false)?('CHECKED'):('') ?>> Não
 							</div>
 						</div>
 					</div><!-- row -->
@@ -1413,7 +1413,7 @@ function getFieldTypeDetail ($type = '', $mod = '',$field = '')
 						</div>
 					</div><!-- row -->
 		<?
-		// IMAGE ------------------------------------------------------------------------------------------------------------------------
+		// PRICE ------------------------------------------------------------------------------------------------------------------------
 		} elseif($type == 'price') {
 		?>
 					<div class='row wide'>
@@ -1432,6 +1432,11 @@ function getFieldTypeDetail ($type = '', $mod = '',$field = '')
 		?>
 					<div class='row wide'>
 						<div class='item'>
+							<label title="Permite que o usuário aumente as margens da imagem na edição">Permitir expansão do canvas</label>
+							<select name="allow_canvas_expansion">
+								<option value="false" <?= (($campo->allow_canvas_expansion == false)?('selected'):('')) ?>>Não</option>
+								<option value="true" <?= (($campo->allow_canvas_expansion == true)?('selected'):('')) ?>>Sim</option>
+							</select>
 							<label title="Não utilize prefixo para o primeiro elemento. As dimensões representam dimensões máximas que a imagem pode ter.">Dimensões</label>
 							<div class='input' style='position: relative; padding-bottom: 20px;'>
 							<a href='#' class='image-new-size'><span>Novo tamanho</span></a>
@@ -2081,6 +2086,7 @@ function runUpdateField($post_data)
 	//imagem ----------------------------------------------------------------------------------------
 	elseif($post_data['tipo'] == 'image')
 	{
+		$_SESSION['dbomaker_modulos'][$mod]->campo[$field]->allow_canvas_expansion = $post_data['allow_canvas_expansion'] == 'true' ? true : false;
 		$image = array();
 		foreach($post_data['dbo_image_array'] as $key => $value)
 		{
@@ -2091,7 +2097,6 @@ function runUpdateField($post_data)
 			$obj->quality = $value[quality];
 			$image[] = $obj;
 		}
-
 		$_SESSION['dbomaker_modulos'][$mod]->campo[$field]->image = $image;
 	}
 	//file ----------------------------------------------------------------------------------------
@@ -3297,6 +3302,10 @@ function writeModuleFile($mod)
 					//image
 					elseif($field->tipo == 'image')
 					{
+						if($field->allow_canvas_expansion)
+						{
+							fwrite($fh, "\$field->allow_canvas_expansion = true;\n");
+						}
 						if(is_array($field->image))
 						{
 							foreach($field->image as $key => $value)
