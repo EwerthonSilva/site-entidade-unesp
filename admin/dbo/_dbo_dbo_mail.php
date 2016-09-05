@@ -25,6 +25,7 @@ $module->ignore_permissions = false;
 $module->force_order_by = '1999';
 $module->order_by = '1999';
 $module->dbo_maker_read_only = true;
+$module->table_engine = 'InnoDB';
 
 /* FIELDS =========================================================================================================== */
 

@@ -575,6 +575,18 @@ function getModuleForm ($module)
 						</div>
 					</div><!-- row -->
 
+					<div class='row standard'>
+						<div class='item'>
+							<label title="Engine da tabela no MySQL">Engine da tabela</label>
+							<div class='input'>
+								<select name="table_engine" style="max-width: 100px;">
+									<option <?= $module->table_engine == 'InnoDB' || $module->modulo == 'temporary_module_key_5658' ? 'selected' : '' ?>>InnoDB</option>
+									<option <?= $module->table_engine == 'MyISAM' || (!isset($module->table_engine) && $module->modulo != 'temporary_module_key_5658') ? 'selected' : '' ?>>MyISAM</option>
+								</select>
+							</div>
+						</div>
+					</div>
+
 					<div class='row'>
 						<div class='item'>
 							<label title="Salve a restrição em uma variável $rest">Restrição do Módulo</label>
@@ -1518,6 +1530,23 @@ function getFieldTypeDetail ($type = '', $mod = '',$field = '')
 											</select>
 										</div><!-- item -->
 									</div><!-- row -->
+									<?php
+										if(CREATE_FKS)
+										{
+											?>
+											<div class='row'>
+												<div class='item item-33'>
+													<label>On update</label>
+													<?= renderSelectFkActions('join[on_update]', $campo->join->on_update, 'update') ?>
+												</div><!-- item -->
+												<div class='item item-33'>
+													<label>On delete</label>
+													<?= renderSelectFkActions('join[on_delete]', $campo->join->on_delete, 'delete') ?>
+												</div><!-- item -->
+											</div><!-- row -->
+											<?php
+										}
+									?>
 									<div class="row cf">
 										<div class='item item-33'>
 											<label>AJAX</label>
@@ -1584,19 +1613,44 @@ function getFieldTypeDetail ($type = '', $mod = '',$field = '')
 												<label title="Irá conter a chave do campo atual.">Campo 1 (modulo atual)</label>
 												<input type='text' name='join[chave1]' value='<?= $campo->join->chave1 ?>'>
 											</div><!-- item -->
+											<div class='item item-25 border-right'>
+												<label>PK 1 (PK no mód. atual (id))</label>
+												<input type='text' name='join[chave1_pk]' value='<?= $campo->join->chave1_pk ?>'>
+											</div><!-- item -->
 											<div class='item item-25'>
 												<label title="Irá conter a chave do campo relacionado">Campo 2 (modulo extrangeiro)</label>
 												<input type='text' name='join[chave2]' value='<?= $campo->join->chave2 ?>'>
-											</div><!-- item -->
-											<div class='item item-25'>
-												<label>PK 1 (PK no mód. atual (id))</label>
-												<input type='text' name='join[chave1_pk]' value='<?= $campo->join->chave1_pk ?>'>
 											</div><!-- item -->
 											<div class='item item-25'>
 												<label>PK 2 (PK no mód. extrangeiro (id))</label>
 												<input type='text' name='join[chave2_pk]' value='<?= $campo->join->chave2_pk ?>'>
 											</div><!-- item -->
 										</div><!-- row -->
+										<?php
+											if(CREATE_FKS)
+											{
+												?>
+												<div class='row'>
+													<div class='item item-25'>
+														<label title="Ação da chave primária no campo 1 no update">On update</label>
+														<?= renderSelectFkActions('join[chave1_on_update]', $campo->join->chave1_on_update, 'update') ?>
+													</div><!-- item -->
+													<div class='item item-25 border-right'>
+														<label title="Ação da chave primária no campo 1 no delete">On delete</label>
+														<?= renderSelectFkActions('join[chave1_on_delete]', $campo->join->chave1_on_delete, 'delete') ?>
+													</div><!-- item -->
+													<div class='item item-25'>
+														<label title="Ação da chave primária no campo 2 no update">On update</label>
+														<?= renderSelectFkActions('join[chave2_on_update]', $campo->join->chave2_on_update, 'update') ?>
+													</div><!-- item -->
+													<div class='item item-25'>
+														<label title="Ação da chave primária no campo 2 no delete">On delete</label>
+														<?= renderSelectFkActions('join[chave2_on_delete]', $campo->join->chave2_on_delete, 'delete') ?>
+													</div><!-- item -->
+												</div><!-- row -->
+												<?php
+											}
+										?>
 										<div class='row'>
 											<div class='item item-50'>
 												<label>Relação adicional <span style="cursor: help;" title="Utiliza uma função para criar uma relação adicional neste join. Recebe como parâmetro a variável $obj. Ex: getUnidadeAtiva"><i class="fa fa-question-circle"></i></span></label>
@@ -2130,6 +2184,16 @@ function runUpdateField($post_data)
 		$join->valor = $post_data['join']['valor'];
 		$join->order_by = $post_data['join']['order_by'];
 
+		//foreign key actions
+		if(strlen(trim($post_data['join']['on_update'])))
+		{
+			$join->on_update = $post_data['join']['on_update'];
+		}
+		if(strlen(trim($post_data['join']['on_delete'])))
+		{
+			$join->on_delete = $post_data['join']['on_delete'];
+		}
+
 		//verificando metodo de retorno
 		if(strlen(trim($post_data['join']['metodo_retorno'])))
 		{
@@ -2227,6 +2291,12 @@ function runUpdateField($post_data)
 			{
 				unset($join->relacao_adicional_funcao);
 			}
+
+			//setando ações das constraints
+			$join->chave1_on_update = $post_data['join']['chave1_on_update'];
+			$join->chave1_on_delete = $post_data['join']['chave1_on_delete'];
+			$join->chave2_on_update = $post_data['join']['chave2_on_update'];
+			$join->chave2_on_delete = $post_data['join']['chave2_on_delete'];
 		}
 
 		//finally, updates the session.
@@ -2830,6 +2900,7 @@ function runUpdateModule($post_data)
 	$_SESSION['dbomaker_modulos'][$mod]->titulo_listagem = stripslashes($post_data['titulo_listagem']);
 	$_SESSION['dbomaker_modulos'][$mod]->classes_listagem = stripslashes($post_data['classes_listagem']);
 	$_SESSION['dbomaker_modulos'][$mod]->force_order_by = stripslashes($post_data['force_order_by']);
+	$_SESSION['dbomaker_modulos'][$mod]->table_engine = stripslashes($post_data['table_engine']);
 	$_SESSION['dbomaker_modulos'][$mod]->module_icon = stripslashes($post_data['module_icon']);
 	$_SESSION['dbomaker_modulos'][$mod]->insert_button_text = stripslashes($post_data['insert_button_text']);
 
@@ -3179,6 +3250,10 @@ function writeModuleFile($mod)
 			fwrite($fh, "\$module->force_order_by = '".singleScape($module->force_order_by)."';\n");
 		}
 		fwrite($fh, "\$module->order_by = '".($module->force_order_by ? $module->force_order_by : $module->order_by)."';\n");
+		if(strlen($module->table_engine))
+		{
+			fwrite($fh, "\$module->table_engine = '".singleScape($module->table_engine)."';\n");
+		}
 
 		/* WRITES THE FIELD DEFINITIONS */
 
@@ -3346,6 +3421,16 @@ function writeModuleFile($mod)
 						fwrite($fh, "\t\$join->modulo = '".$field->join->modulo."';\n");
 						fwrite($fh, "\t\$join->chave = '".$field->join->chave."';\n");
 						fwrite($fh, "\t\$join->valor = '".$field->join->valor."';\n");
+
+						//constraints
+						if(strlen(trim($field->join->on_update)))
+						{
+							fwrite($fh, "\t\$join->on_update = '".$field->join->on_update."';\n");
+						}
+						if(strlen(trim($field->join->on_delete)))
+						{
+							fwrite($fh, "\t\$join->on_delete = '".$field->join->on_delete."';\n");
+						}
 						
 						//checando se vai ajax
 						if($field->join->ajax == 1)
@@ -3380,6 +3465,24 @@ function writeModuleFile($mod)
 							if(strlen(trim($field->join->relacao_adicional_funcao)))
 							{
 								fwrite($fh, "\t\$join->relacao_adicional_funcao = '".$field->join->relacao_adicional_funcao."';\n");
+							}
+
+							//constraints
+							if(strlen(trim($field->join->chave1_on_update)))
+							{
+								fwrite($fh, "\t\$join->chave1_on_update = '".$field->join->chave1_on_update."';\n");
+							}
+							if(strlen(trim($field->join->chave1_on_delete)))
+							{
+								fwrite($fh, "\t\$join->chave1_on_delete = '".$field->join->chave1_on_delete."';\n");
+							}
+							if(strlen(trim($field->join->chave2_on_update)))
+							{
+								fwrite($fh, "\t\$join->chave2_on_update = '".$field->join->chave2_on_update."';\n");
+							}
+							if(strlen(trim($field->join->chave2_on_delete)))
+							{
+								fwrite($fh, "\t\$join->chave2_on_delete = '".$field->join->chave2_on_delete."';\n");
 							}
 						}
 						//checando se foi definido um metodo de retorno

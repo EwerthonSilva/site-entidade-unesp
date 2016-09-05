@@ -74,6 +74,7 @@ form .row .item-66 { float: left; width: 66.6%; }
 form .row .item-50 { float: left; width: 50%; }
 form .row .item-33 { float: left; width: 33.3%; }
 form .row .item-25 { float: left; width: 25%; }
+form .row .item-25.border-right { float: left; width: 24%; margin-right: 1%; }
 form .row .item-20 { float: left; width: 20%; }
 form .row .item label { display: block; box-sizing: border-box; -ms-box-sizing: border-box; -moz-box-sizing: border-box; -webkit-box-sizing: border-box; }
 form .row .item .input { box-sizing: border-box; -ms-box-sizing: border-box; -moz-box-sizing: border-box; -webkit-box-sizing: border-box; }
@@ -218,6 +219,8 @@ div#canvas > .column-3 { width: 120px; }
 
 .button-new.integrado { background-color: #CAB284; cursor: default; }
 .button-new.integrado:hover { background: #CAB284; }
+
+.border-right { border-right: 1px solid #999; }
 
 /*
 

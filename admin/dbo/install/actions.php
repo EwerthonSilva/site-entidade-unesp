@@ -178,7 +178,7 @@ function step2()
 			  `user` varchar(255) NOT NULL,
 			  `pass` varchar(255) NOT NULL,
 			  PRIMARY KEY  (`id`)
-			) ENGINE=MyISAM  DEFAULT CHARSET=utf8;
+			) ENGINE=InnoDB  DEFAULT CHARSET=utf8;
 		";
 		mysql_query($sql);
 
@@ -188,17 +188,17 @@ function step2()
 			  `nome` varchar(255) default NULL,
 			  `permissao` text NOT NULL,
 			  PRIMARY KEY  (`id`)
-			) ENGINE=MyISAM  DEFAULT CHARSET=utf8;
+			) ENGINE=InnoDB  DEFAULT CHARSET=utf8;
 		";
 		mysql_query($sql);
 
 		$sql = "
 			CREATE TABLE IF NOT EXISTS `pessoa_perfil` (
 			  `id` int(11) NOT NULL auto_increment,
-			  `pessoa` int(11) NOT NULL,
-			  `perfil` int(11) NOT NULL,
+			  `pessoa` int(11) NULL,
+			  `perfil` int(11) NULL,
 			  PRIMARY KEY  (`id`)
-			) ENGINE=MyISAM  DEFAULT CHARSET=utf8;
+			) ENGINE=InnoDB  DEFAULT CHARSET=utf8;
 		";
 		mysql_query($sql);
 
@@ -207,7 +207,7 @@ function step2()
 			  `id` int(11) NOT NULL auto_increment,
 			  `nome` varchar(255) default NULL,
 			  PRIMARY KEY  (`id`)
-			) ENGINE=MyISAM  DEFAULT CHARSET=utf8;
+			) ENGINE=InnoDB  DEFAULT CHARSET=utf8;
 		";
 		mysql_query($sql);
 	}
@@ -222,7 +222,7 @@ function step2()
 			INSERT INTO perfil
 				(nome, permissao)
 			VALUES
-				('Desenv', 'pessoa###cockpit|||sidebar|||access|||insert|||update|||delete|||view %%% perfil###cockpit|||sidebar|||access|||insert|||update|||delete|||view|||Permissões %%% permissao###cockpit|||sidebar|||access|||insert|||update|||delete|||view')
+				('Desenv', 'pessoa###cockpit|||access|||insert|||update|||delete %%% perfil###sidebar|||access|||insert|||update|||delete||| %%% permissao###sidebar|||access|||insert|||update|||delete')
 		";
 		mysql_query($sql);
 	}

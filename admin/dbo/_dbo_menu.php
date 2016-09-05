@@ -30,6 +30,7 @@ $module->bibliotecas_js = '
 ';
 $module->order_by = '1050';
 $module->dbo_maker_read_only = true;
+$module->table_engine = 'InnoDB';
 
 /* FIELDS =========================================================================================================== */
 

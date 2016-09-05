@@ -9,6 +9,9 @@
 /* debuga o envio de e-mails pelo dboMail() */
 //define(DBO_MAIL_DEBUG, true);
 
+/* define a pasta da área administrativa do site. Em um contexto de sistema, deixar em branco */
+//define(DBO_ADMIN_FOLDER, 'admin');
+
 /* define a url do site */
 //define(SITE_URL, preg_replace('#/admin/dbo$#is', '', DBO_URL));
 

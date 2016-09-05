@@ -25,6 +25,7 @@ $module->permissoes_custom = '
 	painel-cadastros | Permissão de acesso do usuário ao painel de cadastros do sistema.
 ';
 $module->order_by = '3';
+$module->table_engine = 'InnoDB';
 
 /* FIELDS =========================================================================================================== */
 

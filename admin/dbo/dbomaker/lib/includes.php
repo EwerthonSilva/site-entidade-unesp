@@ -19,6 +19,10 @@ It also works, but with some few limitations.
 @include('../../lib/defines.php');
 @include('../../local-defines.php');  
 
+/* definindo o tipo de tabela do mysql */
+define(MYSQL_TABLE_TYPE, $_GET['table_engine'] == 'MyISAM' ? 'MyISAM' : 'InnoDB');
+define(CREATE_FKS, MYSQL_TABLE_TYPE == 'InnoDB' ? true : false);
+
 $sql = "SHOW TABLES";
 if(@mysql_query($sql))
 {
@@ -47,6 +51,95 @@ if(!function_exists('safeArrayKey'))
 	}
 }
 
+
+/* ---------------------------------------------------------------------------------------------------------- */
+
+function renderSelectFkActions($input_name, $selected, $operation)
+{
+	$selected = $selected ? $selected : ($operation == 'update' ? 'CASCADE' : ($operation == 'delete' ? 'SET NULL' : ''));
+	ob_start();
+	?>
+	<select name="<?= $input_name ?>">
+		<option <?= $selected == 'RESTRICT' ? 'selected' : '' ?>>RESTRICT</option>
+		<option <?= $selected == 'NO ACTION' ? 'selected' : '' ?>>NO ACTION</option>
+		<option <?= $selected == 'CASCADE' ? 'selected' : '' ?>>CASCADE</option>
+		<option <?= $selected == 'SET NULL' ? 'selected' : '' ?>>SET NULL</option>
+		<option <?= $selected == 'SET DEFAULT' ? 'selected' : '' ?>>SET DEFAULT</option>
+	</select>
+	<?php
+	return ob_get_clean();
+}
+
+/* ---------------------------------------------------------------------------------------------------------- */
+
+function createFksIfNotExists($foo = array())
+{
+	/* Foo:
+	   - table
+	   - column
+	   - referenced_table
+	   - referenced_column
+	*/
+	//verificando se AS FKs estão ativas e o array de data tem conteudo
+	//criando as chaves estrangeiras
+	if(CREATE_FKS && sizeof((array)$foo))
+	{
+
+		foreach($foo as $data)
+		{
+			//extraindo as variaveis do array para melhor semântica
+			extract($data);
+
+			$update_action = $on_update ? $on_update : 'CASCADE';
+			$delete_action = $on_delete ? $on_delete : 'SET NULL';
+
+			//não criar para campos automaticos do dbo
+			if(in_array($column, array('created_by', 'updated_by', 'deleted_by'))) continue;
+
+			//verifica se a tabela em que a chave vai ser criada é do tipo InnoDB
+			$sql = "SHOW TABLE STATUS WHERE Name = '".$table."'";
+			$res = mysql_query($sql);
+			$lin = mysql_fetch_object($res);
+			//se a tabela é InnoDB, declaramos o nome da constraint
+			if($lin->Engine == 'InnoDB')
+			{
+				//definindo o nome da constraint
+				$const_name = "constr_t_".str_replace('.', '_', $table)."_c_".$column."_fk";
+
+				//verifica se a constraint já existe
+				$sql = "
+					SELECT *
+					FROM information_schema.REFERENTIAL_CONSTRAINTS
+					WHERE CONSTRAINT_SCHEMA = '".DB_BASE."'
+					AND REFERENCED_TABLE_NAME = '".$referenced_table."'
+					AND CONSTRAINT_NAME = '".$const_name."'				
+				";
+				$res = mysql_query($sql);
+				$lin = mysql_fetch_object($res);
+				
+				//agora, verificamos se as regras de updade ou delete são diferentes do desejado
+				//se for, dropamos a FK e recriamos (ou criamos pela primeira vez, se for o caso)
+				if($lin->UPDATE_RULE != $update_action || $lin->DELETE_RULE != $delete_action)
+				{
+					//dropa a constraint, se existe
+					if(mysql_affected_rows())
+					{
+						$sql = "ALTER TABLE ".$table." DROP FOREIGN KEY ".$const_name;
+						mysql_query($sql);
+					}
+
+					//cria a constraint (ou recria, dependendo do caso)
+					$sql = "ALTER TABLE ".$table." ADD CONSTRAINT ".$const_name." FOREIGN KEY ".$column."_fk (".$column.") REFERENCES ".$referenced_table." (".$referenced_column.") ON DELETE ".$delete_action." ON UPDATE ".$update_action;
+					//echo "FK criada: ".$const_name.', ';
+					if(mysql_query($sql))
+					{
+						echo "FK criada: ".$const_name.', ';
+					};
+				}
+			}
+		}
+	}
+}
 
 /* ---------------------------------------------------------------------------------------------------------- */
 
@@ -212,6 +305,34 @@ function diskDelete($mod)
 
 /* ---------------------------------------------------------------------------------------------------------- */
 
+function getModuleTable($module)
+{
+	return $_SESSION['dbomaker_modulos'][$module]->tabela;
+}
+
+/* ---------------------------------------------------------------------------------------------------------- */
+
+function dropModuleFks($module)
+{
+	foreach((array)$module->campo as $key => $campo)
+	{
+		if($campo->tipo == 'join')
+		{
+			//nao criar para campos automaticos do sistema.
+			if(in_array($campo->coluna, array('created_by', 'updated_by', 'deleted_by'))) continue;
+
+			$const_name = "constr_t_".str_replace('.', '_', $module->tabela)."_c_".$campo->coluna."_fk";			
+			$sql = "ALTER TABLE ".$module->tabela." DROP FOREIGN KEY ".$const_name.";";
+			if(!mysql_query($sql))
+			{
+				echo mysql_error()."<br />";
+			}
+		}
+	}
+}
+
+/* ---------------------------------------------------------------------------------------------------------- */
+
 function syncTable($module)
 {
 	//trying to create the tables.
@@ -228,16 +349,49 @@ function syncTable($module)
 				$pk = $field->coluna;
 				$sql_parts[] = "\t".$field->coluna." int(11) NOT NULL auto_increment";
 			}
+			elseif($field->tipo == 'join')
+			{
+				//se o tipo da tabela for InnoDB, tenta criar as chaves
+				if($module->table_engine == 'InnoDB')
+				{
+					$fks[] = array(
+						'table' => $module->tabela,
+						'column' => $field->coluna,
+						'referenced_table' => getModuleTable($field->join->modulo),
+						'referenced_column' => $field->join->chave,
+						'on_update' => $field->join->on_update,
+						'on_delete' => $field->join->on_delete,
+					);
+				}
+			}
 			//para o caso de PKs não A.I.
 			elseif($field->tipo == 'joinNN')
 			{
+				//montando as configurações de chave estrangeira
+				$fks[] = array(
+					'table' => $field->join->tabela_ligacao,
+					'column' => $field->join->chave1,
+					'referenced_table' => $module->tabela,
+					'referenced_column' => $field->join->chave1_pk ? $field->join->chave1_pk : 'id',
+					'on_update' => $field->join->chave1_on_update,
+					'on_delete' => $field->join->chave1_on_delete,
+				);
+				$fks[] = array(
+					'table' => $field->join->tabela_ligacao,
+					'column' => $field->join->chave2,
+					'referenced_table' => getModuleTable($field->join->modulo),
+					'referenced_column' => $field->join->chave2_pk ? $field->join->chave2_pk : 'id',
+					'on_update' => $field->join->chave2_on_update,
+					'on_delete' => $field->join->chave2_on_delete,
+				);
+				
 				$sql_join  = "CREATE TABLE IF NOT EXISTS ".$field->join->tabela_ligacao." (\n";
 				$sql_join .= "\tid int(11) NOT NULL auto_increment,\n";
-				$sql_join .= "\t".$field->join->chave1." int(11) NOT NULL,\n";
-				$sql_join .= "\t".$field->join->chave2." int(11) NOT NULL,\n";
+				$sql_join .= "\t".$field->join->chave1." int(11) NULL,\n";
+				$sql_join .= "\t".$field->join->chave2." int(11) NULL,\n";
 				$sql_join .= "UNIQUE (".$field->join->chave1.", ".$field->join->chave2."),\n";
 				$sql_join .= "PRIMARY KEY (id)\n";
-				$sql_join .= ") ENGINE = MYISAM DEFAULT CHARSET=utf8; ";
+				$sql_join .= ") ENGINE = InnoDB DEFAULT CHARSET=utf8; ";
 				mysql_query($sql_join);
 
 				//salvando a definição dos joinNN para o alter table
@@ -262,7 +416,24 @@ function syncTable($module)
 		$sql_parts[] .= "PRIMARY KEY ( ".$pk." )";
 	}
 	$sql .= @implode(",\n", $sql_parts);
-	$sql .= ") ENGINE = MYISAM DEFAULT CHARSET=utf8; ";
+	$sql .= ") ENGINE = ".($module->table_engine ? $module->table_engine : MYSQL_TABLE_TYPE)." DEFAULT CHARSET=utf8; ";
+
+	//agora, tenta verificar se a tabela em questão é do mesmo engine que está no modulo
+	$sql = "SHOW TABLE STATUS WHERE Name = '".$module->tabela."'";
+	$res = mysql_query($sql);
+	$lin = mysql_fetch_object($res);
+	if($module->table_engine && $module->table_engine != $lin->Engine)
+	{
+		//se o módulo for MyISAM, remove todas as constraints da tabela antes de fazer a alteração
+		if($module->table_engine == 'MyISAM') dropModuleFks($module);
+
+		//finalmente, altera o engine da tabela
+		$sql = "ALTER TABLE ".$module->tabela." ENGINE = ".$module->table_engine.";";
+		if(!mysql_query($sql))
+		{
+			echo mysql_error();
+		};
+	}
 
 	mysql_query($sql);
 	/*if($sql_join)
@@ -271,7 +442,6 @@ function syncTable($module)
 	}*/
 
 	//and now checking for the fields in the table. alter tables to create extra-fields.
-
 	$sql = "SHOW COLUMNS FROM ".$module->tabela;
 	$res = mysql_query($sql);
 
@@ -342,6 +512,9 @@ function syncTable($module)
 			}
 		}		
 	}
+
+	//cria as chaves estrangeiras no banco de dados, se for o caso.
+	createFksIfNotExists($fks);
 }
 
 /* ---------------------------------------------------------------------------------------------------------- */

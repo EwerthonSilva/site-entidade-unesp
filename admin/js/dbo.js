@@ -46,8 +46,8 @@ function openColorBoxModal(url, width, height, params) {
 		height: height,
 		maxWidth: '100%',
 		maxHeight: '100%',
-		overlayClose: false,
-		escKey: false,
+		overlayClose: (params && params.overlayClose ? true : false),
+		escKey: (params && params.escKey ? true : false),
 		fixed: true,
 		transition: (params && params.transition) || 'elastic'
 	});
@@ -63,9 +63,12 @@ $(document).ready(function(){
 		e.preventDefault();
 		e.stopPropagation();
 		clicado = $(this);
+		params = {};
 		width = clicado.data('modal-width') || clicado.data('width') || 1000;
 		height = clicado.data('modal-height') || clicado.data('height') || '98%';
-		openColorBoxModal(clicado.attr('href') ? clicado.attr('href') : clicado.data('url'), width, height);
+		params.escKey = clicado.data('modal-esc') || false;
+		params.overlayClose = clicado.data('modal-overlay-close') || false;
+		openColorBoxModal(clicado.attr('href') ? clicado.attr('href') : clicado.data('url'), width, height, params);
 	});
 
 	$(document).on('click', '[rel="redirect"]', function(e){

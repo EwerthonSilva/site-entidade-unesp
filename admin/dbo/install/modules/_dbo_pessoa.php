@@ -28,6 +28,7 @@ $module->restricao = '
 	if(!pessoaHasPerfil($_SESSION[\'user_id\'], \'Desenv\')) $rest = "WHERE dbo_flag_desenv = 0";
 ';
 $module->order_by = '2';
+$module->table_engine = 'InnoDB';
 
 /* FIELDS =========================================================================================================== */
 
@@ -179,11 +180,17 @@ $field->tipo = 'joinNN';
 	$join->modulo = 'perfil';
 	$join->chave = 'id';
 	$join->valor = 'nome';
+	$join->on_update = 'CASCADE';
+	$join->on_delete = 'CASCADE';
 	$join->ajax = true;
 	$join->select2 = true;
 	$join->tabela_ligacao = 'pessoa_perfil';
 	$join->chave1 = 'pessoa';
 	$join->chave2 = 'perfil';
+	$join->chave1_on_update = 'CASCADE';
+	$join->chave1_on_delete = 'CASCADE';
+	$join->chave2_on_update = 'CASCADE';
+	$join->chave2_on_delete = 'CASCADE';
 	$join->tipo = 'select';
 	$join->order_by = 'id';
 $field->join = $join;

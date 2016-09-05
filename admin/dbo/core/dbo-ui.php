@@ -197,7 +197,7 @@ class dboUI
 		elseif($field_type == 'price')
 		{
 			//especifico do campo
-			$value = (($value != null && $value != '')?(number_format($value, 2, '', '.')):(null));
+			$value = (($value != null && $value != '')?(number_format($value, 2, '.', '')):(null));
 			if(!$input_only)
 			{
 				?>
@@ -880,22 +880,25 @@ class dboUI
 		{
 			ob_start();
 			?>
-			$('.price.price-real').priceFormat({
-				prefix: 'R$ ',
-				centsSeparator: ',',
-				thousandsSeparator: '.'
+			$('.price.price-real').autoNumeric('init', {
+				aSign: 'R$ ',
+				aDec: ',',
+				aSep: '.',
+				altDec: '.'
 			});
 
-			$('.price.price-generico').priceFormat({
-				prefix: '$ ',
-				centsSeparator: ',',
-				thousandsSeparator: '.'
+			$('.price.price-generico').autoNumeric('init', {
+				aSign: '$ ',
+				aDec: ',',
+				aSep: '.',
+				altDec: '.'
 			});
 
-			$('.price.price-dolar').priceFormat({
-				prefix: 'US$ ',
-				centsSeparator: '.',
-				thousandsSeparator: ','
+			$('.price.price-dolar').autoNumeric('init', {
+				aSign: 'US$ ',
+				aDec: '.',
+				aSep: ',',
+				altDec: '.'
 			});
 			<?
 			dboRegisterDboInit(singleLine(ob_get_clean()), true, 'field_price');

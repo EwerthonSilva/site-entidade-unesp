@@ -24,6 +24,7 @@ $module->auto_view = true;
 $module->ignore_permissions = false;
 $module->order_by = '1040';
 $module->dbo_maker_read_only = true;
+$module->table_engine = 'InnoDB';
 
 /* FIELDS =========================================================================================================== */
 

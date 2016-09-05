@@ -701,25 +701,31 @@ $(document).ready(function(){
 
 	//button to sync all modules to disk
 	$(document).on('click', '.button-sync-all', function(){
+		showPeixeLoader();
 		ajaxLoad('.lixo', 'actions.php?syncAll=1', function(response){
 			setPeixeMessage('<div class="success"><strong><u>Todos os módulos</u></strong> sincronizados com sucesso!</div>');
 			showPeixeMessage();
+			hidePeixeLoader();
 		});
 	})
 
 	//button to sync all updated modules
 	$(document).on('click', '.button-sync', function(){
+		showPeixeLoader();
 		ajaxLoad('.lixo', 'actions.php?syncUpdated=1', function(r){
 			setPeixeMessage('<div class="success"><strong><u>Módulos</u></strong> sincronizados com sucesso!</div>');
 			showPeixeMessage();
+			hidePeixeLoader();
 		});
 	})
 
 	//button to sync all updated modules
 	$(document).on('click', '.button-sync-db', function(){
+		showPeixeLoader();
 		ajaxLoad('.lixo', 'actions.php?syncDatabase=1', function(r){
 			setPeixeMessage('<div class="success"><u><strong>Banco</strong></u> sincronizaco com sucesso: '+(r.length ? r : 'nenhuma alteração.')+'</div>');
 			showPeixeMessage();
+			hidePeixeLoader();
 		});
 	})
 

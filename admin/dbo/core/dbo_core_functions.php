@@ -11,6 +11,9 @@
 	if(!defined(SITE_URL))
 		define(SITE_URL, strstr(DBO_URL, '/admin/dbo') ? preg_replace('#/admin/dbo$#is', '', DBO_URL) : preg_replace('#/dbo$#is', '', DBO_URL));
 
+	/* define a url da área administrativa */
+	define(ADMIN_URL, SITE_URL.(strlen(DBO_ADMIN_FOLDER) ? '/'.DBO_ADMIN_FOLDER : ''));
+
 	/* mascaras de input */
 	define(DBO_MASK_DATE, '99/99/9999');
 	define(DBO_MASK_DATETIME, '99/99/9999 99:99');
@@ -421,8 +424,13 @@
 		}
 		if(!in_array("priceformat", $_system['dbo_imported_js']) && (in_array("priceformat", $libs) || $import_all))
 		{
-			$return .= "<script src=\"".$js_url."/jquery.priceformat.js\"></script>\n";
-			$_system['dbo_imported_js'][] = "priceformat";
+			$return .= "<script src=\"".$js_url."/jquery.autonumeric.js\"></script>\n";
+			$_system['dbo_imported_js'][] = "autonumeric";
+		}
+		if(!in_array("autonumeric", $_system['dbo_imported_js']) && (in_array("autonumeric", $libs) || $import_all))
+		{
+			$return .= "<script src=\"".$js_url."/jquery.autonumeric.js\"></script>\n";
+			$_system['dbo_imported_js'][] = "autonumeric";
 		}
 		if(!in_array("scrollto", $_system['dbo_imported_js']) && (in_array("scrollto", $libs) || $import_all))
 		{
@@ -2565,7 +2573,8 @@
 						<ul id="dbo-top-dock">
 							<?= isSuperAdmin() ? '<li><a href="'.DBO_URL.'/dbomaker/?reffered=1" target="dbomaker" class="color light pointer" title="Gerador de módulos do DBO" data-tooltip><i class="fa fa-fw fa-cube"></i></a></li>' : '' ?>
 							<?= logadoNoPerfil('Desenv') ? '<li><a href="'.DBO_URL.'/core/site-sync.php" class="color light pointer peixe-json" title="Sincronizar informações da base de dados" data-tooltip><i class="fa fa-fw fa-database"></i></a></li>' : '' ?>
-							<?= logadoNoPerfil('Desenv') ? '<li><a href="dbo-maintenance.php" class="color light pointer" title="Panel de manutenção do sistema" data-tooltip><i class="fa fa-fw fa-wrench"></i></a></li>' : '' ?>
+							<?= logadoNoPerfil('Desenv') ? '<li><a href="dbo-maintenance.php" class="color light pointer" title="Painel de manutenção do sistema" data-tooltip><i class="fa fa-fw fa-wrench"></i></a></li>' : '' ?>
+							<?= logadoNoPerfil('Desenv') ? '<li><a href="http://localhost/sysintermed/dbo_permissions.php?perfil=1&dbo_modal=1" class="color light pointer" title="Acesso rápido às permissões do desenvolvedor" data-tooltip rel="modal" data-modal-width="1400" data-modal-esc="true" data-modal-overlay-close="true"><i class="fa fa-fw fa-key"></i></a></li>' : '' ?>
 							<?php $hooks->do_action('dbo_top_dock'); ?>
 						</ul>
 					</div>
