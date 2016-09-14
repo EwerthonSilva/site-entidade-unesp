@@ -363,6 +363,7 @@ function syncTable($module)
 						'on_delete' => $field->join->on_delete,
 					);
 				}
+				$sql_parts[] = "\t".$field->coluna." ".$field->type." ".(($field->isnull)?("NULL"):("NOT NULL"));
 			}
 			//para o caso de PKs não A.I.
 			elseif($field->tipo == 'joinNN')
@@ -407,7 +408,7 @@ function syncTable($module)
 				if($field->pk == true) {
 					$pk = $field->coluna;
 				}
-				$sql_parts[] = "\t".$field->coluna." ".$field->type." ".(($field->isnull)?("NULL"):("NOT NULL"));
+				$sql_parts[] = "\t".$field->coluna." ".$field->type." ".(($field->isnull)?("NULL"):("NOT NULL")).($field->unique ? ' UNIQUE' : '');
 			}
 		}
 	}
@@ -417,6 +418,8 @@ function syncTable($module)
 	}
 	$sql .= @implode(",\n", $sql_parts);
 	$sql .= ") ENGINE = ".($module->table_engine ? $module->table_engine : MYSQL_TABLE_TYPE)." DEFAULT CHARSET=utf8; ";
+
+	mysql_query($sql);
 
 	//agora, tenta verificar se a tabela em questão é do mesmo engine que está no modulo
 	$sql = "SHOW TABLE STATUS WHERE Name = '".$module->tabela."'";
@@ -434,12 +437,6 @@ function syncTable($module)
 			echo mysql_error();
 		};
 	}
-
-	mysql_query($sql);
-	/*if($sql_join)
-	{
-		echo $module->tabela." ##### ".$sql_join;
-	}*/
 
 	//and now checking for the fields in the table. alter tables to create extra-fields.
 	$sql = "SHOW COLUMNS FROM ".$module->tabela;

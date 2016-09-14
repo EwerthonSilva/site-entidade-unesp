@@ -12,6 +12,7 @@
 	<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
 
 	<title><?= SYSTEM_NAME ?> - <?= SYSTEM_DESCRIPTION ?></title>
+	<?= ALLOW_ADMIN_INDEXING !== true ? '<meta name="robots" content="noindex, nofollow">' : '' ?>
 	<meta name="description" content="">
 	<meta name="author" content="Peixe Laranja">
 	<base href="<?= preg_replace('#/dbo$#', '', DBO_URL) ?>/">

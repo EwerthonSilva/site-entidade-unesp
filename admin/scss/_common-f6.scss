@@ -319,3 +319,42 @@ input[type="file"][peixe-ajax-file-upload] { position: absolute; width: 1px; hei
 }
 
 /* /Content Tools *//* /Content Tools */
+
+/* ------------------- */
+/* OAuth and Captcha - */
+/* ------------------- */
+
+$oauth-button-height: 50px !default;
+$oauth-icon-size: 28px !default; //este e o de baixo somandos tem que ser igual ao button-height
+$oauth-icon-padding: 11px !default;
+$oauth-font-size: 14px !default;
+
+//configurações do botão genérico
+.abcRioButton { height: $oauth-button-height !important; text-align: center !important;
+	* { text-align: center !important; } 
+}
+.abcRioButtonIcon { padding: $oauth-icon-padding !important; display: inline-block; width: $oauth-button-height !important; height: $oauth-button-height !important; text-align: center; float: left;
+	i { font-size: $oauth-icon-size; }
+}
+.abcRioButtonIconImage { width: $oauth-icon-size !important; height: $oauth-icon-size !important;
+	svg { width: $oauth-icon-size !important; height: $oauth-icon-size !important; }
+}
+.abcRioButtonContents { font-size: $oauth-font-size !important; line-height: $oauth-button-height !important; font-family: $body-font-family !important; margin-left: 6px; margin-right: 6px; vertical-align: top; display: inline-block; letter-spacing: 0.01em !important;
+	span { display: none !important; }
+}
+
+//configurações do botão do google
+.g-signin2 { height: $oauth-button-height;
+	> div { width: auto !important; }
+	.abcRioButtonContents { 
+		&:before { content: 'Logar com Google'; }
+	}
+}
+
+//configurações do botão do facebook
+.facebook-signin { background-color: #3b5998 !important;
+	* { color: #fff; }
+}
+
+//configurações do reCAPTCHA (centralizar)
+.g-recaptcha > div { margin: 0 auto; margin-bottom: 1em; }

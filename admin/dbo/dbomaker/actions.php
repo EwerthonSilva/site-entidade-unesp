@@ -1141,6 +1141,16 @@ function getFieldForm ($mod,$field)
 
 				<div class='row'>
 					<div class='item'>
+						<label>Unique</label>
+						<div class='input'>
+							<input type='radio' name='unique' value="1" <?= ($campo->unique)?('CHECKED'):('') ?>/>Sim &nbsp;&nbsp;&nbsp;
+							<input type='radio' name='unique' value="0" <?= (!$campo->unique)?('CHECKED'):('') ?>/>Não
+						</div>
+					</div>
+				</div><!-- row -->
+
+				<div class='row'>
+					<div class='item'>
 						<label title="Selecione para definir esse campo como chave primária do módulo atual.">Chave Primária</label>
 						<div class='input'>
 							<select name='pk'>
@@ -1442,14 +1452,25 @@ function getFieldTypeDetail ($type = '', $mod = '',$field = '')
 		// IMAGE ------------------------------------------------------------------------------------------------------------------------
 		} elseif($type == 'image') {
 		?>
-					<div class='row wide'>
-						<div class='item'>
-							<label title="Permite que o usuário aumente as margens da imagem na edição">Permitir expansão do canvas</label>
+					<div class="row wide">
+						<div class="item item-33">
+							<label title="Permite que o usuário aumente as margens da imagem na edição" class="help">Permitir expansão do canvas <i class="fa fa-question-circle"></i></label>
 							<select name="allow_canvas_expansion">
 								<option value="false" <?= (($campo->allow_canvas_expansion == false)?('selected'):('')) ?>>Não</option>
 								<option value="true" <?= (($campo->allow_canvas_expansion == true)?('selected'):('')) ?>>Sim</option>
 							</select>
-							<label title="Não utilize prefixo para o primeiro elemento. As dimensões representam dimensões máximas que a imagem pode ter.">Dimensões</label>
+						</div>
+						<div class="item item-33">
+							<label title="Permite que o sistema redimensione imagens pequenas para tamanhos maiores na geração dos thumbnails" class="help">Redimensionar para maior <i class="fa fa-question-circle"></i></label>
+							<select name="allow_size_expansion">
+								<option value="false" <?= (($campo->allow_size_expansion == false)?('selected'):('')) ?>>Não</option>
+								<option value="true" <?= (($campo->allow_size_expansion == true)?('selected'):('')) ?>>Sim</option>
+							</select>
+						</div>
+					</div>
+					<div class='row wide'>
+						<div class='item'>
+							<label title="Não utilize prefixo para o primeiro elemento. As dimensões representam dimensões máximas que a imagem pode ter." class="help">Dimensões <i class="fa fa-question-circle"></i></label>
 							<div class='input' style='position: relative; padding-bottom: 20px;'>
 							<a href='#' class='image-new-size'><span>Novo tamanho</span></a>
 							<?
@@ -2141,6 +2162,7 @@ function runUpdateField($post_data)
 	elseif($post_data['tipo'] == 'image')
 	{
 		$_SESSION['dbomaker_modulos'][$mod]->campo[$field]->allow_canvas_expansion = $post_data['allow_canvas_expansion'] == 'true' ? true : false;
+		$_SESSION['dbomaker_modulos'][$mod]->campo[$field]->allow_size_expansion = $post_data['allow_size_expansion'] == 'true' ? true : false;
 		$image = array();
 		foreach($post_data['dbo_image_array'] as $key => $value)
 		{
@@ -3292,6 +3314,10 @@ function writeModuleFile($mod)
 					}
 					fwrite($fh, "\$field->pk = ".(($field->pk === true)?('true'):('false')).";\n");
 					fwrite($fh, "\$field->isnull = ".(($field->isnull === true)?('true'):('false')).";\n");
+					if(strlen($field->unique))
+					{
+						fwrite($fh, "\$field->unique = true;\n");
+					}
 					fwrite($fh, "\$field->add = ".(($field->add === true)?('true'):('false')).";\n");
 					fwrite($fh, "\$field->valida = ".(($field->valida === true)?('true'):('false')).";\n");
 					fwrite($fh, "\$field->edit = ".(($field->edit === true)?('true'):('false')).";\n");
@@ -3380,6 +3406,10 @@ function writeModuleFile($mod)
 						if($field->allow_canvas_expansion)
 						{
 							fwrite($fh, "\$field->allow_canvas_expansion = true;\n");
+						}
+						if($field->allow_size_expansion)
+						{
+							fwrite($fh, "\$field->allow_size_expansion = true;\n");
 						}
 						if(is_array($field->image))
 						{

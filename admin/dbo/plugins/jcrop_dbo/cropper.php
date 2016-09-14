@@ -1,7 +1,7 @@
 <?
 require_once('../../../lib/includes.php');
 require_once(DBO_PATH."/core/classes/simpleimage.php");
-$data = unserialize(base64_decode($_GET['data']));
+$data = unserialize(dboDecode($_GET['data']));
 
 //instanciando as variaveis do objeto pai no contexto global
 foreach($data as $key => $value)

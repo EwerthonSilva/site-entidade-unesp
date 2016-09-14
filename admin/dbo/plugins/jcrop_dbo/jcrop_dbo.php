@@ -85,7 +85,7 @@ class dbo_jcrop_dbo
 	{
 		echo dboImportJs('colorbox');
 		$result .= "<div class='jcrop-dbo-result-canvas' id='jcrop-dbo-preview-".$coluna."'><img src='images/spacer.gif' class='thumb-lista' style='display: none; width: 100%; max-width: 100%;'></div>";
-		$result .= "<a href='".DBO_URL."/plugins/jcrop_dbo/cropper.php?data=".base64_encode(serialize($this))."&coluna=".$coluna."' data-width='1050' data-height='98%' rel='modal' class='button secondary radius small'>Selecione a foto para tratamento</a>";
+		$result .= "<a href='".DBO_URL."/plugins/jcrop_dbo/cropper.php?data=".dboEncode(serialize($this))."&coluna=".$coluna."' data-width='1050' data-height='98%' rel='modal' class='button secondary radius small'>Selecione a foto para tratamento</a>";
 		$result .= "<input type='hidden' name='".$coluna."[image]' id='jcrop-dbo-field-".$coluna."'>";
 		$result .= '<script>function closeBox(coluna, filename) { $(\'#jcrop-dbo-field-\'+coluna).val(filename); $(\'#jcrop-dbo-preview-\'+coluna+\' img\').attr(\'src\', \''.DBO_URL.'/plugins/jcrop_dbo/temp/c1_\'+filename).fadeIn(); $.colorbox.close(); }</script>';
 
@@ -118,7 +118,7 @@ class dbo_jcrop_dbo
 		{
 			$result .= "<div class='jcrop-dbo-result-canvas' id='jcrop-dbo-preview-".$coluna."' style=\"min-height: 60px;\"><img src='images/spacer.gif' class='thumb-lista' style='display: none; width: 100%; max-width: 100%;'></div>";
 		}
-		$result .= "<a href='".DBO_URL."/plugins/jcrop_dbo/cropper.php?data=".base64_encode(serialize($this))."&coluna=".$coluna."' data-width='1050' data-height='98%' rel='modal' class='jcrop-alterar-foto' id='jcrop-dbo-trigger-cropper-".$coluna."'>Alterar foto</a> ".((strlen($this->image))?("<span style='white-space: nowrap; display: none;'><input style='display: inline' type='checkbox' CHECKED name='".$coluna."[keep]' value='1' id='jcrop-dbo-keep-".$coluna."'> Manter a foto atual</span>"):(''));
+		$result .= "<a href='".DBO_URL."/plugins/jcrop_dbo/cropper.php?data=".dboEncode(serialize($this))."&coluna=".$coluna."' data-width='1050' data-height='98%' rel='modal' class='jcrop-alterar-foto' id='jcrop-dbo-trigger-cropper-".$coluna."'>Alterar foto</a> ".((strlen($this->image))?("<span style='white-space: nowrap; display: none;'><input style='display: inline' type='checkbox' CHECKED name='".$coluna."[keep]' value='1' id='jcrop-dbo-keep-".$coluna."'> Manter a foto atual</span>"):(''));
 		$result .= '<script>function closeBox(coluna, filename) { $(\'#jcrop-dbo-field-\'+coluna).val(filename); $(\'#jcrop-dbo-preview-\'+coluna+\' img\').attr(\'src\', \''.DBO_URL.'/plugins/jcrop_dbo/temp/c1_\'+filename).fadeIn(); $.colorbox.close(); $(\'#jcrop-dbo-keep-\'+coluna).removeAttr(\'checked\'); }</script>';
 		ob_start();
 		?>

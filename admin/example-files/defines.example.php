@@ -3,6 +3,21 @@
 /* define a senha mestra para login no site */
 //define(MASTER_PASSWORD, 'e771ebe40a650de43bd9ed531015268d106700b5bda5a3a98b70d9bef1577642d13f75da34d97bd6f8ca0121019d6cacf79582b2708749e3899ba5c9da1de16b');
 
+/* configurações do reCAPTCHA (https://www.google.com/recaptcha/) */
+//define(DBO_RECAPTCHA_ACTIVE, 'production'); //true, 'production' ou false
+//define(DBO_RECAPTCHA_SITE_KEY, ''); 
+//define(DBO_RECAPTCHA_SECRET_KEY, '');
+
+/* define as configurações para autenticação do google e facebook. A tabela pessoa precisa ter os campos 'google_id' e 'facebook_id' */
+//define(GOOGLE_AUTH_CONFIG_JSON, '{ stringified JSON ... }');
+//define(FACEBOOK_AUTH_CONFIG_JSON, '{"app_id":" ... ","app_secret":" ... "}');
+//define(OAUTH_ALLOW_NEW_USERS, false); //se setado como false, só vai permitir que usuários já existentes loguem com o Google.
+//define(OAUTH_NEW_USER_PERFIL, 'Cliente'); //Coloque por extenso o nome do perfil ou o id.
+//define(OAUTH_SDK_URLS, 'login'); //lista, separada por virgulas, das páginas em que o SDK de OAuth deve ser carregado (sem o .php). (para evitar JS a toa)
+
+/* define se os search engines podem indexar as páginas da área administrativa, padrão false */
+//define(ALLOW_ADMIN_INDEXING, false);
+
 /* define se os e-mails serão ou não enviados por SMTP */
 //define(DBO_MAIL_IS_SMTP, false);
 
@@ -15,7 +30,7 @@
 /* define a url do site */
 //define(SITE_URL, preg_replace('#/admin/dbo$#is', '', DBO_URL));
 
-/* define a url do site. "content-tools" ou "tinymce" */
+/* define o editor de textos usado no admin (bugado, não usar). "content-tools" ou "tinymce" */
 //define(PAGINA_EDITOR_TYPE, 'tinymce'); 
 
 /* define uma pagina principal diferente do cadastros.php */

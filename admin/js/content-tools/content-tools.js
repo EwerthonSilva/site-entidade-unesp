@@ -3616,7 +3616,7 @@
         return selection.select(previous.domElement());
       } else {
         return ContentEdit.Root.get().trigger('previous-region', this.closest(function(node) {
-          return node.type() === 'Region';
+          return node.type() === 'Fixture' || node.type() === 'Region';
         }));
       }
     };
@@ -3624,7 +3624,7 @@
     Text.prototype._keyReturn = function(ev) {
       var element, insertAt, lineBreakStr, selection, tail, tip;
       ev.preventDefault();
-      if (this.content.isWhitespace()) {
+      if (this.content.isWhitespace() && !ev.shiftKey ^ ContentEdit.PREFER_LINE_BREAKS) {
         return;
       }
       selection = ContentSelect.Range.query(this._domElement);
@@ -3634,7 +3634,7 @@
         insertAt = selection.get()[0];
         lineBreakStr = '<br>';
         if (this.content.length() === insertAt) {
-          if (!this.content.characters[insertAt - 1].isTag('br')) {
+          if (this.content.length() === 0 || !this.content.characters[insertAt - 1].isTag('br')) {
             lineBreakStr = '<br><br>';
           }
         }
@@ -3684,7 +3684,18 @@
     };
 
     Text.prototype._keyTab = function(ev) {
-      return ev.preventDefault();
+      ev.preventDefault();
+      if (this.isFixed()) {
+        if (ev.shiftKey) {
+          return ContentEdit.Root.get().trigger('previous-region', this.closest(function(node) {
+            return node.type() === 'Fixture' || node.type() === 'Region';
+          }));
+        } else {
+          return ContentEdit.Root.get().trigger('next-region', this.closest(function(node) {
+            return node.type() === 'Fixture' || node.type() === 'Region';
+          }));
+        }
+      }
     };
 
     Text.prototype._keyUp = function(ev) {
@@ -3802,20 +3813,6 @@
       return this._flagIfEmpty();
     };
 
-    PreText.prototype._onKeyUp = function(ev) {
-      var html, newSnaphot, snapshot;
-      this._ensureEndZWS();
-      snapshot = this.content.html();
-      html = this._domElement.innerHTML;
-      html = html.replace(/\u200B$/g, '');
-      this.content = new HTMLString.String(html, this.content.preserveWhitespace());
-      newSnaphot = this.content.html();
-      if (snapshot !== newSnaphot) {
-        this.taint();
-      }
-      return this._flagIfEmpty();
-    };
-
     PreText.prototype._keyBack = function(ev) {
       var selection;
       selection = ContentSelect.Range.query(this._domElement);
@@ -3849,16 +3846,44 @@
       return this.taint();
     };
 
+    PreText.prototype._syncContent = function(ev) {
+      var newSnapshot, snapshot;
+      this._ensureEndZWS();
+      snapshot = this.content.html();
+      this.content = new HTMLString.String(this._domElement.innerHTML.replace(/\u200B$/g, ''), this.content.preserveWhitespace());
+      newSnapshot = this.content.html();
+      if (snapshot !== newSnapshot) {
+        this.taint();
+      }
+      return this._flagIfEmpty();
+    };
+
     PreText.prototype._ensureEndZWS = function() {
+      var html, _addZWS;
       if (!this._domElement.lastChild) {
         return;
       }
-      if (this._domElement.innerHTML[this._domElement.innerHTML.length - 1] === '\u200B') {
-        return;
+      html = this._domElement.innerHTML;
+      if (html[html.length - 1] === '\u200B') {
+        if (html.indexOf('\u200B') < html.length - 1) {
+          return;
+        }
       }
-      this.storeState();
-      this._domElement.lastChild.textContent += '\u200B';
-      return this.restoreState();
+      _addZWS = (function(_this) {
+        return function() {
+          if (html.indexOf('\u200B') > -1) {
+            _this._domElement.innerHTML = html.replace(/\u200B/g, '');
+          }
+          return _this._domElement.lastChild.textContent += '\u200B';
+        };
+      })(this);
+      if (this._savedSelection) {
+        return _addZWS();
+      } else {
+        this.storeState();
+        _addZWS();
+        return this.restoreState();
+      }
     };
 
     PreText.droppers = {
@@ -4578,11 +4603,12 @@
       if (tip.length()) {
         listItem.listItemText().focus();
         selection = new ContentSelect.Range(0, 0);
-        return selection.select(listItem.listItemText().domElement());
+        selection.select(listItem.listItemText().domElement());
       } else {
         selection = new ContentSelect.Range(0, tip.length());
-        return selection.select(this._domElement);
+        selection.select(this._domElement);
       }
+      return this.taint();
     };
 
     ListItemText.droppers = {
@@ -6436,7 +6462,7 @@
         before = null;
       }
       this._domElement = this.constructor.createDiv(['ct-tool', "ct-tool--" + this.tool.icon]);
-      this._domElement.setAttribute('data-tooltip', ContentEdit._(this.tool.label));
+      this._domElement.setAttribute('data-ct-tooltip', ContentEdit._(this.tool.label));
       return ToolUI.__super__.mount.call(this, domParent, before);
     };
 
@@ -6514,6 +6540,7 @@
     AnchoredDialogUI.prototype.mount = function() {
       this._domElement = this.constructor.createDiv(['ct-widget', 'ct-anchored-dialog']);
       this.parent().domElement().appendChild(this._domElement);
+      this._contain();
       this._domElement.style.top = "" + this._position[1] + "px";
       return this._domElement.style.left = "" + this._position[0] + "px";
     };
@@ -6524,8 +6551,24 @@
       }
       this._position = newPosition.slice();
       if (this.isMounted()) {
+        this._contain();
         this._domElement.style.top = "" + this._position[1] + "px";
         return this._domElement.style.left = "" + this._position[0] + "px";
+      }
+    };
+
+    AnchoredDialogUI.prototype._contain = function() {
+      var halfWidth, pageWidth;
+      if (!this.isMounted()) {
+        return;
+      }
+      halfWidth = this._domElement.getBoundingClientRect().width / 2 + 5;
+      pageWidth = document.documentElement.clientWidth || document.body.clientWidth;
+      if ((this._position[0] + halfWidth) > (pageWidth - halfWidth)) {
+        this._position[0] = pageWidth - halfWidth;
+      }
+      if (this._position[0] < halfWidth) {
+        return this._position[0] = halfWidth;
       }
     };
 
@@ -6690,13 +6733,13 @@
       domTools = this.constructor.createDiv(['ct-control-group', 'ct-control-group--left']);
       this._domControls.appendChild(domTools);
       this._domRotateCCW = this.constructor.createDiv(['ct-control', 'ct-control--icon', 'ct-control--rotate-ccw']);
-      this._domRotateCCW.setAttribute('data-tooltip', ContentEdit._('Rotate') + ' -90°');
+      this._domRotateCCW.setAttribute('data-ct-tooltip', ContentEdit._('Rotate') + ' -90°');
       domTools.appendChild(this._domRotateCCW);
       this._domRotateCW = this.constructor.createDiv(['ct-control', 'ct-control--icon', 'ct-control--rotate-cw']);
-      this._domRotateCW.setAttribute('data-tooltip', ContentEdit._('Rotate') + ' 90°');
+      this._domRotateCW.setAttribute('data-ct-tooltip', ContentEdit._('Rotate') + ' 90°');
       domTools.appendChild(this._domRotateCW);
       this._domCrop = this.constructor.createDiv(['ct-control', 'ct-control--icon', 'ct-control--crop']);
-      this._domCrop.setAttribute('data-tooltip', ContentEdit._('Crop marks'));
+      this._domCrop.setAttribute('data-ct-tooltip', ContentEdit._('Crop marks'));
       domTools.appendChild(this._domCrop);
       domProgressBar = this.constructor.createDiv(['ct-progress-bar']);
       domTools.appendChild(domProgressBar);
@@ -7220,19 +7263,19 @@
       domTabs = this.constructor.createDiv(['ct-control-group', 'ct-control-group--left']);
       this._domControls.appendChild(domTabs);
       this._domStylesTab = this.constructor.createDiv(['ct-control', 'ct-control--icon', 'ct-control--styles']);
-      this._domStylesTab.setAttribute('data-tooltip', ContentEdit._('Styles'));
+      this._domStylesTab.setAttribute('data-ct-tooltip', ContentEdit._('Styles'));
       domTabs.appendChild(this._domStylesTab);
       this._domAttributesTab = this.constructor.createDiv(['ct-control', 'ct-control--icon', 'ct-control--attributes']);
-      this._domAttributesTab.setAttribute('data-tooltip', ContentEdit._('Attributes'));
+      this._domAttributesTab.setAttribute('data-ct-tooltip', ContentEdit._('Attributes'));
       domTabs.appendChild(this._domAttributesTab);
       this._domCodeTab = this.constructor.createDiv(['ct-control', 'ct-control--icon', 'ct-control--code']);
-      this._domCodeTab.setAttribute('data-tooltip', ContentEdit._('Code'));
+      this._domCodeTab.setAttribute('data-ct-tooltip', ContentEdit._('Code'));
       domTabs.appendChild(this._domCodeTab);
       if (!this._supportsCoding) {
         ContentEdit.addCSSClass(this._domCodeTab, 'ct-control--muted');
       }
       this._domRemoveAttribute = this.constructor.createDiv(['ct-control', 'ct-control--icon', 'ct-control--remove', 'ct-control--muted']);
-      this._domRemoveAttribute.setAttribute('data-tooltip', ContentEdit._('Remove'));
+      this._domRemoveAttribute.setAttribute('data-ct-tooltip', ContentEdit._('Remove'));
       domTabs.appendChild(this._domRemoveAttribute);
       domActions = this.constructor.createDiv(['ct-control-group', 'ct-control-group--right']);
       this._domControls.appendChild(domActions);
@@ -8335,13 +8378,17 @@
       if (regionQuery !== void 0) {
         this._regionQuery = regionQuery;
       }
-      if (this._regionQuery.length > 0 && this._regionQuery[0].nodeType === Node.ELEMENT_NODE) {
-        this._domRegions = this._regionQuery;
-      } else {
-        this._domRegions = document.querySelectorAll(this._regionQuery);
+      this._domRegions = [];
+      if (this._regionQuery) {
+        if (typeof this._regionQuery === 'string' || this._regionQuery instanceof String) {
+          this._domRegions = document.querySelectorAll(this._regionQuery);
+        } else {
+          this._domRegions = this._regionQuery;
+        }
       }
       if (this._state === 'editing') {
         this._initRegions();
+        this._preventEmptyRegions();
       }
       if (this._ignition) {
         if (this._domRegions.length) {

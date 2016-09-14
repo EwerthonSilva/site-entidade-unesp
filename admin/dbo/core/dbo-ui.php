@@ -1303,8 +1303,6 @@ class dboUI
 				//classe para fazer resize das imagens
 				include_once(DBO_PATH."/core/classes/simpleimage.php");
 
-
-
 				foreach($image as $chave2 => $valor2) //processando o resize para todos os tamanhos das imagens
 				{
 					$valor2 = (array)$valor2;
@@ -1312,26 +1310,48 @@ class dboUI
 					$h = $valor2['height'];
 					$q = $valor2['quality'];
 					$image_prefix = $valor2['prefix'];
-					$image = new SimpleImage();
-					$image->load($hosted_file_path);
+					$img = new SimpleImage();
+					$img->load($hosted_file_path);
+
+					//para cada situação, verifica se pode redimensionar para maior
 					if($w && !$h)
 					{
-						$image->resizeToWidth($w);
+						if($img->getWidth() > $w || $allow_size_expansion)
+						{
+							$img->resizeToWidth($w);
+						}
 					}
 					elseif ($h && !$w)
 					{
-						$image->resizeToHeight($h);
+						if($img->getHeight() > $h || $allow_size_expansion)
+						{
+							$img->resizeToHeight($h);
+						}
 					}
 					else
 					{
-						if($w >= $h) {
-							$image->resizeToWidth($w);
+						if($img->getWidth() >= $img->getHeight()) {
+							if($img->getWidth() > $w || $allow_size_expansion)
+							{
+								$img->resizeToWidth($w);
+							}
+							elseif($img->getHeight() > $h || $allow_size_expansion)
+							{
+								$img->resizeToHeight($h);
+							}
 						} else {
-							$image->resizeToHeight($h);
+							if($img->getHeight() > $h || $allow_size_expansion)
+							{
+								$img->resizeToHeight($h);
+							}
+							elseif($img->getWidth() > $w || $allow_size_expansion)
+							{
+								$img->resizeToWidth($w);
+							}
 						}
 					}
 					$file_path = DBO_PATH."/upload/images/".$image_prefix.$raw_value;
-					$image->save($file_path, $q); //salvando o arquivo no server
+					$img->save($file_path, $q); //salvando o arquivo no server
 				}
 			}
 

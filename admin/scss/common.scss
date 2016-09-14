@@ -155,6 +155,7 @@ input, a, select {
 .align-middle-container { 
 	* { vertical-align: middle; }
 }
+.absolute-center { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); -webkit-transform-style: preserve-3d; -moz-transform-style: preserve-3d; transform-style: preserve-3d; }
 
 /* --------------------------------------------------------------------------------------------------------*/
 /* ALGUNS RESETS PARA O FOUNDATION ------------------------------------------------------------------------*/
@@ -593,5 +594,29 @@ hr.tiny { margin: 0.50em 0; }
 	.margin-bottom-2x { margin-bottom: 2rem; }
 	.margin-bottom-4x { margin-bottom: 4rem; }
 }
+
+/* botoes de login de redes sociais e captcha */
+.abcRioButton { height: 50px !important; text-align: center !important;
+	* { text-align: center !important; } 
+}
+.abcRioButtonIcon { padding: 11px !important; display: inline-block; width: 50px !important; height: 50px !important; text-align: center; float: left;
+	i { font-size: 28px; }
+}
+.abcRioButtonIconImage { width: 28px !important; height: 28px !important;
+	svg { width: 28px !important; height: 28px !important; }
+}
+.abcRioButtonContents { font-size: 14px !important; line-height: 50px !important; font-family: $body-font-family !important; margin-left: 6px; margin-right: 6px; vertical-align: top; display: inline-block; letter-spacing: 0.01em !important;
+	span { display: none !important; }
+}
+.g-signin2 { height: 50px;
+	> div { width: auto !important; }
+	.abcRioButtonContents { 
+		&:before { content: 'Logar com Google'; }
+	}
+}
+.facebook-signin { background-color: #3b5998 !important;
+	* { color: #fff; }
+}
+.g-recaptcha > div { margin: 0 auto; margin-bottom: 1em; }
 
 /* /Content Tools */

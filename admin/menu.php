@@ -23,7 +23,7 @@
 		if(PAGINA_ATUAL != 'login.php')
 		{
 		?>
-			<li><a href="login.php">Faça seu login</a></li>
+			<li><a href="login.php?dbo_redirect=<?= dboEncode(fullUrl()) ?>">Faça seu login</a></li>
 		<?
 		}
 	}

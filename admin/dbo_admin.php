@@ -2,7 +2,7 @@
 <? require('auth.php') ?>
 <? require_once(DBO_PATH.'/core/dbo-ui.php'); ?>
 <?
-	$params = $_GET['dbo_params'] ? json_decode(base64_decode($_GET['dbo_params']), true) : array();
+	$params = $_GET['dbo_params'] ? json_decode(dboDecode($_GET['dbo_params']), true) : array();
 	if($_GET['dbo_pagina_tipo'])
 	{
 		$params['tipo'] = dboescape($_GET['dbo_pagina_tipo']);

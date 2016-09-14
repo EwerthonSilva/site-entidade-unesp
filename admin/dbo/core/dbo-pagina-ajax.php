@@ -17,7 +17,7 @@
 		}
 		else
 		{
-			$full_url = base64_decode($_GET['full_url']);
+			$full_url = dboDecode($_GET['full_url']);
 
 			$pag = pagina::smartLoad(array(
 				'id' => $_GET['pagina_id'],
@@ -162,7 +162,7 @@
 			//se for um insert, atualiza o action do formulário para update.
 			if($operation == 'insert')
 			{
-				$form_action = secureUrl('dbo/core/dbo-pagina-ajax.php?action=salvar-pagina&tipo='.$_GET['tipo'].'&pagina_id='.$pag->id."&full_url=".base64_encode($dbo->keepUrl(array(
+				$form_action = secureUrl('dbo/core/dbo-pagina-ajax.php?action=salvar-pagina&tipo='.$_GET['tipo'].'&pagina_id='.$pag->id."&full_url=".dboEncode($dbo->keepUrl(array(
 					'dbo_update='.$pag->id,
 					'!dbo_new'
 				), array(

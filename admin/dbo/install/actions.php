@@ -173,10 +173,17 @@ function step2()
 		$sql = "
 			CREATE TABLE IF NOT EXISTS `pessoa` (
 			  `id` int(11) NOT NULL auto_increment,
+			  `foto` varchar(255) NOT NULL,
 			  `nome` varchar(255) NOT NULL,
-			  `email` varchar(255) NOT NULL,
-			  `user` varchar(255) NOT NULL,
+			  `apelido` varchar(255) NOT NULL,
+			  `sexo` varchar(255) NOT NULL,
+			  `email` varchar(255) NULL UNIQUE,
+			  `user` varchar(255) NULL UNIQUE,
 			  `pass` varchar(255) NOT NULL,
+			  `descricao` TEXT NOT NULL,
+			  `dbo_flag_desenv` INT(11) NOT NULL,
+			  `google_id` varchar(255) NULL UNIQUE,
+			  `facebook_id` varchar(255) NULL UNIQUE,
 			  PRIMARY KEY  (`id`)
 			) ENGINE=InnoDB  DEFAULT CHARSET=utf8;
 		";

@@ -68,7 +68,7 @@
 			#wrapper-categorias-da-pagina input[type="checkbox"] { margin-bottom: 0px; padding-bottom: 8px; }
 		</style>
 
-		<form id="form-pagina" method="post" action="<?= secureUrl('dbo/core/dbo-pagina-ajax.php?action=salvar-pagina&tipo='.$tipo.'&pagina_id='.$pag->id."&full_url=".base64_encode($pag->keepUrl())) ?>" peixe-silent>
+		<form id="form-pagina" method="post" action="<?= secureUrl('dbo/core/dbo-pagina-ajax.php?action=salvar-pagina&tipo='.$tipo.'&pagina_id='.$pag->id."&full_url=".dboEncode($pag->keepUrl())) ?>" peixe-silent>
 			<div class="row almost full">
 				<div class="large-9 columns">
 					<div class="row">

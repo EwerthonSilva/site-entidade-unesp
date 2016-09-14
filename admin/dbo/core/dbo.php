@@ -162,9 +162,8 @@ class DboFieldType {
 		extract($params);
 		if($this->data->tipo == 'content-tools')
 		{
-			return dboContentTools($this->value, array(
-				'template' => ($template ? $template : $this->data->params['template']),
-			));
+			$params = array_merge($params, array('template' => ($template ? $template : $this->data->params['template'])));
+			return dboContentTools($this->value, $params);
 		}
 		else
 		{
@@ -175,6 +174,29 @@ class DboFieldType {
 	function frontEnd($params = array())
 	{
 		return $this->content($params);
+	}
+
+	function createFromUrl($url, $params = array())
+	{
+		if($this->data->tipo == 'image')
+		{
+			if($url)
+			{
+				$file_name = time().'-from-url-'.str_pad(rand(1, 9999), 4, '0', STR_PAD_LEFT).dboGetExtension($url);
+				foreach($this->data->image as $key => $info)
+				{
+					//para o primeiro index, salva em files alem de salvar em images, e atualiza o campo url para buscar a partir deste local.
+					if($key === 0)
+					{
+						$new_url = DBO_PATH.'/upload/files/'.$info->prefix.$file_name;
+						$return = downloadFileFromUrl($url, $new_url);
+						$url = $new_url;
+					}
+					$return = downloadFileFromUrl($url, DBO_PATH.'/upload/images/'.$info->prefix.$file_name);
+				}
+				return $return ? $file_name : '';
+			}
+		}
 	}
 }
 
@@ -613,7 +635,7 @@ class Dbo extends Obj
 	{
 		if($var)
 		{
-			$var = base64_decode($var);
+			$var = dboDecode($var);
 			$variaveis = explode("||", $var);
 			foreach($variaveis as $chave => $valor)
 			{
@@ -1642,7 +1664,7 @@ class Dbo extends Obj
 
 	function makeMid()
 	{
-		return base64_encode(time().rand(1,100000));
+		return dboEncode(time().rand(1,100000));
 	}
 
 	//cria um id unico para guardar informações do modulo atual na sesssao ----------------------------------------------------------------
@@ -2102,14 +2124,14 @@ class Dbo extends Obj
 		}
 		$query .= @implode("||", $query_aux);
 
-		return base64_encode($query);
+		return dboEncode($query);
 	}
 
 	//cria um complemento de SQL com os fixos --------------------------------------------------------------------------------------------
 
 	function decodeFixos($foo)
 	{
-		$foo = base64_decode($foo);
+		$foo = dboDecode($foo);
 		list($chave, $valor) = explode("::", $foo);
 		return array($chave => $valor);
 	}
@@ -3079,7 +3101,7 @@ class Dbo extends Obj
 			$scheme = $this->__module_scheme;
 			$fixos = $this->__fixos;
 
-			if($load_autoadmin_data)
+			if($load_autoadmin_data && !$this->id)
 			{
 				$update = dboescape($_GET['dbo_update']);
 				$this->id = $update;
@@ -3229,7 +3251,7 @@ class Dbo extends Obj
 			if(!$fields_only)
 			{
 				$return .= "<div class='row'><div class='item large-12 columns text-right'><div class='input'><button class='button radius peixe-save' id=\"main-submit\" accesskey='s'>Salvar alterações n".$this->__module_scheme->genero." ".dboStrToLower($this->__module_scheme->titulo)."</button></div></div></div>";
-				$return .= "<input type='hidden' name='__dbo_update_flag' value='".$update."'>\n\n";
+				$return .= "<input type='hidden' name='__dbo_update_flag' value='".$this->id."'>\n\n";
 				$return .= CSRFInput();
 				$return .= submitToken();
 				$return .= "</form></div></div></span>"; //.dbo-element
@@ -3634,9 +3656,24 @@ class Dbo extends Obj
 									{
 										?>
 										<div class='row'>
-											<div class='large-12 columns'>
+											<?php
+												$function_name = false;
+												if(function_exists('form_'.$this->getModule().'_toolbar'))
+												{
+													$function_name = 'form_'.$this->getModule().'_toolbar';
+												}
+											?>
+											<div class='large-<?= $function_name ? '7' : '12' ?> columns'>
 												<h3>Nov<?= $scheme->genero ?> <?= dboStrToLower($scheme->titulo) ?></h3>
 											</div>
+											<?php
+												if($function_name)
+												{
+													?>
+													<div class="small-12 large-5 columns"><?= $function_name('insert', $this); ?></div>
+													<?php
+												}
+											?>
 										</div><!-- row -->
 										<?php
 										echo $this->getInsertForm(array(
@@ -3675,28 +3712,44 @@ class Dbo extends Obj
 						{
 							if($_GET['dbo_update'])
 							{
-								?>
-								<?= $this->getBarraAcoesUpdate($this->getButtonScheme($this)) ?>
-								<?
-									if(function_exists('form_'.$this->getModule().'_update'))
+								//carrega o modulo
+								$this->id = dboescape($_GET['dbo_update']);
+								$this->load();
+
+								echo $this->getBarraAcoesUpdate($this->getButtonScheme($this));
+
+								if(function_exists('form_'.$this->getModule().'_update'))
+								{
+									$function_name = 'form_'.$this->getModule().'_update';
+									$class_name = get_class($this);
+									echo $function_name(new $class_name(dboescape($_GET['dbo_update'])));
+								}
+								else
+								{
+									$function_name = false;
+									if(function_exists('form_'.$this->getModule().'_toolbar'))
 									{
-										$function_name = 'form_'.$this->getModule().'_update';
-										$class_name = get_class($this);
-										echo $function_name(new $class_name(dboescape($_GET['dbo_update'])));
+										$function_name = 'form_'.$this->getModule().'_toolbar';
 									}
-									else
-									{
-										?>
-										<div class='row'>
-											<div class='large-12 columns'>
-												<h3>Alterar <?= dboStrToLower($scheme->titulo) ?></h3>
-											</div><!-- col -->
-										</div><!-- row -->
+									?>
+									<div class='row'>
+										<div class='large-<?= $function_name ? '7' : '12' ?> columns'>
+											<h3>Alterar <?= dboStrToLower($scheme->titulo) ?></h3>
+										</div><!-- col -->
 										<?php
-										$this->getUpdateForm(array(
-											'id_formulario' => $id_formulario,
-										));
-									}
+											if($function_name)
+											{
+												?>
+												<div class="small-12 large-5 columns"><?= $function_name('update', $this) ?></div>
+												<?php
+											}
+										?>
+									</div><!-- row -->
+									<?php
+									$this->getUpdateForm(array(
+										'id_formulario' => $id_formulario,
+									));
+								}
 							}
 						}
 						//shows the list if you're not in the update or insert form.
@@ -4041,6 +4094,7 @@ class Dbo extends Obj
 					if($($wrapper_novo).hasClass('hidden'))
 					{
 						$wrapper_novo.fadeIn().removeClass('hidden');
+						$wrapper_novo.peixeAutoFocus();
 						$('.trigger-dbo-auto-admin-inserir').fadeOut('fast', function(){
 							$('.trigger-dbo-auto-admin-cancelar-insercao-edicao').fadeIn('fast');
 						})
@@ -4093,7 +4147,9 @@ class Dbo extends Obj
 			$(document).ready(function(){
 
 				dboInit();
-					
+
+				<? if(!$_GET['sucesso']) { ?> "$('#<?= $id_formulario ?>').peixeAutoFocus();" <? } ?>
+
 				$(document).on('click', '.trigger-clear-closest-input', function(e){
 					e.preventDefault();
 					$(this).closest('.item').find('input').val('');

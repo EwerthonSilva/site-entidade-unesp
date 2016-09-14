@@ -20,6 +20,10 @@
 	define(DBO_MASK_CPF, '999.999.999-99');
 	define(DBO_MASK_CNPJ, '99.999.999/9999-99');
 
+	/* defines para uso de recaptcha */
+	define(DBO_RECAPTCHA_DESENV_SITE_KEY, '6LdAIikTAAAAAGEFBJFCaudIRcploiB5yFOk4kcd'); 
+	define(DBO_RECAPTCHA_DESENV_SECRET_KEY, '6LdAIikTAAAAAM6OF2K9mRFJzxiU7FkWtbabfeVN');
+
 	//variáveis de sistema
 	$_system['media_manager']['default_image_sizes'] = array(
 		'small' => array(
@@ -65,6 +69,92 @@
 		unset($process);
 	}
 
+	// ----------------------------------------------------------------------------------------------------------------
+
+	/* prepara o site para suportar login por OAUTH */
+	if(defined('GOOGLE_AUTH_CONFIG_JSON') || defined('FACEBOOK_AUTH_CONFIG_JSON'))
+	{
+		if(defined('GOOGLE_AUTH_CONFIG_JSON') && (!defined('OAUTH_SDK_URLS') || in_array(thisPage(), explode(',', OAUTH_SDK_URLS)) || $_GET['load_oauth_sdks']))
+		{
+			function hookGoogleOAuth()
+			{
+				$parts = json_decode(GOOGLE_AUTH_CONFIG_JSON);
+				?>
+				<meta name="google-signin-client_id" content="<?= $parts->web->client_id ?>">
+				<script src="https://apis.google.com/js/platform.js" async defer></script>
+				<?php
+			}
+			$hooks->add_action('dbo_head', 'hookGoogleOAuth');
+			$hooks->add_action('site_head', 'hookGoogleOAuth');
+		}
+
+		if(defined('FACEBOOK_AUTH_CONFIG_JSON') && (!defined('OAUTH_SDK_URLS') || in_array(thisPage(), explode(',', OAUTH_SDK_URLS)) || $_GET['load_oauth_sdks']))
+		{
+			function hookFacebookOAuth()
+			{
+				$parts = json_decode(FACEBOOK_AUTH_CONFIG_JSON);
+				?>
+				<script>
+					window.fbAsyncInit = function() {
+						FB.init({
+							appId: '<?= $parts->app_id ?>',
+							cookie: true,
+							//xfbml: true,
+							version: 'v2.2'
+						});
+					};
+					(function(d, s, id){
+						var js, fjs = d.getElementsByTagName(s)[0];
+						if (d.getElementById(id)) {return;}
+						js = d.createElement(s); js.id = id;
+						js.src = "//connect.facebook.net/en_US/sdk.js";
+						fjs.parentNode.insertBefore(js, fjs);
+					}(document, 'script', 'facebook-jssdk'));
+				</script>
+				<?php
+			}
+			$hooks->add_action('dbo_body_append', 'hookFacebookOAuth');
+			$hooks->add_action('site_body', 'hookFacebookOAuth');
+		}
+		function hookOAuthUrl()
+		{
+			//setando a url para OAUTH
+			$oauth_url = secureUrl(DBO_URL.'/core/dbo-oauth-ajax.php?'.CSRFVar().(secureUrl() && strlen($_GET['oauth_link_id']) ? '&oauth_link_id='.$_GET['oauth_link_id'] : '').($_GET['dbo_redirect'] ? '&dbo_redirect='.$_GET['dbo_redirect'] : ''));
+			?>
+			<script>var DBO_OAUTH_URL = '<?= $oauth_url ?>';</script>
+			<?php
+		}
+		$hooks->add_action('dbo_head', 'hookOAuthUrl');
+		$hooks->add_action('site_head', 'hookOAuthUrl');
+	}
+
+	// ----------------------------------------------------------------------------------------------------------------
+
+	function downloadFileFromUrl($url, $path)
+	{
+		$newfname = $path;
+		$file = @fopen ($url, 'rb');
+		if ($file) {
+			$newf = fopen ($newfname, 'wb');
+			if ($newf) {
+				while(!feof($file)) {
+					fwrite($newf, fread($file, 1024 * 8), 1024 * 8);
+				}
+			}
+		}
+		else
+		{
+			return false;
+		}
+		if ($file) {
+			fclose($file);
+		}
+		if ($newf) {
+			fclose($newf);
+		}
+		return true;
+	}
+	
 	// ----------------------------------------------------------------------------------------------------------------
 
 	function dboTemplate($template_name)
@@ -862,6 +952,7 @@
 	{
 		global $hooks;
 		extract($params);
+		
 		$__template__ = $template === null ? 'content-tools-blank' : $template;
 
 		$__json__ = json_decode($__json__, true);
@@ -941,9 +1032,14 @@
 	{
 		if($tipo == '')
 		{
-			if(!loggedUser())
+			if(!loggedUser() && thisPage() != 'login')
 			{
-				header("Location: login.php?dbo_redirect=".base64_encode(fullUrl()));
+				header("Location: login.php?dbo_redirect=".dboEncode(fullUrl()));
+				exit();
+			}
+			elseif(loggedUser() && thisPage() == 'login')
+			{
+				header("Location: index.php");
 				exit();
 			}
 		}
@@ -1130,8 +1226,10 @@
 
 	function dboGetExtension($file_name, $dot = true)
 	{
-		$parts = explode(".", $file_name);
-		return (($dot)?("."):('')).$parts[sizeof($parts)-1];
+		$ext = explode(".", $file_name);
+		$ext = explode("?", $ext[sizeof($ext)-1]);
+		$ext = $ext[0];
+		return (($dot)?("."):('')).$ext;
 	}
 
 	// ----------------------------------------------------------------------------------------------------------------
@@ -1679,7 +1777,7 @@
 	function dboAdminRedirectCode($code, $params = array())
 	{
 		extract($params);
-		return '&dbo_return_redirect=dbo-return-redirect-parser.php&dbo_return_redirect_args='.base64_encode($code);
+		return '&dbo_return_redirect=dbo-return-redirect-parser.php&dbo_return_redirect_args='.dboEncode($code);
 	}
 
 	// ----------------------------------------------------------------------------------------------------------------
@@ -1698,7 +1796,7 @@
 		else
 		{
 			extract($params);
-			return '&dbo_admin_post_code='.base64_encode($code);
+			return '&dbo_admin_post_code='.dboEncode($code);
 		}
 	}
 
@@ -1706,7 +1804,7 @@
 
 	function dboAdminParseUrlCode($code)
 	{
-		$code = trim(base64_decode($code));
+		$code = trim(dboDecode($code));
 
 		ob_start();
 		//detectando se é javascript ou outra coisa.
@@ -2083,19 +2181,25 @@
 				</div><!-- row -->
 
 				<div class='row'>
-					<?
-						//checando para ver se este sismtema é integrado com uma central de acessos
-						if(defined('CENTRAL_DE_ACESSOS_PATH'))
-						{
-							?>
-							<div class="large-6 columns">
+					<div class="large-6 columns">
+						<?
+							//checando para ver se este sismtema é integrado com uma central de acessos
+							if(defined('CENTRAL_DE_ACESSOS_PATH'))
+							{
+								?>
 								<a href="<?= CENTRAL_DE_ACESSOS_URL ?>/password-forgotten.php" class="top-10" tabindex='-1'>Esqueci minha senha</a>
-							</div>
-							<?
-						}
-					?>
+								<?
+							}
+							elseif(dboRecaptchaIsActive() && dboFailedLoginAttempt())
+							{
+								?>
+								<div class="g-recaptcha" data-sitekey="<?= dboRecaptchaSiteKey() ?>"></div>
+								<?php
+							}
+						?>
+					</div>
 					<div class='large-6 columns text-right'>
-						<input type='submit' value='Logar' class="button radius no-margin">
+						<button type="submit" class="button radius no-margin"><i class="fa fa-check"></i> Logar</button>
 					</div><!-- col -->
 				</div><!-- row -->
 
@@ -2114,7 +2218,7 @@
 					if($_GET['dbo_redirect'])
 					{
 						?>
-						<input type='hidden' name='dbo_redirect' value="<?= urlencode(base64_decode($_GET['dbo_redirect'])) ?>"/>
+						<input type='hidden' name='dbo_redirect' value="<?= urlencode(dboDecode($_GET['dbo_redirect'])) ?>"/>
 						<?
 					}
 				?>
@@ -2126,6 +2230,28 @@
 		{
 			?>
 			<form action='login.php' method='POST' id='login-form' style="<?= ((outdatedBrowser())?('display: none;'):('')) ?>">
+				<?php
+					if(defined('GOOGLE_AUTH_CONFIG_JSON') || defined('FACEBOOK_AUTH_CONFIG_JSON'))
+					{
+						?>
+						<div class="row">
+							<div class="small-12 large-6 columns">
+								<div class="g-signin2" data-onsuccess="googleSignIn"></div>
+							</div>
+							<div class="small-12 large-6 columns">
+								<div class="facebook-signin pointer abcRioButton" onClick="facebookSignin()">
+									<div class="abcRioButtonIcon"><i class="fa fa-facebook"></i></div>
+									<span class="abcRioButtonContents">Logar com Facebook</span>
+								</div>
+							</div>
+						</div>
+						<hr>
+						<div class="text-center" style="margin-bottom: -20px;">
+							<span style="display: inline-block; padding: 0 1em; background-color: #fff; position: relative; top: -28px;">ou</span>
+						</div>
+						<?php
+					}
+				?>
 				<div class='row'>
 					<div class='large-12 columns'>
 						<label>Usuário</label>
@@ -2141,16 +2267,25 @@
 				</div><!-- row -->
 
 				<div class='row'>
-					<div class='large-12 columns text-right'>
-						<input type='submit' value='Logar' class="button radius no-margin">
+					<div class="small-12 large-7 columns">
+						<?php
+							if(dboRecaptchaIsActive() && dboFailedLoginAttempt())
+							{
+								?>
+								<div class="g-recaptcha" data-sitekey="<?= dboRecaptchaSiteKey() ?>"></div>
+								<?php
+							}
+						?>
+					</div>
+					<div class='large-5 columns text-right'>
+						<button type="submit" class="button radius no-margin"><i class="fa fa-check"></i> Logar</button>
 					</div><!-- col -->
 				</div><!-- row -->
-
 				<?
 					if($_GET['dbo_redirect'])
 					{
 						?>
-						<input type='hidden' name='dbo_redirect' value="<?= urlencode(base64_decode($_GET['dbo_redirect'])) ?>"/>
+						<input type='hidden' name='dbo_redirect' value="<?= urlencode(dboDecode($_GET['dbo_redirect'])) ?>"/>
 						<?
 					}
 				?>
@@ -2159,6 +2294,75 @@
 		}
 	}
 
+	// ----------------------------------------------------------------------------------------------------------------
+
+	function dboFailedLoginAttemptRegister()
+	{
+		meta::set('Failed login attempt: '.$_SERVER['REMOTE_ADDR'], 1);
+	}
+	
+	// ----------------------------------------------------------------------------------------------------------------
+
+	function dboFailedLoginAttempt()
+	{
+		return meta::get('Failed login attempt: '.$_SERVER['REMOTE_ADDR']);
+	}
+	
+	// ----------------------------------------------------------------------------------------------------------------
+
+	function dboFailedLoginAttemptClear()
+	{
+		meta::remove('Failed login attempt: '.$_SERVER['REMOTE_ADDR']);
+	}
+	
+	// ----------------------------------------------------------------------------------------------------------------
+
+	function dboRecaptchaSiteKey()
+	{
+		return $_SERVER['HTTP_HOST'] == 'localhost' ? DBO_RECAPTCHA_DESENV_SITE_KEY : DBO_RECAPTCHA_SITE_KEY;
+	}
+	
+	// ----------------------------------------------------------------------------------------------------------------
+
+	function dboRecaptchaSecretKey()
+	{
+		return $_SERVER['HTTP_HOST'] == 'localhost' ? DBO_RECAPTCHA_DESENV_SECRET_KEY : DBO_RECAPTCHA_SECRET_KEY;
+	}
+	
+	// ----------------------------------------------------------------------------------------------------------------
+
+	function dboRecaptchaIsActive()
+	{
+		//verifica se está ativo em desenvolvimento
+		if(DBO_RECAPTCHA_ACTIVE == 'production' && $_SERVER['HTTP_HOST'] != 'localhost') return true;
+		if(DBO_RECAPTCHA_ACTIVE === true) return true;
+		return false;
+	}
+	
+	// ----------------------------------------------------------------------------------------------------------------
+
+	function dboRecaptchaIsValid($recaptcha_response = null)
+	{
+		$url = 'https://www.google.com/recaptcha/api/siteverify';
+		$data = array(
+			'secret' => dboRecaptchaSecretKey(),
+			'response' => ($recaptcha_response ? $recaptcha_response : $_REQUEST['g-recaptcha-response']),
+			'remoteip' => $_SERVER['REMOTE_ADDR'],
+		);
+
+		// use key 'http' even if you send the request to https://...
+		$options = array(
+			'http' => array(
+				'header'  => "Content-type: application/x-www-form-urlencoded\r\n",
+				'method'  => 'POST',
+				'content' => http_build_query($data),
+			),
+		);
+		$context  = stream_context_create($options);
+		$result = json_decode(file_get_contents($url, false, $context));
+		return $result->success == true ? true : false;
+	}
+	
 	// ----------------------------------------------------------------------------------------------------------------
 
 	function dboEscape($var)
@@ -2317,6 +2521,22 @@
 				{
 					$response['error'] = true;
 					$response['message'] = '';
+
+					//antes de mais nada, verifica o captcha
+					if(dboRecaptchaIsActive() && dboFailedLoginAttempt())
+					{
+						if(!dboRecaptchaIsValid())
+						{
+							setMessage('<div class="error">Erro: Aparentemente, você <strong>pode ser</strong> um robô. Tente novamente.</div>');
+							header("Location: login.php");
+							exit();
+						}
+						else
+						{
+							dboFailedLoginAttemptClear();
+						}
+					}
+
 					if(!strlen(trim($_POST['user'])) || !strlen(trim($_POST['pass'])))
 					{
 						$message = '<div class="error">Usuário ou senha não preenchidos.</div>';
@@ -2344,6 +2564,7 @@
 					}
 					$pes->loadAll();
 					if(!$pes->size()) {
+						dboFailedLoginAttemptRegister();
 						$message = '<div class="error">Usuário ou Senha inválidos.</div>';
 						if($type == 'json')
 						{
@@ -2555,6 +2776,12 @@
 			</script>
 			<?php
 		}
+		if(dboRecaptchaIsActive())
+		{
+			?>
+			<script src='https://www.google.com/recaptcha/api.js'></script>
+			<?php
+		}
 		$hooks->do_action('dbo_head');
 	}
 
@@ -2574,7 +2801,7 @@
 							<?= isSuperAdmin() ? '<li><a href="'.DBO_URL.'/dbomaker/?reffered=1" target="dbomaker" class="color light pointer" title="Gerador de módulos do DBO" data-tooltip><i class="fa fa-fw fa-cube"></i></a></li>' : '' ?>
 							<?= logadoNoPerfil('Desenv') ? '<li><a href="'.DBO_URL.'/core/site-sync.php" class="color light pointer peixe-json" title="Sincronizar informações da base de dados" data-tooltip><i class="fa fa-fw fa-database"></i></a></li>' : '' ?>
 							<?= logadoNoPerfil('Desenv') ? '<li><a href="dbo-maintenance.php" class="color light pointer" title="Painel de manutenção do sistema" data-tooltip><i class="fa fa-fw fa-wrench"></i></a></li>' : '' ?>
-							<?= logadoNoPerfil('Desenv') ? '<li><a href="http://localhost/sysintermed/dbo_permissions.php?perfil=1&dbo_modal=1" class="color light pointer" title="Acesso rápido às permissões do desenvolvedor" data-tooltip rel="modal" data-modal-width="1400" data-modal-esc="true" data-modal-overlay-close="true"><i class="fa fa-fw fa-key"></i></a></li>' : '' ?>
+							<?= logadoNoPerfil('Desenv') ? '<li><a href="'.ADMIN_URL.'/dbo_permissions.php?perfil=1&dbo_modal=1" class="color light pointer" title="Acesso rápido às permissões do desenvolvedor" data-tooltip rel="modal" data-modal-width="1400" data-modal-esc="true" data-modal-overlay-close="true"><i class="fa fa-fw fa-key"></i></a></li>' : '' ?>
 							<?php $hooks->do_action('dbo_top_dock'); ?>
 						</ul>
 					</div>
@@ -3219,7 +3446,15 @@
 
 	// ----------------------------------------------------------------------------------------------------------------
 
-	function secureURLCheck($params = array())
+	function secureUrlExpired()
+	{
+		if($_GET['dbo_secure_lifetime'] && $_GET['dbo_secure_lifetime'] < time()) return true;
+		return false;
+	}
+	
+	// ----------------------------------------------------------------------------------------------------------------
+
+	function secureUrlCheck($params = array())
 	{
 		if(!secureUrl())
 		{
@@ -3229,6 +3464,18 @@
 		}
 	}
 
+	// ----------------------------------------------------------------------------------------------------------------
+
+	function recaptchaCheck($response = null)
+	{
+		if(!dboRecaptchaIsValid($response))
+		{
+			$json_result['message'] = '<div class="error">Tentativa de acesse insegura</div>';
+			echo json_encode($json_result);
+			exit();
+		}
+	}
+	
 	// ----------------------------------------------------------------------------------------------------------------
 
 	function singleLine($var)

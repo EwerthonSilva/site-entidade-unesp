@@ -295,6 +295,11 @@ function showPeixeLoader() {
 			});
 	}
 
+	//função para dar autofocus no primeiro elemento texto de um seletor
+	$.fn.peixeAutoFocus = function(){
+		$(this).find(':text').filter(':visible:first').focus();
+	}
+
 })(jQuery);	
 
 //mostra o loader de AJAX
@@ -544,6 +549,20 @@ function peixeSmartSave(c) {
 			target.trigger('click');
 		}
 	}
+}
+
+//funcao para login com o google
+function googleSignIn(googleUser) {
+	var id_token = googleUser.getAuthResponse().id_token;
+	peixeJSON(DBO_OAUTH_URL, { google_id_token: id_token }, null, true);
+	return false;
+}
+
+function facebookSignin() {
+    FB.login( function(response) {
+		peixeJSON(DBO_OAUTH_URL, { facebook: true }, null, true);
+		return false;
+	}, { scope: 'email,public_profile' } );
 }
 
 $(document).ready(function(){

@@ -64,7 +64,7 @@ input + label { font-size: $input-font-size; text-transform: none; color: $input
 textarea { height: auto; }
 
 a { white-space: break-word;
-	&.grey { color: #bbb; 
+	&.grey { color: #bbb; transition: all .15s ease;
 		&:hover { color: #666; }
 	}
 }
@@ -528,6 +528,11 @@ table.list .thumb-lista { margin-bottom: 0px !important; }
 	}
 }
 
+//acertozinho o dropdown do foundation
+.f-dropdown {
+	&:before { pointer-events: none; }
+}
+
 //estilos para o bredcrumb inspirado no foundation
 .breadcrumb {
 	&.border { border-bottom: 1px solid #ddd; margin-bottom: .75em; }
@@ -640,8 +645,9 @@ table.list .thumb-lista { margin-bottom: 0px !important; }
 		&.pointer:hover { color: darken($status-color-ongoing, 15%); }
 	}
 	&.cancel { color: $status-color-cancel; 
-		&.pointer:hover { color: darken($status-color-cancel, 15%); }
+		&:hover { color: darken($status-color-cancel, 15%); }
 	}
+	&.pointer { transition: all .15s ease; }
 }
 
 /* classes de visibilidade */

@@ -23,7 +23,10 @@ if($_GET['action'] == 'do-crop')
 
 	if(file_put_contents($file_path.$nome, $data_decode) !== false){
 		if($mod->__module_scheme->campo[$_GET['coluna']]->tipo == 'image'){
-			if(dboUi::fieldSQL('image', $nome, $mod, array('image' => $mod->__module_scheme->campo[$_GET['coluna']]->image)))
+			if(dboUi::fieldSQL('image', $nome, $mod, array(
+				'image' => $mod->__module_scheme->campo[$_GET['coluna']]->image,
+				'allow_size_expansion' => $mod->__module_scheme->campo[$_GET['coluna']]->allow_size_expansion,
+			)))
 			{
 				$json_result['parent']['eval'] = 'jQuery.colorbox.close(); $("#wrapper-imagem-'.$_GET['coluna'].' img").attr("src", "'.DBO_URL.'/upload/images/'.$nome.'?='.uniqid().'")';
 				$json_result['parent']['message'] = '<div class="success">Imagem editada com sucesso!</div>';
