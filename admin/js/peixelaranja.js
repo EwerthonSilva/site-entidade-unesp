@@ -565,6 +565,64 @@ function facebookSignin() {
 	}, { scope: 'email,public_profile' } );
 }
 
+/* abrindo modal direto, com iframe */
+function openColorBoxModal(url, width, height, params) {
+	var width = ((typeof width != 'undefined')?(width):(1000));
+	var height = ((typeof height != 'undefined')?(height):('98%'));
+	height = (($(window).width() < 810)?('90%'):(height));
+	$.colorbox({
+		href: url,
+		iframe: true,
+		width: width,
+		height: height,
+		maxWidth: '100%',
+		maxHeight: '100%',
+		overlayClose: (params && params.overlayClose ? true : false),
+		escKey: (params && params.escKey ? true : false),
+		fixed: true,
+		transition: (params && params.transition) || 'elastic'
+	});
+}
+
+/* abre o modal do tipo reveal */
+function openRevealModal(url, params = {}) {
+	showPeixeLoader();
+	//verifica se o modal existe, se não existir, cria como append do body
+	var modal_id = params.id ? params.id : '#modal-generico-peixe-laranja';
+	var modal = $(modal_id);
+	if(!modal.size()){
+		$('body').append('<div id="modal-generico-peixe-laranja" class="reveal reveal-modal smart medium" data-reveal></div>');
+		if(Foundation.version != '4.3.0'){
+			$(document).foundation();
+		}
+		modal = $(modal_id);
+	}
+
+	//acerta as classes
+	if(params.size || modal_id == '#modal-generico-peixe-laranja'){
+		modal.removeClass('tiny small medium large full').addClass(params.size || 'medium');
+	}
+
+	$.ajax(url).done(function(data){
+		//tentando com foundation 4 e 6
+		if(Foundation.version != '4.3.0'){
+			modal.html(data).foundation('open', {
+				animationIn: 'slide-in-left'
+			});
+		}
+		else {
+			modal.html(data).foundation('reveal', 'open');
+		}
+		hidePeixeLoader();
+		//se tiver callback, executa
+		if(typeof params.done == 'function'){
+			setTimeout(function(){
+				params.done();
+			}, 250);
+		}
+	})
+}
+
 $(document).ready(function(){
 
 	if(jQuery.hotkeys){
@@ -597,6 +655,30 @@ $(document).ready(function(){
 		setTimeout(function(){
 			slidePeixeMessageUp();
 		}, 3000);
+	});
+
+	//tratando modais
+	/* modals */
+	$(document).on('click', '[rel="modal"]', function(e){
+		e.preventDefault();
+		e.stopPropagation();
+		var c = $(this);
+		var params = {};
+		var url = c.attr('href') ? c.attr('href') : c.data('url');
+		if(c.is('[data-modal-ajax]')){ //reveal
+			//verifica se está setado um modal-id para abrir
+			params.id = c.data('modal-ajax');
+			params.size = c.data('modal-size');
+			params.done = c.attr('data-modal-done') ? eval('('+c.attr('data-modal-done')+')') : null;
+			openRevealModal(url, params);
+		}
+		else { //colorBox
+			var width = c.data('modal-width') || c.data('width') || 1000;
+			var height = c.data('modal-height') || c.data('height') || '98%';
+			params.escKey = c.data('modal-esc') || false;
+			params.overlayClose = c.data('modal-overlay-close') || false;
+			openColorBoxModal(url, width, height, params);
+		}
 	});
 
 	//botao de submit que só funciona com javascript, e impede dupla submissão
@@ -766,6 +848,19 @@ $(document).ready(function(){
 		var c = $(this);
 		peixeSmartSave(c);
 		return true;
+	});
+
+	//Fazendo as tabs funcionarem
+	$(document).on('click', '[data-peixe-tabs] a', function(e){
+		e.preventDefault();
+		var c = $(this);
+		var wrapper = c.closest('[data-peixe-tabs]');
+		var container = wrapper.data('peixe-tabs');
+		wrapper.find('.active').removeClass('active');
+		c.parent().addClass('active');
+		$(container).find('[data-peixe-tab]:visible').fadeOut('fast', function(){
+			$(c.attr('href')).fadeIn('show');
+		})
 	});
 
 	//colcando ajax loader e screen freezer

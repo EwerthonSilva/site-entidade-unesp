@@ -51,11 +51,11 @@ $em-base: 16 !default;
 
 $default-float: left;
 
-// $body-bg: #fff;
-// $body-font-color: #222;
-// $body-font-family: "Helvetica Neue", "Helvetica", Helvetica, Arial, sans-serif;
-// $body-font-weight: normal;
-// $body-font-style: normal;
+ $body-bg: #fff;
+ $body-font-color: #222;
+ $body-font-family: "Helvetica Neue", "Helvetica", Helvetica, Arial, sans-serif;
+ $body-font-weight: normal;
+ $body-font-style: normal;
 
 // Font-smoothing
 
@@ -80,9 +80,9 @@ $default-float: left;
 
 // Inset shadow shiny edges and depressions.
 
-// $shiny-edge-size: 0 1px 0;
-// $shiny-edge-color: rgba(#fff, .5);
-// $shiny-edge-active-color: rgba(#000, .2);
+ $shiny-edge-size: 0 1px 0;
+ $shiny-edge-color: rgba(#fff, .5);
+ $shiny-edge-active-color: rgba(#000, .2);
 
 // Control whether or not CSS classes come through in the CSS files.
 
@@ -129,10 +129,10 @@ $default-float: left;
 
 //Custom use example -> $cursor-default-value: url(http://cursors-site.net/path/to/custom/cursor/default.cur),progress;
 
-// $cursor-crosshair-value: "crosshair";
-// $cursor-default-value: "default";
-// $cursor-pointer-value: "pointer";
-// $cursor-help-value: "help";
+ $cursor-crosshair-value: "crosshair";
+ $cursor-default-value: "default";
+ $cursor-pointer-value: "pointer";
+ $cursor-help-value: "help";
 
 //
 // Grid Variables

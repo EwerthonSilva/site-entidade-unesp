@@ -24,7 +24,9 @@
 	define(DBO_RECAPTCHA_DESENV_SITE_KEY, '6LdAIikTAAAAAGEFBJFCaudIRcploiB5yFOk4kcd'); 
 	define(DBO_RECAPTCHA_DESENV_SECRET_KEY, '6LdAIikTAAAAAM6OF2K9mRFJzxiU7FkWtbabfeVN');
 
-	//variáveis de sistema
+	/* variáveis de sistema */
+
+	//tamanhos padrão do media manager
 	$_system['media_manager']['default_image_sizes'] = array(
 		'small' => array(
 			'name' => 'Miniatura',
@@ -52,6 +54,19 @@
 		)
 	);
 
+	//campos padrão que o usuário pode alterar no modal "Meu perfil"
+	if(!is_array($_system['meu_perfil']['campos']))
+	{
+		$_system['meu_perfil']['campos'] = array(
+			'foto',
+			'nome',
+			'apelido',
+			'sexo',
+			'email',
+			'descricao',
+		);
+	}
+
 	//garantindo que o magic_quotes vai ser desligado
 	if (get_magic_quotes_gpc()) {
 		$process = array(&$_GET, &$_POST, &$_COOKIE, &$_REQUEST);
@@ -68,6 +83,19 @@
 		}
 		unset($process);
 	}
+
+	// ----------------------------------------------------------------------------------------------------------------
+
+	function dboRename($oldfile,$newfile) {
+		if (!@rename($oldfile,$newfile)) {
+			if (copy ($oldfile,$newfile)) {
+				unlink($oldfile);
+				return TRUE;
+			}
+			return FALSE;
+		}
+		return TRUE;
+	}	
 
 	// ----------------------------------------------------------------------------------------------------------------
 
@@ -128,6 +156,13 @@
 		$hooks->add_action('site_head', 'hookOAuthUrl');
 	}
 
+	// ----------------------------------------------------------------------------------------------------------------
+
+	function dboModalMeuPerfilUrl()
+	{
+		return secureUrl(ADMIN_URL.'/dbo-meu-perfil.php?dbo_modal=1&body_class=hide-breadcrumb&load_oauth_sdks=true&oauth_link_id='.loggedUser());
+	}
+	
 	// ----------------------------------------------------------------------------------------------------------------
 
 	function downloadFileFromUrl($url, $path)

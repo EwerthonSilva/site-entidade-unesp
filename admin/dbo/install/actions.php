@@ -173,29 +173,29 @@ function step2()
 		$sql = "
 			CREATE TABLE IF NOT EXISTS `pessoa` (
 			  `id` int(11) NOT NULL auto_increment,
-			  `foto` varchar(255) NOT NULL,
-			  `nome` varchar(255) NOT NULL,
-			  `apelido` varchar(255) NOT NULL,
-			  `sexo` varchar(255) NOT NULL,
-			  `email` varchar(255) NULL UNIQUE,
-			  `user` varchar(255) NULL UNIQUE,
-			  `pass` varchar(255) NOT NULL,
+			  `foto` varchar(190) NOT NULL,
+			  `nome` varchar(190) NOT NULL,
+			  `apelido` varchar(190) NOT NULL,
+			  `sexo` varchar(190) NOT NULL,
+			  `email` varchar(190) NULL UNIQUE,
+			  `user` varchar(190) NULL UNIQUE,
+			  `pass` varchar(190) NOT NULL,
 			  `descricao` TEXT NOT NULL,
 			  `dbo_flag_desenv` INT(11) NOT NULL,
-			  `google_id` varchar(255) NULL UNIQUE,
-			  `facebook_id` varchar(255) NULL UNIQUE,
+			  `google_id` varchar(190) NULL UNIQUE,
+			  `facebook_id` varchar(190) NULL UNIQUE,
 			  PRIMARY KEY  (`id`)
-			) ENGINE=InnoDB  DEFAULT CHARSET=utf8;
+			) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4;
 		";
 		mysql_query($sql);
 
 		$sql = "
 			CREATE TABLE IF NOT EXISTS `perfil` (
 			  `id` int(11) NOT NULL auto_increment,
-			  `nome` varchar(255) default NULL,
+			  `nome` varchar(190) default NULL,
 			  `permissao` text NOT NULL,
 			  PRIMARY KEY  (`id`)
-			) ENGINE=InnoDB  DEFAULT CHARSET=utf8;
+			) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4;
 		";
 		mysql_query($sql);
 
@@ -204,17 +204,18 @@ function step2()
 			  `id` int(11) NOT NULL auto_increment,
 			  `pessoa` int(11) NULL,
 			  `perfil` int(11) NULL,
+			  `dbo_flag_desenv` INT(11) NOT NULL,
 			  PRIMARY KEY  (`id`)
-			) ENGINE=InnoDB  DEFAULT CHARSET=utf8;
+			) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4;
 		";
 		mysql_query($sql);
 
 		$sql = "
 			CREATE TABLE IF NOT EXISTS `permissao` (
 			  `id` int(11) NOT NULL auto_increment,
-			  `nome` varchar(255) default NULL,
+			  `nome` varchar(190) default NULL,
 			  PRIMARY KEY  (`id`)
-			) ENGINE=InnoDB  DEFAULT CHARSET=utf8;
+			) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4;
 		";
 		mysql_query($sql);
 	}
@@ -229,7 +230,7 @@ function step2()
 			INSERT INTO perfil
 				(nome, permissao)
 			VALUES
-				('Desenv', 'pessoa###cockpit|||access|||insert|||update|||delete %%% perfil###sidebar|||access|||insert|||update|||delete||| %%% permissao###sidebar|||access|||insert|||update|||delete')
+				('Desenv', 'pessoa###cockpit|||access|||insert|||update|||delete %%% perfil###sidebar|||access|||insert|||update|||delete|||Permissões %%% permissao###sidebar|||access|||insert|||update|||delete')
 		";
 		mysql_query($sql);
 	}

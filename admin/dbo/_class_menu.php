@@ -382,7 +382,7 @@ function auto_admin_menu()
 										if(hasPermission('update', 'menu'))
 										{
 											?>
-											<span class="button radius" id="button-salvar-menu">Salvar menu</span>
+											<span class="button radius peixe-save" id="button-salvar-menu">Salvar menu</span>
 											<?
 										}
 									?>

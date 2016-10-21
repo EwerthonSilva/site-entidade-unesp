@@ -91,7 +91,7 @@ else
 								?>
 								<li class="wrapper-media-item <?= (($selected_file == $pag->imagem_destaque)?('active'):('')) ?>">
 									<div class="media-item <?= (($selected_file == $pag->imagem_destaque)?('active'):('')) ?>" style="background-image: url('<?= $media_folder_url.'thumbs/small-'.$pag->imagem_destaque.(($selected_file == $pag->imagem_destaque)?('?='.$img_token):('')) ?>')" data-file="<?= $pag->imagem_destaque ?>">
-										<span class="trigger-delete" data-file="<?= $pag->imagem_destaque ?>" data-url="<?= secureUrl('ajax-dbo-media-manager-actions.php?action=delete-media&pagina_id='.$pag->id.'&'.CSRFVar()) ?>"><i class="fa fa-close"></i></span>
+										<span class="trigger-delete" data-file="<?= $pag->imagem_destaque ?>" data-url="<?= secureUrl('ajax-dbo-media-manager.php?action=delete-media&pagina_id='.$pag->id.'&'.CSRFVar()) ?>"><i class="fa fa-close"></i></span>
 										<span class="legenda"><?= $pag->titulo ? $pag->titulo : $pag->imagem_destaque ?></span>
 									</div>
 								</li>
@@ -142,7 +142,7 @@ else
 								</ul>
 								<div id="wrapper-tabela-detalhes">
 									<div id="cropper-controls">
-										<form method="post" action="<?= secureUrl('ajax-dbo-media-manager-actions.php?action=do-crop&file='.$selected_file.'&'.CSRFVar()) ?>" class="no-margin peixe-json" id="form-crop" peixe-log>
+										<form method="post" action="<?= secureUrl('ajax-dbo-media-manager.php?action=do-crop&file='.$selected_file.'&'.CSRFVar()) ?>" class="no-margin peixe-json" id="form-crop" peixe-log>
 											<div class="font-14 text-left" style="padding-left: 100px; color: #fff;">
 												<p>
 													<span style="position: relative; top: -5px; color: #999;" class="font-14">Aplicar o recorte:</span><br />
@@ -166,7 +166,7 @@ else
 									$croppeUrl = secureUrl(DBO_URL.'/../dbo-cropper.php?dbo_modal=1&src='.$pag->imagem_destaque.'&modulo='.$pag->modulo_anexado.'&coluna=');
 									?>
 									<a title="Recortar" rel="modal" href="<?=$croppeUrl?>"><i class="button-crop fa fa-crop"></i></a>
-									<form action="<?= secureUrl(DBO_URL.'/../ajax-dbo-media-manager-actions.php?action=update-media-image&media_id='.$pag->id.'&'.CSRFVar()) ?>" method="post" class="no-margin" id="form-media-image">
+									<form action="<?= secureUrl(DBO_URL.'/../ajax-dbo-media-manager.php?action=update-media-image&media_id='.$pag->id.'&'.CSRFVar()) ?>" method="post" class="no-margin" id="form-media-image">
 										<table class="tools" style="margin-bottom: 2px">
 											<tbody>
 												<tr>
@@ -261,7 +261,7 @@ else
 				</div>
 				<div id="block-upload" style="padding-top: 30px;">
 					<form method="post" action="" class="no-margin" id="form-upload" enctype="multipart/form-data" style="<?= (($selected_file)?('display: none;'):('')) ?>">
-						<input type="file" name="arquivo" id="arquivo" peixe-ajax-file-upload data-action="<?= secureUrl('ajax-dbo-media-manager-actions.php?action=upload-file&'.CSRFVar()) ?>" data-modulo="<?= $_GET['modulo'] ?>" data-modulo_id="<?= $_GET['modulo_id'] ?>"/><label for="arquivo" id="arquivo-label"><i class="fa fa-cloud-upload" style="font-size: 20px;"></i> Enviar arquivo</label>
+						<input type="file" name="arquivo" id="arquivo" peixe-ajax-file-upload data-action="<?= secureUrl('ajax-dbo-media-manager.php?action=upload-file&'.CSRFVar()) ?>" data-modulo="<?= $_GET['modulo'] ?>" data-modulo_id="<?= $_GET['modulo_id'] ?>"/><label for="arquivo" id="arquivo-label"><i class="fa fa-cloud-upload" style="font-size: 20px;"></i> Enviar arquivo</label>
 					</form>
 				</div>
 			</div>

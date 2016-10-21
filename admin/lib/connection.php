@@ -15,9 +15,9 @@ if($mysql_error)
 	define(HAS_CONNECTION, FALSE);
 } else {
 	define(HAS_CONNECTION, TRUE);
-	mysql_query("SET NAMES 'utf8'");
-	mysql_query('SET character_set_connection=utf8');
-	mysql_query('SET character_set_client=utf8');
-	mysql_query('SET character_set_results=utf8');
+	mysql_query("SET NAMES 'utf8mb4'");
+	mysql_query('SET character_set_connection=utf8mb4');
+	mysql_query('SET character_set_client=utf8mb4');
+	mysql_query('SET character_set_results=utf8mb4');
 }
 ?>

@@ -73,6 +73,7 @@ img.width-100 { width: 100% !important; height: auto !important; }
 	&:before { content: '"'; color: #bbb; font-weight: bold; }
 	&:after { content: '"'; color: #bbb; font-weight: bold; }
 }
+.clear-both { clear: both; }
 
 .tal { text-align: left; }
 .tac { text-align: center; }
@@ -124,7 +125,7 @@ img.width-100 { width: 100% !important; height: auto !important; }
 	&:hover { color: #333; }
 }
 
-/* esitlos para o media manager */
+/* estilos para o media manager */
 
 div[media-manager-element="image-container"] { max-width: 100%;
 	&.float-left { float: left; margin-right: 1.5em; margin-bottom: 1em; }
@@ -156,6 +157,7 @@ input, a, select {
 	* { vertical-align: middle; }
 }
 .absolute-center { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); -webkit-transform-style: preserve-3d; -moz-transform-style: preserve-3d; transform-style: preserve-3d; }
+.horizontal-center { position: absolute !important; left: 50% !important; margin: 0; transform: translate(-50%, 0); -webkit-transform-style: preserve-3d; -moz-transform-style: preserve-3d; transform-style: preserve-3d; }
 
 /* --------------------------------------------------------------------------------------------------------*/
 /* ALGUNS RESETS PARA O FOUNDATION ------------------------------------------------------------------------*/
@@ -596,6 +598,7 @@ hr.tiny { margin: 0.50em 0; }
 }
 
 /* botoes de login de redes sociais e captcha */
+.abcRioButtonContentWrapper { background: #f5f5f5; }
 .abcRioButton { height: 50px !important; text-align: center !important;
 	* { text-align: center !important; } 
 }

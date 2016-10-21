@@ -65,10 +65,10 @@ function checkDatabase()
 	global $_SESSION;
 	if($link_connection = @mysql_connect($_SESSION['dbo_install']['DB_HOST'], $_SESSION['dbo_install']['DB_USER'], $_SESSION['dbo_install']['DB_PASS'])) {
 		if($db = mysql_select_db($_SESSION['dbo_install']['DB_BASE'], $link_connection)) {
-			mysql_query("SET NAMES 'utf8'");
-			mysql_query('SET character_set_connection=utf8');
-			mysql_query('SET character_set_client=utf8');
-			mysql_query('SET character_set_results=utf8');
+			mysql_query("SET NAMES 'utf8mb4'");
+			mysql_query('SET character_set_connection=utf8mb4');
+			mysql_query('SET character_set_client=utf8mb4');
+			mysql_query('SET character_set_results=utf8mb4');
 			return true;
 		} else {
 			return mysql_error();

@@ -51,6 +51,16 @@
 	//'styles' => 'background-size: cover;',
 //);
 
+/* lista de campos que o usuário pode atualizar no perfil */
+//$_system['meu_perfil']['campos'] = array(
+	//'foto',
+	//'nome',
+	//'apelido',
+	//'sexo',
+	//'email',
+	//'descricao',
+//);
+
 /* definindo tipos especiais de páginas no sistema */
 //$_system['pagina_tipo']['animal'] = array(
 	//'tipo' => 'animal',

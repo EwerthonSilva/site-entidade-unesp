@@ -77,6 +77,7 @@ p:empty { display: none; }
 .block { display: block; }
 .uppercase { text-transform: uppercase; }
 img.width-100 { width: 100% !important; height: auto !important; }
+.clear-both { clear: both; }
 
 //peixe messages
 .wrapper-message { font-family: $body-font-family, Sans-serif; max-height: rem-calc(100); position: fixed; top: 0; left: 0px; width: 100%; line-height: 1.2; overflow: hidden; font-size: rem-calc(19); z-index: 10000; opacity: 0.95; text-align: center; transition: all 1.5s ease;
@@ -236,6 +237,29 @@ input[type="file"][peixe-ajax-file-upload] { position: absolute; width: 1px; hei
 .slick-slide:first-child { display: block !important; }*/
 
 /* ------------------ */
+/* META TABLE ------- */
+/* ------------------ */
+/* make rows and columns behave like table in specific breakpoints-up */
+
+@each $value in $breakpoint-classes {
+	@if $value == small {}
+	@else {
+		.row.#{$value}-meta-table {
+			@include breakpoint($value) {
+				display: table;
+				&.#{$value}-expanded { width: 100%; }
+				> .columns { display: table-cell; width: auto; float: none; 
+					&:last-child:not(:first-child) { float: none; }
+					&.#{$value}-align-top { vertical-align: top; }
+					&.#{$value}-align-middle { vertical-align: middle; }
+					&.#{$value}-align-bottom { vertical-align: bottom; }
+				}
+			}		
+		}
+	}
+}
+
+/* ------------------ */
 /* CONTENT TOOLS ---- */
 /* ------------------ */
 
@@ -330,6 +354,7 @@ $oauth-icon-padding: 11px !default;
 $oauth-font-size: 14px !default;
 
 //configurações do botão genérico
+.abcRioButtonContentWrapper { background: #f5f5f5; }
 .abcRioButton { height: $oauth-button-height !important; text-align: center !important;
 	* { text-align: center !important; } 
 }

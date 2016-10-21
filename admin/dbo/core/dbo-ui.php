@@ -683,6 +683,7 @@ class dboUI
 
 	static function fieldJS($field_type, $params = array())
 	{
+		global $_system;
 		extract($params);
 		if($field_type == 'textarea-rich')
 		{
@@ -817,7 +818,18 @@ class dboUI
 					new ContentTools.Style('Margem inferior 4x', 'margin-bottom-4x', ['p', 'h1', 'h2', 'h3', 'iframe']),
 					new ContentTools.Style('Maiúsculas', 'uppercase', ['p', 'h1', 'h2', 'h3']),
 					new ContentTools.Style('Citação', 'quote', ['p', 'h1', 'h2', 'h3']),
+					new ContentTools.Style('Nova linha', 'clear-both', ['p', 'h1', 'h2', 'h3']),
 					new ContentTools.Style('Largura máxima', 'width-100', ['img']),
+					<?
+						foreach((array)$_system['content_tools']['styles'] as $value)
+						{
+							list($ct_title, $ct_class, $ct_tags) = $value;
+							$ct_tags = explode(' ', $ct_tags);
+							$ct_tags = array_filter($ct_tags);
+							$ct_styles[] = "new ContentTools.Style('".$ct_title."', '".$ct_class."', ['".implode("','", $ct_tags)."'])";
+						}
+						echo implode(",", (array)$ct_styles);
+					?>
 				]);
 
 				/* setando o editor para utilizar h2 e h3 */

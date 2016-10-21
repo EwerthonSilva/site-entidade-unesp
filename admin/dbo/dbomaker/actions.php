@@ -2412,7 +2412,7 @@ function runNewField($post_data)
 	$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->coluna = "temporary_field_key_5658";
 
 	//inicial default definitions (custom type)
-	$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->type = "VARCHAR(255)";
+	$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->type = "VARCHAR(190)";
 	$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->pk = false;
 	$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->isnull = false;
 	$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->tipo = 'text';
@@ -2445,7 +2445,7 @@ function runNewField($post_data)
 	//Input text
 	elseif($post_data['tipo'] == 'text')
 	{
-		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->type = "VARCHAR(255)";
+		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->type = "VARCHAR(190)";
 		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->tipo = 'text';
 		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->lista = true;
 		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->order = true;
@@ -2477,7 +2477,7 @@ function runNewField($post_data)
 	//Password
 	elseif($post_data['tipo'] == 'password')
 	{
-		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->type = "VARCHAR(255)";
+		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->type = "VARCHAR(190)";
 		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->tipo = 'password';
 	}
 	//Imagem
@@ -2486,6 +2486,30 @@ function runNewField($post_data)
 		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->type = "TEXT";
 		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->tipo = 'image';
 		$_SESSION['dbomaker_controls']['show_field_type'] = TRUE;
+			$image = new Obj();
+			$image->width = 1920;
+			$image->height = 1600;
+			$image->prefix = '';
+			$image->quality = 75;
+		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->image[] = $image;
+			$image = new Obj();
+			$image->width = 1200;
+			$image->height = 1200;
+			$image->prefix = 'large-';
+			$image->quality = 80;
+		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->image[] = $image;
+			$image = new Obj();
+			$image->width = 800;
+			$image->height = 800;
+			$image->prefix = 'medium-';
+			$image->quality = 80;
+		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->image[] = $image;
+			$image = new Obj();
+			$image->width = 400;
+			$image->height = 400;
+			$image->prefix = 'small-';
+			$image->quality = 90;
+		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->image[] = $image;
 	}
 	//File
 	elseif($post_data['tipo'] == 'file')
@@ -2496,13 +2520,13 @@ function runNewField($post_data)
 	//Mídia
 	elseif($post_data['tipo'] == 'media')
 	{
-		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->type = "VARCHAR(255)";
+		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->type = "VARCHAR(190)";
 		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->tipo = 'media';
 	}
 	//Select
 	elseif($post_data['tipo'] == 'select')
 	{
-		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->type = "VARCHAR(255)";
+		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->type = "VARCHAR(190)";
 		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->tipo = 'select';
 		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->lista = true;
 		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->order = true;
@@ -2512,7 +2536,7 @@ function runNewField($post_data)
 	//Radio
 	elseif($post_data['tipo'] == 'radio')
 	{
-		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->type = "VARCHAR(255)";
+		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->type = "VARCHAR(190)";
 		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->tipo = 'radio';
 		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->lista = true;
 		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->order = true;
@@ -2569,7 +2593,7 @@ function runNewField($post_data)
 	//Join
 	elseif($post_data['tipo'] == 'query')
 	{
-		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->type = "VARCHAR(255)";
+		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->type = "VARCHAR(190)";
 		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->tipo = 'query';
 		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->add = false;
 		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->edit = false;
@@ -2676,7 +2700,7 @@ function runNewField($post_data)
 	{
 		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->titulo = "Deletado Porque";
 		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->coluna = "deleted_because";
-		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->type = "VARCHAR(255)";
+		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->type = "VARCHAR(190)";
 		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->tipo = 'text';
 		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->add = false;
 		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->edit = false;
@@ -2711,7 +2735,7 @@ function runNewField($post_data)
 	{
 		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->titulo = "Permalink";
 		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->coluna = "permalink";
-		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->type = "VARCHAR(255)";
+		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->type = "VARCHAR(190)";
 		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->tipo = 'text';
 		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->add = false;
 		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->edit = false;

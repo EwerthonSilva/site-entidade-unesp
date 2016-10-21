@@ -1024,7 +1024,7 @@ ul.accordion { list-style: none; border: 1px solid #ddd; border-bottom: none;
 
 	#main-header { margin-bottom: emCalc(30);
 		&.pretty-header { height: auto !important;
-			#pretty-logo { position: relative !important; display: block !important; margin: 0 auto !important; top: 15px !important; left: 0px !important; text-align: center;
+			#pretty-logo { position: relative !important; display: block !important; margin: 0 auto !important; top: 15px !important; left: 0px !important; text-align: center; transform: none !important;
 				img { max-height: 100px !important; height: 100px !important; margin-bottom: 30px !important; }
 			}
 			.main-tabs { position: static !important; 

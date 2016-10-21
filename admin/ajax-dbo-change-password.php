@@ -20,7 +20,7 @@
 				if($pes->size())
 				{
 					//verificando se a senha atual está correta.
-					if($pes->cryptPassword($_POST['pass_atual']) == $pes->pass)
+					if(!strlen(trim($pes->pass)) || $pes->cryptPassword($_POST['pass_atual']) == $pes->pass)
 					{
 						if($_POST['pass'] == $_POST['pass_check'] && strlen(trim($_POST['pass'])))
 						{

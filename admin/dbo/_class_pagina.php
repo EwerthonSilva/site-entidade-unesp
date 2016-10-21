@@ -1116,7 +1116,7 @@ function queryPaginas($params = array())
 {
 	global $_pagina;
 	global $_pagina_backup;
-	
+
 	if(is_array($_pagina_backup))
 		$_pagina_backup[] = clone $_pagina;
 
@@ -1131,7 +1131,10 @@ function resetQueryPaginas()
 	if(is_array($_pagina_backup) && sizeof($_pagina_backup))
 	{
 		$_pagina = array_pop($_pagina_backup);
-		$_pagina_backup = false;
+		if(sizeof($_pagina_backup) == 0)
+		{
+			$_pagina_backup = false;
+		}
 	}
 }
 

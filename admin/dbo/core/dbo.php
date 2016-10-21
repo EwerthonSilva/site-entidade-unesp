@@ -1808,7 +1808,7 @@ class Dbo extends Obj
 
 	//returns if the current data can be interactive with the user -----------------------------------------------------------------------
 
-	function checkInteraction($module, $field, $data, $interaction_type)
+	/*function checkInteraction($module, $field, $data, $interaction_type)
 	{
 		global $no_user_interaction;
 
@@ -1825,7 +1825,7 @@ class Dbo extends Obj
 			) { return false; }
 		}
 		return true;
-	}
+	}*/
 
 	//retorna a restricao do modulo caso esteja setada, sem o WHERE ----------------------------------------------------------------------
 
@@ -2601,7 +2601,6 @@ class Dbo extends Obj
 
 			/* delete */
 			$dbo_permission_delete = hasPermission('delete', $_GET['dbo_mod']);
-
 			
 			// Fazendo um "SELECT *" na tabela
 			$classe = ($this->__class);
@@ -2639,17 +2638,18 @@ class Dbo extends Obj
 
 					$id = $obj->id;
 
-					$update_interaction = true;
-					$delete_interaction = true;
-
+					$function_name = $obj->getModule().'_has_permission';
+					if(function_exists($function_name))
+					{
+						$dbo_permission_update = $function_name('update', $obj);
+						$dbo_permission_delete = $function_name('delete', $obj);
+					}
+					
 					// Imprimindo as linhas
 					$return .= "<tr id='row-".$id."' rel='".$this->keepUrl('dbo_view='.$id)."' ".(($_GET['dbo_view'] == $id)?("class='active'"):(''))." ".((!$dbo_permission_view && $dbo_permission_update)?("data-update-url='".$this->keepUrl(array("dbo_update=".$id, '!dbo_new&!dbo_delete&!dbo_view'))."'"):(''))." >";
 
 					foreach($this->__module_scheme->campo as $chave => $valor)
 					{
-
-						$update_interaction = (($update_interaction === true)?($this->checkInteraction($modulo, $valor, $obj->$chave, 'update')):($update_interaction));
-						$delete_interaction = (($delete_interaction === true)?($this->checkInteraction($modulo, $valor, $obj->$chave, 'delete')):($delete_interaction));
 
 						//checa se existe função de exibição de dados
 						$list_function = ((strlen($valor->list_function))?($valor->list_function):(false));
@@ -2836,6 +2836,11 @@ class Dbo extends Obj
 					{
 						foreach($this->__module_scheme->button as $chave => $botao)
 						{
+							$function_name = $obj->getModule().'_has_permission_button';
+							if(function_exists($function_name))
+							{
+								$dbo_permission_button[$botao->value] = $function_name($botao->value, $obj);
+							}
 							if(!DBO_PERMISSIONS || $dbo_permission_button[$botao->value])
 							{
 								if($botao->custom === TRUE) //botoes customizados. o codigo bem do arquivo de definição do modulo.
@@ -2848,6 +2853,10 @@ class Dbo extends Obj
 										$return .= "<td><a class='button tiny radius large-no-wrap no-margin' href='".$this->keepUrl(array("dbo_mod=".$botao->modulo."&dbo_fixo=".$this->encodeFixos($botao->modulo_fk."=".$obj->{$botao->key}), "!pag&!dbo_insert&!dbo_update&!dbo_delete&!dbo_view"))."'>".$botao->value."</a></td>";
 									}
 								}
+							}
+							else
+							{
+								$return .= '<td></td>';
 							}
 						}//foreach
 					}//if
@@ -2865,13 +2874,13 @@ class Dbo extends Obj
 							{
 								$return .= (($obj->inativo == 0)?("<span class='wrapper-lock'><a title='Desativar' class='trigger-dbo-auto-admin-toggle-active-inactive' href='".$this->keepUrl(array("dbo_toggle_inactive=".$id."&token=".md5($id.SALT_DBO_AUTO_ADMIN_TOGGLE_ACTIVE)."&".CSRFVar(), '!dbo_toggle_active'))."'><i class=\"fa fa-unlock-alt\"></i></a></span>"):("<span class='wrapper-lock'><a title='".$this->__module_scheme->titulo." inativo. Clique para ativar' class='trigger-dbo-auto-admin-toggle-active-inactive alert' href='".$this->keepUrl(array("dbo_toggle_active=".$id."&token=".md5($id.SALT_DBO_AUTO_ADMIN_TOGGLE_ACTIVE)."&".CSRFVar(), '!dbo_toggle_inactive'))."'><i class=\"fa fa-lock\"></i></a></span>"));
 							}
-							$return .= (($update_interaction)?(" <a title='Alterar' href='".$this->keepUrl(array("dbo_update=".$id, '!dbo_new&!dbo_delete&!dbo_view'))."'><i class=\"fa fa-pencil\"></i></a>"):(''));
+							$return .= " <a title='Alterar' href='".$this->keepUrl(array("dbo_update=".$id, '!dbo_new&!dbo_delete&!dbo_view'))."'><i class=\"fa fa-pencil\"></i></a>";
 						}
 					}
 					if ($this->__module_scheme->delete === true) {
 						if(!DBO_PERMISSIONS || $dbo_permission_delete)
 						{
-							$return .= (($delete_interaction)?(" <a title='Excluir' class=\"trigger-dbo-auto-admin-delete\" data-id=\"".$id."\" href=\"".$this->keepUrl(array("dbo_delete=".$id."&".CSRFVar(), '!dbo_new&!dbo_update&!dbo_view'))."\"><i class=\"fa fa-times\"></i></a>"):(''));
+							$return .= " <a title='Excluir' class=\"trigger-dbo-auto-admin-delete\" data-id=\"".$id."\" href=\"".$this->keepUrl(array("dbo_delete=".$id."&".CSRFVar(), '!dbo_new&!dbo_update&!dbo_view'))."\"><i class=\"fa fa-times\"></i></a>";
 						}
 					}
 
@@ -2988,7 +2997,14 @@ class Dbo extends Obj
 					}
 					if($valor->add === true)
 					{
-						if($this->perfilTemAcessoCampo($valor->perfil) && !in_array($valor->coluna, (array)$field_blacklist))
+						if(
+							$this->perfilTemAcessoCampo($valor->perfil) && 
+							(
+								(is_array($field_whitelist) && in_array($valor->coluna, $field_whitelist)) ||
+								(is_array($field_blacklist) && !in_array($valor->coluna, $field_blacklist)) ||
+								(!is_array($field_whitelist) && !is_array($field_blacklist))
+							)
+						)
 						{
 							$grid_cell = $this->parseGridCell($grid[$gc++]);
 
@@ -3177,7 +3193,14 @@ class Dbo extends Obj
 					}
 					if($valor->edit === true)
 					{
-						if($this->perfilTemAcessoCampo($valor->perfil) && !in_array($valor->coluna, (array)$field_blacklist))
+						if(
+							$this->perfilTemAcessoCampo($valor->perfil) && 
+							(
+								(is_array($field_whitelist) && in_array($valor->coluna, $field_whitelist)) ||
+								(is_array($field_blacklist) && !in_array($valor->coluna, $field_blacklist)) ||
+								(!is_array($field_whitelist) && !is_array($field_blacklist))
+							)
+						)
 						{
 
 							$grid_cell = $this->parseGridCell($grid[$gc++]);
@@ -3363,6 +3386,9 @@ class Dbo extends Obj
 		if($this->ok())
 		{
 
+			$dbo_permission_update = hasPermission('update', $_GET['dbo_mod']);
+			$dbo_permission_delete = hasPermission('delete', $_GET['dbo_mod']);
+
 			if(!is_object($this->__module_scheme))
 			{
 				echo "<h1 style='font-size: 21px; color: #C00;'>ERRO: A classe '".get_class($this)."' não possui esquema de módulo definido.</h1>";
@@ -3437,7 +3463,7 @@ class Dbo extends Obj
 					//checa se o usuário logado pode deletar deste modulo, senão, tchau!
 					if(DBO_PERMISSIONS)
 					{
-						if(!hasPermission('delete', $_GET['dbo_mod']))
+						if(!$dbo_permission_delete)
 						{
 							setMessage("<div class='error'>Seu usuário não tem permissão para realizar essa ação.</div>");
 							$this->myHeader("Location: index.php");
@@ -3469,7 +3495,7 @@ class Dbo extends Obj
 				if($_GET['dbo_toggle_active'] || $_GET['dbo_toggle_inactive'])
 				{
 					CSRFCheckRequest();
-					if(DBO_PERMISSIONS && hasPermission('update', $_GET['dbo_mod']))
+					if(DBO_PERMISSIONS && $dbo_permission_update)
 					{
 						$mod_name = $this->__module_scheme->modulo;
 						if($_GET['dbo_toggle_active'])
@@ -3510,7 +3536,7 @@ class Dbo extends Obj
 								$this->myHeader("Location: index.php");
 							}
 						} else {
-							if(!hasPermission('update', $_GET['dbo_mod'])) //se pode alterar...
+							if(!$dbo_permission_update) //se pode alterar...
 							{
 								setMessage("<div class='error'>Seu usuário não tem permissão para realizar essa ação.</div>");
 								$this->myHeader("Location: index.php");
@@ -3707,8 +3733,8 @@ class Dbo extends Obj
 
 					
 					<?
-						//checa se o usuário pode visualizar o registro
-						if(!DBO_PERMISSIONS || hasPermission('update', $_GET['dbo_mod']))
+						//checa se o usuário pode editar o registro
+						if(!DBO_PERMISSIONS || $dbo_permission_update)
 						{
 							if($_GET['dbo_update'])
 							{
@@ -3716,7 +3742,14 @@ class Dbo extends Obj
 								$this->id = dboescape($_GET['dbo_update']);
 								$this->load();
 
-								echo $this->getBarraAcoesUpdate($this->getButtonScheme($this));
+								$function_name = $this->getModule().'_has_permission';
+								if(function_exists($function_name))
+								{
+									$dbo_permission_update = $function_name('update', $this);
+									$function_name = false;
+								}
+
+								echo $dbo_permission_update ? $this->getBarraAcoesUpdate($this->getButtonScheme($this)) : '';
 
 								if(function_exists('form_'.$this->getModule().'_update'))
 								{
@@ -3746,9 +3779,18 @@ class Dbo extends Obj
 										?>
 									</div><!-- row -->
 									<?php
-									$this->getUpdateForm(array(
-										'id_formulario' => $id_formulario,
-									));
+									if($dbo_permission_update)
+									{
+										$this->getUpdateForm(array(
+											'id_formulario' => $id_formulario,
+										));
+									}
+									else
+									{
+										?>
+										<p class="text-center"><br /><br /><br />&#8212; Você não tem permissão para alterar estes dados &#8212;</p>
+										<?php
+									}
 								}
 							}
 						}
@@ -4486,13 +4528,8 @@ class Dbo extends Obj
 
 				$first = FALSE;
 
-				$update_interaction = true;
-
 				foreach($this->__module_scheme->campo as $chave => $valor)
 				{
-
-					$update_interaction = (($update_interaction === true)?($this->checkInteraction($modulo, $valor, $modulo->{$valor->coluna}, 'update')):($update_interaction));
-
 					if($hasgrid)
 					{
 						if($grid[$gc] == '|-')
@@ -4755,7 +4792,7 @@ class Dbo extends Obj
 
 			if(!DBO_PERMISSIONS || hasPermission('update', $_GET['dbo_mod']))
 			{
-				$return .= (($update_interaction)?("<a class='button small radius no-margin' href='".$this->keepUrl(array('dbo_update='.$modulo->id, '!dbo_view'))."'>Alterar</a>"):(''));
+				$return .= "<a class='button small radius no-margin' href='".$this->keepUrl(array('dbo_update='.$modulo->id, '!dbo_view'))."'>Alterar</a>";
 			}
 
 			$return .= " <a href='' class='view-button-close button secondary small radius no-margin'>Fechar</a></div></div>"; //input //item //row (dos botoes customizados)

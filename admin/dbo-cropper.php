@@ -37,6 +37,18 @@ if(!isset($_system['media_manager']['crops']))
 			'height' => 1,
 			'force_resize' => false
 		),
+		'14_3' => array(
+			'name' => 'Recorte 4:3',
+			'width' => 4,
+			'height' => 3,
+			'force_resize' => false
+		),
+		'16_9' => array(
+			'name' => 'Recorte 16:9',
+			'width' => 16,
+			'height' => 9,
+			'force_resize' => false
+		),
 		'livre' => array(
 			'name' => 'Recorte livre',
 			'width' => '',

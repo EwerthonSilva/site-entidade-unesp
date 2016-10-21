@@ -8,7 +8,7 @@ secureURLCheck();
 
 if($_GET['action'] == 'do-crop')
 {
-	$mod = new $_GET['modulo']();
+	$mod = $_GET['modulo'] ? new $_GET['modulo']() : false;
 	$data = $_POST['imgBase64'];
 	$nome = $_GET['src'];
 
@@ -22,7 +22,8 @@ if($_GET['action'] == 'do-crop')
 	$data_decode = base64_decode($data);
 
 	if(file_put_contents($file_path.$nome, $data_decode) !== false){
-		if($mod->__module_scheme->campo[$_GET['coluna']]->tipo == 'image'){
+		//se for um módulo
+		if($mod && $mod->__module_scheme->campo[$_GET['coluna']]->tipo == 'image'){
 			if(dboUi::fieldSQL('image', $nome, $mod, array(
 				'image' => $mod->__module_scheme->campo[$_GET['coluna']]->image,
 				'allow_size_expansion' => $mod->__module_scheme->campo[$_GET['coluna']]->allow_size_expansion,
@@ -31,10 +32,11 @@ if($_GET['action'] == 'do-crop')
 				$json_result['parent']['eval'] = 'jQuery.colorbox.close(); $("#wrapper-imagem-'.$_GET['coluna'].' img").attr("src", "'.DBO_URL.'/upload/images/'.$nome.'?='.uniqid().'")';
 				$json_result['parent']['message'] = '<div class="success">Imagem editada com sucesso!</div>';
 			}
+		//se for direto do media manager
 		}else{
 			resampleThumbs($nome, $file_path, array('aplicar_crop' => $_POST['aplicar_crop']));
 			if($_POST['aplicar_crop'] == 'miniatura'){
-				rename($file_path.$nome.'backup', $file_path.$nome);
+				dboRename($file_path.$nome.'backup', $file_path.$nome);
 			}
 			//$json_result['parent']['html']['.media-item.active'] = 'teste';
 			//$json_result['parent']['reload'][] = '.media-item.active';

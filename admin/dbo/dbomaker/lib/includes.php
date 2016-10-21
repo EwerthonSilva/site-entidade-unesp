@@ -392,7 +392,7 @@ function syncTable($module)
 				$sql_join .= "\t".$field->join->chave2." int(11) NULL,\n";
 				$sql_join .= "UNIQUE (".$field->join->chave1.", ".$field->join->chave2."),\n";
 				$sql_join .= "PRIMARY KEY (id)\n";
-				$sql_join .= ") ENGINE = InnoDB DEFAULT CHARSET=utf8; ";
+				$sql_join .= ") ENGINE = InnoDB DEFAULT CHARSET=utf8mb4; ";
 				mysql_query($sql_join);
 
 				//salvando a definição dos joinNN para o alter table
@@ -417,7 +417,7 @@ function syncTable($module)
 		$sql_parts[] .= "PRIMARY KEY ( ".$pk." )";
 	}
 	$sql .= @implode(",\n", $sql_parts);
-	$sql .= ") ENGINE = ".($module->table_engine ? $module->table_engine : MYSQL_TABLE_TYPE)." DEFAULT CHARSET=utf8; ";
+	$sql .= ") ENGINE = ".($module->table_engine ? $module->table_engine : MYSQL_TABLE_TYPE)." DEFAULT CHARSET=utf8mb4; ";
 
 	mysql_query($sql);
 
@@ -468,7 +468,7 @@ function syncTable($module)
 				}
 				else
 				{
-					$sql = "ALTER TABLE ".$module->tabela." ADD ".$field->coluna." ".fieldType($field->type)." ".((checkTypeForCollate($field->type))?("CHARACTER SET utf8 COLLATE utf8_general_ci"):(""))." ".(($field->isnull)?("NULL"):("NOT NULL"));
+					$sql = "ALTER TABLE ".$module->tabela." ADD ".$field->coluna." ".fieldType($field->type)." ".((checkTypeForCollate($field->type))?("CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci"):(""))." ".(($field->isnull)?("NULL"):("NOT NULL"));
 				}
 				echo $sql;
 				mysql_query($sql);
