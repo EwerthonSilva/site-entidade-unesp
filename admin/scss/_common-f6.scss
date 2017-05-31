@@ -197,8 +197,14 @@ input[type="file"][peixe-ajax-file-upload] { position: absolute; width: 1px; hei
 
 //width control
 @include breakpoint(medium) { 
-	.width-80 { max-width: 80%; margin-left: auto; margin-right: auto; }
-	.width-50 { max-width: 50%; margin-left: auto; margin-right: auto; }
+	.width-80 { max-width: 80%; margin-left: auto !important; margin-right: auto !important; }
+	.width-70 { max-width: 70%; margin-left: auto !important; margin-right: auto !important; }
+	.width-60 { max-width: 60%; margin-left: auto !important; margin-right: auto !important; }
+	.width-50 { max-width: 50%; margin-left: auto !important; margin-right: auto !important; }
+	.width-40 { max-width: 40%; margin-left: auto !important; margin-right: auto !important; }
+	.width-30 { max-width: 30%; margin-left: auto !important; margin-right: auto !important; }
+	.width-20 { max-width: 20%; margin-left: auto !important; margin-right: auto !important; }
+	.width-10 { max-width: 10%; margin-left: auto !important; margin-right: auto !important; }
 }
 
 /* ------------------ */
@@ -383,3 +389,13 @@ $oauth-font-size: 14px !default;
 
 //configurações do reCAPTCHA (centralizar)
 .g-recaptcha > div { margin: 0 auto; margin-bottom: 1em; }
+
+//confgurações dos slides do dbo
+.dbo-slide { overflow: hidden; }
+.dbo-slide-layer { background-size: contain; background-repeat: no-repeat; background-position: top left;
+	.dbo-layer-content { transition: all .15s ease; 
+		* { color: all .3s ease;  }
+	}
+	*:last-child { margin-bottom: 0; }
+	p { line-height: inherit; font-weight: inherit; font-size: inherit; }
+}

@@ -293,7 +293,7 @@ function showModules ($params = array())
 			}
 		}
 	?>
-		<a title='Order: <?= $count++ ?> <?= $modulo->imported_module ? '| Módulo integrado com a Central de Acessos, deve ser editado por lá.' : '' ?>' href='<?= $modulo->modulo ?>' class='sortable draggable <?= $class ?> module-<?= $modulo->modulo ?> module <?= $modulo->imported_module ? 'imported' : '' ?>' module='<?= $modulo->modulo ?>' id='module-<?= encNameAjax($modulo->modulo) ?>'><?= $modulo->titulo ?></a>
+		<a title='Order: <?= $count++ ?> <?= $modulo->imported_module ? '| Módulo integrado com a Central de Acessos, deve ser editado por lá.' : '' ?>' href='<?= $modulo->modulo ?>' class='sortable draggable <?= $class ?> module-<?= $modulo->modulo ?> module <?= $modulo->imported_module ? 'imported' : '' ?>' module='<?= $modulo->modulo ?>' id='module-<?= encNameAjax($modulo->modulo) ?>'><?= $modulo->titulo_big_button ? $modulo->titulo_big_button : $modulo->titulo ?></a>
 	<?
 	}
 	?><div class='new-module button-new' id="button-novo-modulo">Novo <u>M</u>ódulo</div><?
@@ -1188,8 +1188,8 @@ function getFieldForm ($mod,$field)
 							<div class='perfil' style='float: left; border-left: 1px solid #CCC; padding-left: 10px; margin-left: 10px; '>
 							<?
 							$sql = "SELECT * FROM perfil ORDER BY nome";
-							$res = mysql_query($sql);
-							while($lin = mysql_fetch_object($res)) { ?>
+							$res = dboQuery($sql);
+							while($lin = dboFetchObject($res)) { ?>
 								<input type='checkbox' class='campo_perfil' name='perfil[]' value='<?= $lin->nome ?>' <?= (@in_array($lin->nome, $campo->perfil))?("CHECKED"):("") ?>> <?= $lin->nome ?><br>
 							<? } ?>
 							</div>
@@ -1279,6 +1279,7 @@ function getFieldForm ($mod,$field)
 								<option value='checkbox' <?= ($campo->tipo == 'checkbox')?('SELECTED'):('') ?>>Checkbox</option>
 								<option value='date' <?= ($campo->tipo == 'date')?('SELECTED'):('') ?>>Data</option>
 								<option value='datetime' <?= ($campo->tipo == 'datetime')?('SELECTED'):('') ?>>Data e Hora</option>
+								<option value='number' <?= ($campo->tipo == 'number')?('SELECTED'):('') ?>>Número</option>
 								<option value='price' <?= ($campo->tipo == 'price')?('SELECTED'):('') ?>>Preço</option>
 								<option value='file' <?= ($campo->tipo == 'file')?('SELECTED'):('') ?>>Arquivo</option>
 								<option value='image' <?= ($campo->tipo == 'image')?('SELECTED'):('') ?>>Imagem</option>
@@ -1434,6 +1435,88 @@ function getFieldTypeDetail ($type = '', $mod = '',$field = '')
 							</div><!-- input -->
 						</div>
 					</div><!-- row -->
+		<?
+		// Númber ------------------------------------------------------------------------------------------------------------------------
+		} elseif($type == 'number') {
+		?>
+			<div class="wrapper-plugin-detail">				
+				<div class="row wide">
+					<div class="item">
+						<div class="input">
+							<div class="wrapper-field-type-detail">
+								<div class="row standard">
+									<div class="item">
+										<label>
+											Parâmetros (1 por linha):<br><br>
+
+											decimals:
+											<span class="param-desc">
+												número da casas decimais Ex: 2<br /><br />
+											</span>
+
+											decimal_separator:
+											<span class="param-desc">
+												caractere separador dos decimais Ex: ,<br /><br />
+											</span>
+
+											thousand_separator:
+											<span class="param-desc">
+												caractere separador dos milhares Ex: .<br /><br />
+											</span>
+
+											prefix:
+											<span class="param-desc">
+												símbolo prefixo do número Ex: R$<br /><br />
+											</span>
+
+											sufix:
+											<span class="param-desc">
+												símbolo sufixo do número Ex: Kg<br /><br />
+											</span>
+
+											max_value:
+											<span class="param-desc">
+												valor máximo Ex: 1500.50<br /><br />
+											</span>
+
+											min_value:
+											<span class="param-desc">
+												valor mínimo Ex: -200.33
+											</span>
+										</label>
+										<div class="input">
+											<textarea rows="10" name="params"><?php
+												if(!in_array('decimals', array_keys((array)$campo->params)))
+												{
+													echo "decimals: 0\n";
+												}
+												foreach((array)$campo->params as $key => $value)
+												{
+													echo $key.': ';
+													if($value === true)
+													{
+														echo 'true';
+													}
+													elseif($value === false)
+													{
+														echo 'false';
+													}
+													else
+													{
+														echo $value;
+													}
+													echo "\n";
+												}	
+											?></textarea>
+										</div><!-- input -->
+									</div><!-- item -->
+								</div><!-- row -->
+								<div class="clear"></div>
+							</div><!-- wrapper-field-type-detail -->
+						</div><!-- input -->
+					</div><!-- item -->
+				</div><!-- row -->
+			</div>
 		<?
 		// PRICE ------------------------------------------------------------------------------------------------------------------------
 		} elseif($type == 'price') {
@@ -1930,6 +2013,7 @@ function getNewFieldForm($mod)
 				<li><input type='radio' name='tipo' id="tipo-checkbox" value='checkbox'/><label for="tipo-checkbox">Checkbox (múltiplos valores)</label></li>
 				<li><input type='radio' name='tipo' id="tipo-date" value='date'/><label for="tipo-date">Data com Calendário</label></li>
 				<li><input type='radio' name='tipo' id="tipo-datetime" value='datetime'/><label for="tipo-datetime">Data e Hora com Calendário</label></li>
+				<li><input type='radio' name='tipo' id="tipo-number" value='number'/><label for="tipo-number">Número</label></li>
 				<li><input type='radio' name='tipo' id="tipo-price" value='price'/><label for="tipo-price">Preço</label></li>
 				<li><input type='radio' name='tipo' id="tipo-join" value='join'/><label for="tipo-join">Join com outro Módulo</label></li>
 				<li><input type='radio' name='tipo' id="tipo-query" value='query'/><label for="tipo-query">Query (campo virtual)</label></li>
@@ -2152,6 +2236,24 @@ function runUpdateField($post_data)
 		}
 
 		$_SESSION['dbomaker_modulos'][$mod]->campo[$field]->valores = $values;
+	}
+	//number ----------------------------------------------------------------------------------------
+	elseif($post_data['tipo'] == 'number')
+	{
+		$params = array();
+		$post_params = explode("\n", trim($post_data['params']));
+		foreach($post_params as $key => $param)
+		{
+			$parts = explode(":", $param);
+			$parts = array_reverse($parts);
+			$identifier = array_pop($parts);
+			$parts = array_reverse($parts);
+			$parts = stripslashes(trim(implode(":", $parts)));
+			if(strtolower($parts) == 'false') { $parts = false; }
+			if(strtolower($parts) == 'true') { $parts = true; }
+			$params[$identifier] = $parts;
+		}
+		$_SESSION['dbomaker_modulos'][$mod]->campo[$field]->params = $params;
 	}
 	//preco ----------------------------------------------------------------------------------------
 	elseif($post_data['tipo'] == 'price')
@@ -2572,7 +2674,17 @@ function runNewField($post_data)
 		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->isnull = true;
 		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->classes = 'datetimepick';
 	}
-	//Datetime
+	//Number
+	elseif($post_data['tipo'] == 'number')
+	{
+		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->type = "DOUBLE";
+		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->tipo = 'number';
+		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->lista = true;
+		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->order = true;
+		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->filter = true;
+		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->isnull = true;
+	}
+	//Price
 	elseif($post_data['tipo'] == 'price')
 	{
 		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->type = "DOUBLE";
@@ -3418,6 +3530,19 @@ function writeModuleFile($mod)
 							}
 						}
 						fwrite($fh, ");\n");
+					}
+					//number
+					elseif($field->tipo == 'number')
+					{
+						if(is_array($field->params))
+						{
+							fwrite($fh, "\$field->params = array(\n");
+							foreach($field->params as $key => $value)
+							{
+								fwrite($fh, "\t'".$key."' => ".(($value === true)?("true"):((($value === false)?("false"):("'".singleScape($value)."'")))).",\n");
+							}
+							fwrite($fh, ");\n");
+						}
 					}
 					//price
 					elseif($field->tipo == 'price')

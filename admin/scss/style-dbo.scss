@@ -10,6 +10,8 @@
 /* STYLES DBO BACK END ----------------------------------------------------------------------------------------------------- */
 /* ------------------------------------------------------------------------------------------------------------------------- */
 
+#pretty-logo { animation-duration: 0.5s; }
+
 body { overflow-y: scroll; overflow-x: hidden; 
 	&.ct-editing {
 		.input-content-tools {
@@ -449,7 +451,7 @@ table.responsive {
 .dbo-link-order-desc { background-image: url(../dbo/core/images/link-order-by-desc.png); }
 
 /* layout para os input-images */
-.thumb-lista { padding: 3px; border: 1px solid #CCC; -webkit-box-shadow: 0px 1px 3px #DDD; margin-bottom: 1em; display: block; }
+.thumb-lista { padding: 3px; border: 1px solid #CCC; -webkit-box-shadow: 0px 1px 3px #DDD; margin-bottom: 1em; display: block; background-color: #eee; }
 table.list .thumb-lista { margin-bottom: 0px !important; }
 
 /* ajustes de layout nas views dos cadastros */

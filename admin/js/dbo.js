@@ -35,6 +35,14 @@ function openDboModal(url, tamanho, callback) {
 	})
 }
 
+function dboSetPreference(mk, jk, jv) {
+	peixeJSONSilent(DBO_URL+'/core/dbo-meta-ajax.php?action=set-pref', {
+		meta_key: mk,
+		json_key: jk,
+		json_value: jv
+	}, null, false);
+}
+
 $(document).ready(function(){
 	//fade nas mensagens
 
@@ -136,11 +144,7 @@ $(document).ready(function(){
 		mk = (typeof c.dataset.meta_key !== 'undefined' ? c.dataset.meta_key : null);
 		jk = c.dataset.pref_key;
 		jv = c.dataset.pref_value;
-		peixeJSONSilent(DBO_URL+'/core/dbo-meta-ajax.php?action=set-pref', {
-			meta_key: mk,
-			json_key: jk,
-			json_value: jv
-		}, null, true);
+		dboSetPreference(mk, jk, jv);
 		if(typeof c.dataset.toggle !== 'undefined'){
 			c.dataset.pref_value = jv == 'true' ? 'false' : 'true';
 		}

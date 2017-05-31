@@ -38,44 +38,50 @@
 					<div class="row">
 						<div class="small-12 large-6 columns text-center">
 							<?php
-								if(!strlen(trim(loggedUserObj()->google_id)))
+								if(defined('GOOGLE_AUTH_CONFIG_JSON'))
 								{
-									?>
-									<div class="margin-bottom">
-										<div class="g-signin2" data-onsuccess="googleSignIn"></div>
-									</div>
-									<?php
-								}
-								else
-								{
-									?>
-									<div class="panel text-center">
-										<p><i class="fa fa-check color ok"></i> Seu perfil já está vinculado ao <strong>Google</strong></p>
-									</div>
-									<?php
+									if(!strlen(trim(loggedUserObj()->google_id)))
+									{
+										?>
+										<div class="margin-bottom">
+											<div class="g-signin2" data-onsuccess="googleSignIn"></div>
+										</div>
+										<?php
+									}
+									else
+									{
+										?>
+										<div class="panel text-center">
+											<p><i class="fa fa-check color ok"></i> Seu perfil já está vinculado ao <strong>Google</strong></p>
+										</div>
+										<?php
+									}
 								}
 							?>
 						</div>
 						<div class="small-12 large-6 columns text-center">
 							<?php
-								if(!strlen(trim(loggedUserObj()->facebook_id)))
+								if(defined('FACEBOOK_AUTH_CONFIG_JSON'))
 								{
-									?>
-									<div class="margin-bottom">
-										<div class="facebook-signin pointer abcRioButton" onClick="facebookSignin()">
-											<div class="abcRioButtonIcon"><i class="fa fa-facebook"></i></div>
-											<span class="abcRioButtonContents">Logar com Facebook</span>
+									if(!strlen(trim(loggedUserObj()->facebook_id)))
+									{
+										?>
+										<div class="margin-bottom">
+											<div class="facebook-signin pointer abcRioButton" onClick="facebookSignin()">
+												<div class="abcRioButtonIcon"><i class="fa fa-facebook"></i></div>
+												<span class="abcRioButtonContents">Logar com Facebook</span>
+											</div>
 										</div>
-									</div>
-									<?php
-								}
-								else
-								{
-									?>
-									<div class="panel text-center">
-										<p><i class="fa fa-check color ok"></i> Seu perfil já está vinculado ao <strong>Facebook</strong></p>
-									</div>
-									<?php
+										<?php
+									}
+									else
+									{
+										?>
+										<div class="panel text-center">
+											<p><i class="fa fa-check color ok"></i> Seu perfil já está vinculado ao <strong>Facebook</strong></p>
+										</div>
+										<?php
+									}
 								}
 							?>
 						</div>

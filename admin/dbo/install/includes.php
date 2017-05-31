@@ -8,6 +8,9 @@ define(DEFAULT_COLOR_HEADER, "#9fbdb5");
 define(DEFAULT_COLOR_DESCRIPTION, "#c1d1c6");
 define(DEFAULT_COLOR_TITLE, "#e0b88b");
 
+define(DBO_DATABASE_LIB, 'mysqli');
+require_once(__DIR__.'/../core/dbo-database-functions.php');
+
 if($_GET['redirect'] == 1)
 {
 	header('Location: ../../');
@@ -62,19 +65,19 @@ function populateSession()
 
 function checkDatabase()
 {
-	global $_SESSION;
-	if($link_connection = @mysql_connect($_SESSION['dbo_install']['DB_HOST'], $_SESSION['dbo_install']['DB_USER'], $_SESSION['dbo_install']['DB_PASS'])) {
-		if($db = mysql_select_db($_SESSION['dbo_install']['DB_BASE'], $link_connection)) {
-			mysql_query("SET NAMES 'utf8mb4'");
-			mysql_query('SET character_set_connection=utf8mb4');
-			mysql_query('SET character_set_client=utf8mb4');
-			mysql_query('SET character_set_results=utf8mb4');
-			return true;
-		} else {
-			return mysql_error();
-		}
+	global $dbo_default_link_connection;
+	$dbo_default_link_connection = dboDatabaseConnect($_SESSION['dbo_install']['DB_HOST'], $_SESSION['dbo_install']['DB_USER'], $_SESSION['dbo_install']['DB_PASS'], $_SESSION['dbo_install']['DB_BASE']);
+	if(
+		$dbo_default_link_connection &&
+		strlen(trim($_SESSION['dbo_install']['DB_HOST']))
+	) {
+		dboQuery("SET NAMES 'utf8mb4'");
+		dboQuery('SET character_set_connection=utf8mb4');
+		dboQuery('SET character_set_client=utf8mb4');
+		dboQuery('SET character_set_results=utf8mb4');
+		return true;
 	} else {
-		return mysql_error();
+		return dboQueryError();
 	}
 }
 
@@ -120,8 +123,8 @@ function checkTables()
 	foreach($core_tables as $key => $value)
 	{
 		$sql = "SHOW TABLES FROM ".$_SESSION['dbo_install']['DB_BASE']." LIKE '".$value."'";
-		$res = mysql_query($sql);
-		if(!mysql_affected_rows()) {
+		$res = dboQuery($sql);
+		if(!dboAffectedRows()) {
 			return false;
 		}
 	}
@@ -137,25 +140,25 @@ function checkAdmins()
 		if(checkTables())
 		{
 			$sql = "SELECT id FROM perfil WHERE nome = 'Desenv'";
-			$res = mysql_query($sql);
-			$lin = mysql_fetch_object($res);
+			$res = dboQuery($sql);
+			$lin = dboFetchObject($res);
 			$id_admin = $lin->id;
 
 			$sql = "SELECT MAX(pessoa) AS pessoa FROM pessoa_perfil WHERE perfil = '".addslashes($id_admin)."'";
-			$res = mysql_query($sql);
-			if(!mysql_affected_rows())
+			$res = dboQuery($sql);
+			if(!dboAffectedRows())
 			{
 				return false;
 			}
 			else
 			{
-				$lin = mysql_fetch_object($res);
+				$lin = dboFetchObject($res);
 				$id_pessoa = $lin->pessoa;
 			}
 
 			$sql = "SELECT * FROM pessoa WHERE id = '".addslashes($id_pessoa)."'";
-			$res = mysql_query($sql);
-			if(mysql_affected_rows())
+			$res = dboQuery($sql);
+			if(dboAffectedRows())
 			{
 				return true;
 			}
@@ -421,20 +424,20 @@ function getAdmins()
 	if(checkDatabase() === true)
 	{
 		$sql = "SELECT id FROM perfil WHERE nome = 'Desenv'";
-		$res = mysql_query($sql);
-		if(mysql_affected_rows())
+		$res = dboQuery($sql);
+		if(dboAffectedRows())
 		{
-			$lin = @mysql_fetch_object($res);
+			$lin = @dboFetchObject($res);
 			$id_admin = $lin->id;
 
 			$sql = "SELECT pessoa FROM pessoa_perfil WHERE perfil = '".addslashes($id_admin)."'";
-			$res = mysql_query($sql);
-			while($lin = @mysql_fetch_object($res))
+			$res = dboQuery($sql);
+			while($lin = @dboFetchObject($res))
 			{
 				$admins[$lin->pessoa]['id'] = $lin->id;
 				$sql = "SELECT * FROM pessoa WHERE id ='".addslashes($lin->pessoa)."'";
-				$res2 = mysql_query($sql);
-				$lin2 = mysql_fetch_object($res2);
+				$res2 = dboQuery($sql);
+				$lin2 = dboFetchObject($res2);
 				$admins[$lin->pessoa]['nome'] = $lin2->nome;
 				$admins[$lin->pessoa]['email'] = $lin2->email;
 				$admins[$lin->pessoa]['user'] = $lin2->user;

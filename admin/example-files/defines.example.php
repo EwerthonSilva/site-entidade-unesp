@@ -1,5 +1,8 @@
 <?php
 
+/* configurações de conexão com o banco de dados */
+//define(DBO_DATABASE_LIB, 'mysqli');
+
 /* define a senha mestra para login no site */
 //define(MASTER_PASSWORD, 'e771ebe40a650de43bd9ed531015268d106700b5bda5a3a98b70d9bef1577642d13f75da34d97bd6f8ca0121019d6cacf79582b2708749e3899ba5c9da1de16b');
 
@@ -14,6 +17,9 @@
 //define(OAUTH_ALLOW_NEW_USERS, false); //se setado como false, só vai permitir que usuários já existentes loguem com o Google.
 //define(OAUTH_NEW_USER_PERFIL, 'Cliente'); //Coloque por extenso o nome do perfil ou o id.
 //define(OAUTH_SDK_URLS, 'login'); //lista, separada por virgulas, das páginas em que o SDK de OAuth deve ser carregado (sem o .php). (para evitar JS a toa)
+
+/* chave da API do google maps (Google Maps JavaScript API) */
+//define(GOOGLE_MAPS_API_KEY, '...');
 
 /* define se os search engines podem indexar as páginas da área administrativa, padrão false */
 //define(ALLOW_ADMIN_INDEXING, false);
@@ -39,6 +45,9 @@
 /* define a palavra principal do cockpit */
 //define(DBO_TERM_CADASTROS, 'Cadastros');
 
+/* definição de cores do sistema */
+//define(PRIMARY_COLOR, '#2199e8');
+
 /* definições de um header customizado para o admin */
 /* colocar as imagens admin-bg.jpg e admin-logo.png dentro da pasta admin/images */
 //$_system['pretty_header'] = array(
@@ -51,6 +60,33 @@
 	//'styles' => 'background-size: cover;',
 //);
 
+/* Configurações padrão para o dbo-slider */
+//$_system['dbo_slider']['settings'] = array(
+	//'fonts' => array(
+		//'Open Sans' => array(
+			//'label' => 'Open Sans',
+			//'weights' => array(
+				//'300',
+				//'400',
+				//'700',
+			//),
+		//),
+		//'Museo sans web' => array(
+			//'label' => 'Museo Sans',
+			//'weights' => array(
+				//'100',
+				//'300',
+				//'500',
+				//'700',
+				//'900',
+			//),
+		//),
+	//),
+	//'colors' => array(
+		//PRIMARY_COLOR => 'Primária',
+	//)
+//);
+
 /* lista de campos que o usuário pode atualizar no perfil */
 //$_system['meu_perfil']['campos'] = array(
 	//'foto',
@@ -59,6 +95,14 @@
 	//'sexo',
 	//'email',
 	//'descricao',
+//);
+
+/* configurações de templates para páginas do sistema */
+//$_system['pagina_tipo']['pagina'] = array(
+	//'templates' => array(
+		//'pagina-blank' => 'Página padrão',
+		//'pagina-template-evento-ativo' => 'Página de evento',
+	//),
 //);
 
 /* definindo tipos especiais de páginas no sistema */
@@ -143,6 +187,12 @@
 		//'grid' => 6,
 	//),
 //);
+
+/* opções extra de estilos para o Content Tools */
+/*$_system['content_tools']['styles'] = array(
+	array('Citação','quote','p h1 h2 h3'),
+	array('Borda','borda','img'),
+);*/
 
 /* define se as páginas devem ser cacheadas ou não */
 /* para utilizar o cache, coloque dentro do functions.php, logo após os includes: require_once('dbo/core/dbo-cache.php'); */

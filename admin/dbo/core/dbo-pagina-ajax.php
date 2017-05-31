@@ -27,6 +27,9 @@
 			//marcando o antigo status
 			$old_status = $pag->status;
 
+			//marcando o antigo template
+			$old_template = strlen(trim($pag->getDetail('template'))) ? $pag->getDetail('template') : 'pagina-blank';
+
 			//setando a operação de acordo com o obj pag
 			$operation = $pag->id ? 'update' : 'insert';
 
@@ -35,6 +38,12 @@
 
 			//setando todos os dados da página por POST
 			dboUI::smartSet($_POST, $pag);
+
+			//setando todos os detalhes na página
+			foreach((array)$_POST['dbo_pagina_detail'] as $key => $value)
+			{
+				$pag->setDetail($key, $value);
+			}
 
 			//verificando se o tipo de campo é content-tools, para salvar do jeito certo!
 			if($pag->getEditorType() == 'content-tools')
@@ -158,6 +167,12 @@
 			$json_result['reload'][] = '#wrapper-imagem-destacada';
 			if(hasPermission('admin', 'pagina-'.$tipo)) { $json_result['reload'][] = '#wrapper-autor'; }
 			$json_result['reload_url'] = $pag->keepUrl(array('dbo_update='.$pag->id, '!dbo_new'), array('url' => $full_url));
+
+			//caso tenha ocorrido alteração de tmeplate, dá reload no corpo do texto também.
+			if(strlen(trim($pag->getDetail('template'))) && $pag->getDetail('template') != $old_template)
+			{
+				$json_result['reload'][] = '.wrapper-pagina-field-texto';
+			}
 
 			//se for um insert, atualiza o action do formulário para update.
 			if($operation == 'insert')

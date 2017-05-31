@@ -44,6 +44,11 @@
 		<h3>Conversão de páginas para Content Tools</h3>
 		<p>Este script pega todas as páginas do sistema e transforma o conteúdo do banco do padrão <strong>TinyMCE</strong> para o padrão <strong>Content Tools</strong>.</p>
 		<button type="button" class="button radius peixe-json" data-url="<?= secureUrl('dbo/maintenance/ajax-paginas.php?action=migrar-para-content-tools&'.CSRFVar()) ?>" data-confirm="Você tem certeza que deseja executar este script?" peixe-log>Converter páginas para Content Tools</button>
+
+		<hr>
+		<h3>Drop de chaves estrangeiras</h3>
+		<p>Este script remove todas as <strong>constraints de chaves estrangeiras (FK)</strong> do banco de dados ativo, para que o DBO Maker possa recriá-las.</p>
+		<button type="button" class="button radius peixe-json" data-url="<?= secureUrl('dbo/core/dbo-maintenance-ajax.php?action=drop-fk-constraints&'.CSRFVar()) ?>" data-confirm="Você tem certeza que deseja executar este script?" peixe-log>Remover constraints de chave estrangeira</button>
 	</div>
 </div>
 

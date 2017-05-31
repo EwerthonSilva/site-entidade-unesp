@@ -163,6 +163,24 @@ function peixeExecJSON(data, error_message, mode) {
 				$(key).fadeHtml(result.html[key]);
 			}
 		}
+		if(result.prepend){
+			for(var key in result.prepend)
+			{
+				for(var key2 in result.prepend[key])
+				{
+					$(key).prepend(result.prepend[key][key2]);
+				}
+			}
+		}
+		if(result.append){
+			for(var key in result.append)
+			{
+				for(var key2 in result.append[key])
+				{
+					$(key).append(result.append[key][key2]);
+				}
+			}
+		}
 		if(result.parent){
 			parent.peixeExecJSON(JSON.stringify(result.parent), error_message, mode);
 		}
@@ -227,9 +245,10 @@ function showPeixeLoader() {
 	//function que funciona como o .html() do jQuery, mas com um efeito de fade
 	$.fn.fadeHtml = function(content, callback) {
 		return this.each(function() {
-			$(this).fadeTo(peixe_fade_html_timer, 0, function(){
-				$(this).html(content);
-				$(this).fadeTo(peixe_fade_html_timer, 1, callback);
+			var c = $(this);
+			c.fadeTo(peixe_fade_html_timer, 0, function(){
+				c.html(content);
+				c.fadeTo(peixe_fade_html_timer, 1, callback);
 			});
 		});
 	}
@@ -238,11 +257,12 @@ function showPeixeLoader() {
 	$.fn.peixeUnrequire = function(callback) {
 		var size = this.length-1;
 		return this.each(function(i) {
+			var c = $(this);
 			if(this.nodeName != 'INPUT' && this.nodeName != 'SELECT' && this.nodeName != 'TEXTAREA'){
-				$(this).find('[required]').removeAttr('required').removeClass('required').attr('maybe-required', '');
+				c.find('[required]').removeAttr('required').removeClass('required').attr('maybe-required', '');
 			}
 			else {
-				$(this).removeAttr('required').removeClass('required').attr('maybe-required', '');
+				c.removeAttr('required').removeClass('required').attr('maybe-required', '');
 			}
 			if(size == i){
 				if(typeof callback == 'function'){
@@ -256,11 +276,12 @@ function showPeixeLoader() {
 	$.fn.peixeRequire = function(callback) {
 		var size = this.length-1;
 		return this.each(function(i) {
+			var c = $(this);
 			if(this.nodeName != 'INPUT' && this.nodeName != 'SELECT' && this.nodeName != 'TEXTAREA'){
-				$(this).find('[maybe-required]').removeAttr('maybe-required').addClass('required').attr('required', '');
+				c.find('[maybe-required]').removeAttr('maybe-required').addClass('required').attr('required', '');
 			}
 			else {
-				$(this).removeAttr('maybe-required').addClass('required').attr('required', '');
+				c.removeAttr('maybe-required').addClass('required').attr('required', '');
 			}
 			if(size == i){
 				if(typeof callback == 'function'){
@@ -298,9 +319,36 @@ function showPeixeLoader() {
 	//função para dar autofocus no primeiro elemento texto de um seletor
 	$.fn.peixeAutoFocus = function(){
 		$(this).find(':text').filter(':visible:first').focus();
+		console.log('peixe auto focus');
 	}
 
+	//funcao para animações
+	$.fn.extend({
+		peixeAnimate: function (animation_name = false, callback = false) {
+			var animation_end = 'webkitAnimationEnd mozAnimationEnd MSAnimationEnd oanimationend animationend';
+			return this.each(function(){
+				var c = $(this);
+				var animation_name = animation_name ? animation_name : c.data('peixe-animation');
+				var callback = callback ? callback : c.data('peixe-animation-callback');
+				if(c.data('peixe-animation-duration').length){
+					c.css('animation-duration', c.data('peixe-animation-duration'));
+				}
+				if(c.data('peixe-animation-delay').length){
+					c.data('peixe-animation-delay');
+					c.css('animation-delay', c.data('peixe-animation-delay'));
+				}
+				c.show().addClass('animated ' + animation_name).one(animation_end, function() {
+					c.removeClass('animated ' + animation_name);
+					if(callback == 'hide'){
+						c.hide();
+					}
+				});
+			})
+		}
+	});
+
 })(jQuery);	
+
 
 //mostra o loader de AJAX
 function hidePeixeLoader() {

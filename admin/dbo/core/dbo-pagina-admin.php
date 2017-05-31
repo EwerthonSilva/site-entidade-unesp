@@ -405,6 +405,100 @@
 							?>
 						</div>
 
+						<?php
+							if($tipo == 'pagina')
+							{
+								?>
+								<div class="panel radius font-13">
+									<div class="row">
+										<div class="small-12 large-12 columns">
+											<strong>Página mãe <i class="fa fa-question-circle help" title="Indica a página mãe da página atual, hierarquicamente."></i></strong>
+											<hr class="small">
+											<?php
+												//para evitar queries a toa, pegamos primeiro todas as páginas que são mãe.
+												$sql = "SELECT DISTINCT mae FROM pagina WHERE tipo = 'pagina' AND mae IS NOT NULL";
+												$res = dboQuery($sql);
+												if(dboAffectedRows())
+												{
+													while($lin = dboFetchObject($res))
+													{
+														$maes_ids[$lin->mae] = $lin->mae;
+													}
+												}
+											?>
+											<select name="mae">
+												<option value="">- Nenhuma -</option>
+												<?= renderSelectPaginaMae($pag->mae, array('maes_ids' => $maes_ids)) ?>
+											</select>
+										</div>
+									</div>
+								</div>
+								<?php
+							}
+						?>
+
+						<?php
+							if(sizeof((array)$templates) > 0)
+							{
+								$template_ativo = $pag->getDetail('template');
+								?>
+								<div class="panel radius font-13">
+									<div class="row">
+										<div class="small-12 large-12 columns">
+											<strong>Modelo da página</strong>
+											<hr class="small">
+											<select name="dbo_pagina_detail[template]">
+												<?php
+													foreach($templates as $key => $value)
+													{
+														?>
+														<option value="<?= $key ?>" <?= $template_ativo == $key ? 'selected' : '' ?>><?= htmlSpecialChars($value) ?></option>
+														<?php
+													}
+												?>
+											</select>
+										</div>
+									</div>
+								</div>
+								<?php
+							}
+						?>
+
+						<div class="panel font-13 radius wrapper-pagina-field-imagem_destaque" id="wrapper-slider-destacado" style="<?= $pag->hideFormField('slider_destacado') ? 'display: none;' : '' ?>">
+							<div class="row">
+								<div class="large-12 columns">
+									<strong>Slider destacado <i class="fa fa-question-circle help" title="Este slider será exibido caso seu template tenha suporte à funcionalidade."></i></strong>
+									<hr class="small">
+									<div id="wrapper-slider-destacado">
+										<?php
+											$sli = new dbo_slider('ORDER BY nome');
+											if($sli->size())
+											{
+												?>
+												<select name="dbo_pagina_detail[slider_destacado]">
+													<option value="">...</option>
+													<?php
+														do {
+															?>
+															<option value="<?= $sli->id ?>" <?= $pag->getDetail('slider_destacado') ? 'selected' : '' ?>><?= $sli->nome ?></option>
+															<?php
+														}while($sli->fetch());
+													?>
+												</select>
+												<?php
+											}
+											else
+											{
+												?>
+												<p class="text-center no-margin">&#8212; Não há sliders cadastrados &#8212;</p>
+												<?php
+											}
+										?>
+									</div>
+								</div>
+							</div>
+						</div>
+
 						<div class="panel font-13 radius wrapper-pagina-field-imagem_destaque" id="wrapper-imagem-destacada" style="<?= $pag->hideFormField('imagem_destaque') ? 'display: none;' : '' ?>">
 							<div class="row">
 								<div class="large-12 columns">
@@ -650,6 +744,7 @@
 		extract($params);
 
 		$titulo = $titulo ? $titulo : preg_replace('/\\.[^.\\s]{3,4}$/', '', $file_name);
+		$media_type = $media_type ? $media_type : 'image';
 
 		$pag = new pagina();
 		$pag->titulo = $titulo;
@@ -672,6 +767,7 @@
 		{
 			$pag->modulo_anexado_id = $modulo_id;
 		}
+		$pag->setDetail('media_type', $media_type);
 		$pag->save();
 
 		//esta flag vai dizer se a slug deve ser mudada na primeira alteração de título.
@@ -809,7 +905,6 @@
 
 								//data
 								$sql_part_data = (!empty($_GET['m']) ? " AND DATE_FORMAT(data, '%Y-%m') = '".dboescape($_GET['m'])."' " : '');
-
 
 								//verificando se a pagina tem modulo extendido
 								if($extension_module)
@@ -971,7 +1066,16 @@
 									GROUP BY 
 										pag.id
 									ORDER BY
-										".($_GET['order_by'] ? dboescape($_GET['order_by']) : $order_by)." ".($_GET['order'] ? dboescape($_GET['order']) : $order)."
+										CASE
+											WHEN pag.mae IS NULL
+											THEN ".(strpos($_GET['order_by'], 'ext_') === 0 ? '' : 'pag.').($_GET['order_by'] ? dboescape($_GET['order_by']) : $order_by)."
+											ELSE (
+												SELECT ".(strpos($_GET['order_by'], 'ext_') === 0 ? '' : 'pag_mae.').($_GET['order_by'] ? dboescape($_GET['order_by']) : $order_by)."
+												FROM ".$pag->getTable()." pag_mae
+												WHERE pag.mae = pag_mae.id
+											)
+										END
+										".($_GET['order'] ? dboescape($_GET['order']) : $order)."
 								";
 								$pag = new pagina();
 								$pag->forcePagination($paginacao);
@@ -1151,7 +1255,7 @@
 
 																			<?= $pag->inativo() ? '<a href="'.secureUrl('dbo/core/dbo-pagina-ajax.php?action=ativar&pagina_id='.$pag->id.'&'.CSRFVar()).'" title="Ativar" class="peixe-json peixe-reload" data-keep-url="'.keepUrl().'" peixe-reload="#list-item-'.$pag->id.'"><i class="fa fa-lock color alert"></i></a>' : '' ?>
 
-																			<strong><a href="<?= $dbo->keepUrl('dbo_update='.$pag->id); ?>" style="padding-bottom: 4px; display: inline-block;"><?= $pag->getListIdentifier($column) ?></a></strong><?= $pag->status != 'publicado' ? '<span class="color medium"> &#8212; '.ucfirst($pag->status).'</span>' : '' ?><br />
+																			<strong><a href="<?= $dbo->keepUrl('dbo_update='.$pag->id); ?>" style="padding-bottom: 4px; display: inline-block;"><?= $pag->mae ? '<span class="color light">------ &nbsp; </span>' : '' ?><?= $pag->getListIdentifier($column) ?></a></strong><?= $pag->status != 'publicado' ? '<span class="color medium"> &#8212; '.ucfirst($pag->status).'</span>' : '' ?><br />
 																			<?php
 																				if($list_view == 'details')
 																				{
@@ -1693,6 +1797,38 @@
 		}
 
 		return $pag;
+	}
+
+	function renderSelectPaginaMae($active, $params = array())
+	{
+		extract($params);
+
+		ob_start();
+
+		$sql = "SELECT * FROM pagina WHERE tipo = 'pagina' AND mae ".($mae_id ? " = '".$mae_id."'" : " IS NULL ")." ORDER BY titulo";
+		
+		$res = dboQuery($sql);
+		if(dboAffectedRows())
+		{
+			while($lin = dboFetchObject($res))
+			{
+				?>
+				<option value="<?= $lin->id ?>" <?= $lin->id == $active ? 'SELECTED' : '' ?>><?= trim($indent.' '.$lin->titulo)  ?></option>
+				<?php
+				//verifica se tem filhos, ai chama essa função novamente.
+				if(in_array($lin->id, (array)$maes_ids))
+				{
+					$sub_indent = $indent.'---';
+					echo renderSelectPaginaMae($active, array(
+						'mae_id' => $lin->id,
+						'indent' => $sub_indent,
+						'maes_ids' => $maes_ids,
+					));
+				}
+			}
+		}
+
+		return ob_get_clean();
 	}
 
 ?>

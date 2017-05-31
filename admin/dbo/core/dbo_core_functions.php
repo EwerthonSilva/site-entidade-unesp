@@ -1,7 +1,8 @@
 <?
 
-	include_once('dbo-shortcodes.php');
-	include_once('dbo-formatting.php');
+	require_once('dbo-shortcodes.php');
+	require_once('dbo-formatting.php');
+	require_once('dbo-database-functions.php');
 
 	/* defines padrão, se não setados pelo usuário. */
 	@define(DBO_TERM_CADASTROS, 'Cadastros');
@@ -54,6 +55,14 @@
 		)
 	);
 
+	//configurações padrão do slider
+	$_system['dbo_slider']['default_settings'] = array(
+		'colors' => array(
+			'#FFFFFF' => 'Branco',
+			'#000000' => 'Preto',
+		)
+	);
+
 	//campos padrão que o usuário pode alterar no modal "Meu perfil"
 	if(!is_array($_system['meu_perfil']['campos']))
 	{
@@ -97,6 +106,24 @@
 		return TRUE;
 	}	
 
+	// ----------------------------------------------------------------------------------------------------------------
+
+	function dboGetFileType($file_name)
+	{
+		$types = array(
+			'jpg' => 'image',
+			'mp4' => 'video',
+		);
+
+		$ext = strtolower(dboGetExtension($file_name, false));
+
+		if(in_array($ext, array_keys($types)))
+		{
+			return $types[$ext];
+		}
+		return 'image';
+	}
+	
 	// ----------------------------------------------------------------------------------------------------------------
 
 	/* prepara o site para suportar login por OAUTH */
@@ -161,6 +188,42 @@
 	function dboModalMeuPerfilUrl()
 	{
 		return secureUrl(ADMIN_URL.'/dbo-meu-perfil.php?dbo_modal=1&body_class=hide-breadcrumb&load_oauth_sdks=true&oauth_link_id='.loggedUser());
+	}
+	
+	// ----------------------------------------------------------------------------------------------------------------
+
+	function dboModalLoginUrl($params = array())
+	{
+		extract($params);
+		return secureUrl(ADMIN_URL.'/dbo-login.php?dbo_modal=1&body_class=hide-breadcrumb&load_oauth_sdks=true&oauth_link_id='.loggedUser()."&dbo_redirect=".urlEncode(dboEncode(secureUrl('dbo-login.php?dbo_modal=1&body_class=hide-breadcrumb&action=reload-parent'))));
+	}
+	
+	// ----------------------------------------------------------------------------------------------------------------
+
+	function dboModalLogoutUrl($params = array())
+	{
+		extract($params);
+		return secureUrl(ADMIN_URL.'/dbo-login.php?dbo_modal=1&body_class=hide-breadcrumb&action=logout');
+	}
+	
+	// ----------------------------------------------------------------------------------------------------------------
+
+	function dboValueStepper($value, $params = array())
+	{
+		extract($params);
+
+		$min_value = $min_value ?: 0;
+		$step = $step ?: 1;
+
+		ob_start();
+		?>
+		<span class="dbo-value-stepper inline-block <?= $classes ?>" style="<?= $styles ?>" data-min-value="<?= $min_value ?>" data-step="<?= $step ?>">
+			<span class="dbo-value-stepper-minus"><i class="fa fa-minus"></i></span>
+			<input type="text" name="<?= $name ?>" id="<?= $id ?>" value="<?= htmlSpecialChars($value) ?>" <?= dboParseDataAttributes((array)$data_attrs) ?> class="<?= $input_classes ?>" style="<?= $input_styles ?>"/>
+			<span class="dbo-value-stepper-plus"><i class="fa fa-plus"></i></span>
+		</span>
+		<?php
+		return ob_get_clean();
 	}
 	
 	// ----------------------------------------------------------------------------------------------------------------
@@ -394,15 +457,38 @@
 
 	// ----------------------------------------------------------------------------------------------------------------
 
-	function dboMarkdown($text)
+	function dboMarkdown($text, $params = array())
 	{
+		/* Params:
+		   - paragraphs: true/false
+		   - line_breaks: true/false
+		   - single_line: true/false --> seta paragraphs e line_breaks como false
+		*/
+
 		global $_dboMarkdown;
+		extract($params);
+
+		if($single_line)
+		{
+			$paragraphs = false;
+			$line_breaks = false;
+		}
+
 		if(empty($_dboMarkdown))
 		{
 			require_once(DBO_PATH.'/core/classes/Parsedown.php');
 			$_dboMarkdown = new Parsedown();
 		}
-		return $_dboMarkdown->setBreaksEnabled(true)->text($text);
+
+		//seta se vai imprimir quebras de linha ou não
+		$_dboMarkdown->setBreaksEnabled($line_breaks === false ? false : true);
+
+		//verifica se o que se quer são paragrafos ou linhas
+		if($paragraphs === false)
+		{
+			return $_dboMarkdown->line($text);
+		}
+		return $_dboMarkdown->text($text);
 	}
 
 	// ----------------------------------------------------------------------------------------------------------------
@@ -572,6 +658,11 @@
 			$return .= "<script src=\"".$js_url."/jquery.sticky-kit.js\"></script>\n";
 			$_system['dbo_imported_js'][] = "sticky-kit";
 		}
+		if(!in_array("sticky", $_system['dbo_imported_js']) && (in_array("sticky", $libs) || $import_all))
+		{
+			$return .= "<script src=\"".$js_url."/sticky/jquery.sticky.js\"></script>\n";
+			$_system['dbo_imported_js'][] = "sticky";
+		}
 		if(!in_array("timepicker", $_system['dbo_imported_js']) && (in_array("timepicker", $libs) || $import_all))
 		{
 			$return .= "<script src=\"".$js_url."/jquery.timepicker.js\"></script>\n";
@@ -626,11 +717,18 @@
 		}
 		if(!in_array("select2", $_system['dbo_imported_js']) && (in_array("select2", $libs) || $import_all))
 		{
-			$return .= "<link rel=\"stylesheet\" href=\"".$js_url."/select2/select2.css\">\n";
-			$return .= "<script src=\"".$js_url."/select2/jquery.select2.min.js\"></script>\n";
-			$return .= "<script src=\"".$js_url."/select2/jquery.select2.pt-BR.js\"></script>\n";
+			$return .= "<link rel=\"stylesheet\" href=\"".$js_url."/select2-3.5/select2.css\">\n";
+			$return .= "<script src=\"".$js_url."/select2-3.5/jquery.select2.min.js\"></script>\n";
+			$return .= "<script src=\"".$js_url."/select2-3.5/jquery.select2.pt-BR.js\"></script>\n";
 			$_system['dbo_imported_js'][] = "select2";
 		}
+		/*if(!in_array("select2", $_system['dbo_imported_js']) && (in_array("select2", $libs) || $import_all))
+		{
+			$return .= "<link rel=\"stylesheet\" href=\"".$js_url."/select2/css/select2.css\">\n";
+			$return .= "<script src=\"".$js_url."/select2/js/select2.min.js\"></script>\n";
+			//$return .= "<script src=\"".$js_url."/select2/jquery.select2.pt-BR.js\"></script>\n";
+			$_system['dbo_imported_js'][] = "select2";
+		}*/
 		if(!in_array("waypoints", $_system['dbo_imported_js']) && (in_array("waypoints", $libs) || $import_all))
 		{
 			$return .= "<script src=\"".$js_url."/jquery.waypoints.min.js\"></script>\n";
@@ -648,9 +746,43 @@
 		}
 		if(!in_array("google-maps", $_system['dbo_imported_js']) && (in_array("google-maps", $libs) || $import_all))
 		{
-			$return .= "<script src=\"https://maps.googleapis.com/maps/api/js?v=3.exp&sensor=false\"></script>\n";
+			$return .= "<script src=\"https://maps.googleapis.com/maps/api/js?v=3.exp&sensor=false&key=".GOOGLE_MAPS_API_KEY."\"></script>\n";
 			$return .= "<script src=\"".$js_url."/markerwithlabel.js\"></script>\n";
 			$_system['dbo_imported_js'][] = "google-maps";
+		}
+		if(!in_array("marked", $_system['dbo_imported_js']) && (in_array("marked", $libs) || $import_all))
+		{
+			$return .= "<script src=\"".$js_url."/marked.js\"></script>\n";
+			$_system['dbo_imported_js'][] = "marked";
+		}
+		if(!in_array("flowtype", $_system['dbo_imported_js']) && (in_array("flowtype", $libs) || $import_all))
+		{
+			$return .= "<script src=\"".$js_url."/flowtype.js\"></script>\n";
+			$_system['dbo_imported_js'][] = "flowtype";
+		}
+		if(!in_array("dbo-value-stepper", $_system['dbo_imported_js']) && (in_array("dbo-value-stepper", $libs) || $import_all))
+		{
+			ob_start();
+			?>
+			<script>
+				$(document).ready(function(){
+					$(document).on('click', '.dbo-value-stepper-minus, .dbo-value-stepper-plus', function(){
+						var c = $(this);
+						var stepper = c.closest('.dbo-value-stepper');
+						var input = stepper.find('input');
+						var step = parseFloat(stepper.data('step'));
+						var min_value = parseFloat(stepper.data('min-value'));
+						var decimals = String(step.toString().split('.').slice(1,2)[0]).length;
+						decimals = decimals > 4 ? 0 : decimals;
+						console.log(c.hasClass('dbo-value-stepper-minus'));
+						var value = c.hasClass('dbo-value-stepper-minus') ? parseFloat(input.val()) - parseFloat(step) : parseFloat(input.val()) + parseFloat(step);
+						input.val(value < min_value ? min_value : value.toFixed(decimals)).trigger('input');
+					});
+				}) //doc.ready
+			</script>
+			<?php
+			$return .= ob_get_clean();
+			$_system['dbo_imported_js'][] = "dbo-value-stepper";
 		}
 
 		$return .= "<!-- DBO_IMPORTED_JS (END) -->\n";
@@ -700,6 +832,7 @@
 		*  styles
 		*  size: small | medium | large
 		*  contain: false | true
+		*  background_size: CSS...
 		*/
 		extract($params);
 
@@ -708,7 +841,7 @@
 
 		if($image)
 		{
-			return '<div style="background-size: '.($contain ? 'contain' : 'cover').'; background-repeat: no-repeat; background-position: center center; background-image: url('.$image.'); padding-top: '.$height.'; max-width: '.$max_width.';'.$styles.'" class="'.$classes.'"><img src="'.$image.'" style="display: none;" alt=""></div>';
+			return '<div style="background-size: '.($background_size ? $background_size : ($contain ? 'contain' : 'cover')).'; background-repeat: no-repeat; background-position: center center; background-image: url('.$image.'); padding-top: '.$height.'; max-width: '.$max_width.';'.$styles.'" class="'.$classes.'"><img src="'.$image.'" style="display: none;" alt=""></div>';
 		}
 	}
 
@@ -1091,66 +1224,6 @@
 
 	// ----------------------------------------------------------------------------------------------------------------
 
-	function dboQuery($sql)
-	{
-		global $dbo_query_counter;
-		$dbo_query_counter++;
-		//dboLog('query', $sql);
-		$ret = mysql_query($sql);
-		if($ret)
-		{
-			return $ret;
-		}
-		else
-		{
-			echo dboQueryError();
-		}
-	}
-
-	// ----------------------------------------------------------------------------------------------------------------
-
-	function dboAffectedRows()
-	{
-		return mysql_affected_rows();
-	}
-
-	// ----------------------------------------------------------------------------------------------------------------
-
-	function dboQueryError()
-	{
-		return mysql_error();
-	}
-
-	// ----------------------------------------------------------------------------------------------------------------
-
-	function dboFetchAssoc($res)
-	{
-		return mysql_fetch_assoc($res);
-	}
-
-	// ----------------------------------------------------------------------------------------------------------------
-
-	function dboFetchObject($res)
-	{
-		return mysql_fetch_object($res);
-	}
-
-	// ----------------------------------------------------------------------------------------------------------------
-
-	function dboQueryResult($res, $pos)
-	{
-		return mysql_result($res, $pos);
-	}
-
-	// ----------------------------------------------------------------------------------------------------------------
-
-	function dboInsertId()
-	{
-		return mysql_insert_id();
-	}
-
-	// ----------------------------------------------------------------------------------------------------------------
-
 	function dboUniqueSlug($slug, $type = 'database', $params = array())
 	{
 		/**
@@ -1423,6 +1496,8 @@
 		if(strlen(trim($db_data)))
 		{
 			list($file_name, $server_file_name) = explode("\n", $db_data);
+			//para casos de upload de imagem, não existe um server name.
+			$server_file_name = strlen(trim($server_file_name)) ? $server_file_name : $file_name;
 			ob_start();
 			?>
 			<input type="file" class="peixe-ajax-file-upload-ready" name="<?= $name ?>_aux" value="" style="display: none;" id="<?= $id ?>" peixe-ajax-file-upload <?= $tipo == 'required' ? 'data-ex-required="true"' : '' ?> class="<?= $classes ?>" <?= $action ? 'data-action="'.$action.'"' : '' ?>/>
@@ -1454,7 +1529,7 @@
 		$return = '';
 		foreach($array as $key => $value)
 		{
-			$return .= 'data-'.$key.'="'.json_encode($value).'" ';
+			$return .= 'data-'.$key.'="'.htmlSpecialChars((is_array($value) ? json_encode($value) : $value)).'" ';
 		}
 		return $return;
 	}
@@ -1568,9 +1643,9 @@
 		";
 
 		$res = dboQuery($sql);
-		if(mysql_affected_rows())
+		if(dboAffectedRows())
 		{
-			while($lin = mysql_fetch_object($res))
+			while($lin = dboFetchObject($res))
 			{
 				$_sys[sysId()]['perfis_pessoa'][$pessoa_id][$lin->id] = $lin->nome;
 			}
@@ -1593,9 +1668,9 @@
 				perfil
 		";
 		$res = dboQuery($sql);
-		if(mysql_affected_rows())
+		if(dboAffectedRows())
 		{
-			while($lin = mysql_fetch_object($res))
+			while($lin = dboFetchObject($res))
 			{
 				$_sys[sysId()]['perfis'][$lin->id] = $lin->nome;
 
@@ -2189,7 +2264,7 @@
 				<div class='row collapse'>
 					<label>E-mail</label>
 					<div class='small-6 columns' id='wrapper-email'>
-						<input type='text' name='email' class="text-right" autofocus>
+						<input type='text' name='email' class="text-right" autofocus required>
 					</div><!-- col -->
 					<div class='small-6 columns' id='wrapper-dominio'>
 						<select name="dominio" tabindex='-1'>
@@ -2211,7 +2286,7 @@
 				<div class='row'>
 					<div class='large-12 columns'>
 						<label>Senha</label>
-						<input type='password' name='pass' class="text-center">
+						<input type='password' name='pass' class="text-center" required>
 					</div><!-- col -->
 				</div><!-- row -->
 
@@ -2270,15 +2345,27 @@
 					{
 						?>
 						<div class="row">
-							<div class="small-12 large-6 columns">
-								<div class="g-signin2" data-onsuccess="googleSignIn"></div>
-							</div>
-							<div class="small-12 large-6 columns">
-								<div class="facebook-signin pointer abcRioButton" onClick="facebookSignin()">
-									<div class="abcRioButtonIcon"><i class="fa fa-facebook"></i></div>
-									<span class="abcRioButtonContents">Logar com Facebook</span>
-								</div>
-							</div>
+							<?php
+								if(defined('GOOGLE_AUTH_CONFIG_JSON'))
+								{
+									?>
+									<div class="small-12 large-6 columns">
+										<div class="g-signin2" data-onsuccess="googleSignIn"></div>
+									</div>
+									<?php
+								}
+								if(defined('FACEBOOK_AUTH_CONFIG_JSON'))
+								{
+									?>
+									<div class="small-12 large-6 columns">
+										<div class="facebook-signin pointer abcRioButton" onClick="facebookSignin()">
+											<div class="abcRioButtonIcon"><i class="fa fa-facebook"></i></div>
+											<span class="abcRioButtonContents">Logar com Facebook</span>
+										</div>
+									</div>
+									<?php
+								}
+							?>
 						</div>
 						<hr>
 						<div class="text-center" style="margin-bottom: -20px;">
@@ -2400,13 +2487,6 @@
 	
 	// ----------------------------------------------------------------------------------------------------------------
 
-	function dboEscape($var)
-	{
-		return mysql_real_escape_string($var);
-	}
-
-	// ----------------------------------------------------------------------------------------------------------------
-
 	function masterLogin($pass)
 	{
 		if(defined('MASTER_PASSWORD'))
@@ -2438,6 +2518,8 @@
 	{
 		function dbo_login($params = array())
 		{
+			$referer = $_SERVER['HTTP_REFERER'];
+			
 			extract($params);
 			if($_POST)
 			{
@@ -2453,7 +2535,7 @@
 					if(!strlen(trim($_POST['email'])) || !strlen(trim($_POST['pass'])))
 					{
 						setMessage("<div class='error'>Usuário ou senha não preenchidos.</div>");
-						header("Location: login.php");
+						header("Location: ".$referer);
 						exit();
 					}
 
@@ -2461,7 +2543,7 @@
 					if(dboAccessLock($_SERVER['REMOTE_ADDR']))
 					{
 						setMessage('<div class="error">Seu IP está bloqueado por muitas tentivas de acesso inválidas.</div>');
-						header("Location: login.php");
+						header("Location: ".$referer);
 						exit();
 					}
 
@@ -2512,13 +2594,13 @@
 							else
 							{
 								setMessage("<div class='error'>".ERROR_MAIL_UNSYNC."</div>");
-								header("Location: login.php");
+								header("Location: ".$referer);
 								exit();
 							}
 						} else {
 							dboAccessLock();
 							setMessage("<div class='error'>Usuário ou Senha inválidos.</div>");
-							header("Location: login.php");
+							header("Location: ".$referer);
 							exit();
 						}
 					}
@@ -2547,7 +2629,7 @@
 						else
 						{
 							setMessage("<div class='error'>Permissão de acesso negada. Contate o administrador (ramal: 4651).</div>");
-							header("Location: login.php");
+							header("Location: ".$referer);
 							exit();
 						}
 					}
@@ -2563,7 +2645,7 @@
 						if(!dboRecaptchaIsValid())
 						{
 							setMessage('<div class="error">Erro: Aparentemente, você <strong>pode ser</strong> um robô. Tente novamente.</div>');
-							header("Location: login.php");
+							header("Location: ".$referer);
 							exit();
 						}
 						else
@@ -2583,7 +2665,7 @@
 						else
 						{
 							setMessage($message);
-							header("Location: login.php");
+							header("Location: ".$referer);
 							exit();
 						}
 					}
@@ -2609,7 +2691,7 @@
 						else
 						{
 							setMessage($message);
-							header("Location: login.php");
+							header("Location: ".$referer);
 							exit();
 						}
 					} else {
@@ -2799,7 +2881,7 @@
 		{
 			echo dboImportJs(array(
 				'stellar',
-				//'smooth-scroll',
+				'smooth-scroll',
 			));
 			?>
 			<script>
@@ -2861,7 +2943,8 @@
 		$end_time = (float) array_sum(explode(' ',microtime()));
 		if(!$_GET['dbo_modal'])
 		{
-			echo "<span class='processing-time' style='color: #FFF;' class='no-print'>Processing time: ". sprintf("%.4f", ($end_time-$start_time))." seconds</span>";
+			echo "<span class='database-lib' style='color: #FFF;' class='no-print'>DB lib: ".(DBO_DATABASE_LIB === 'mysqli' ? 'MySQLi' : 'MySQL')."</span>";
+			echo "<span class='processing-time' style='color: #FFF;' class='no-print'> - Processing time: ". sprintf("%.4f", ($end_time-$start_time))." seconds</span>";
 			echo " <span class='dbo-queries-number' style='color: #FFF;'> - Queries: ".$dbo_query_counter."</span>";
 			echo " <span class='dbo-memory-usage' style='color: #FFF;'> - Memory peak: ".humanFilesize(memory_get_peak_usage(false))."</span>";
 		}
@@ -3269,9 +3352,9 @@
 
 		$result = array();
 
-		if(mysql_affected_rows())
+		if(dboAffectedRows())
 		{
-			while($lin = mysql_fetch_object($res))
+			while($lin = dboFetchObject($res))
 			{
 				$result[$lin->pessoa] = $lin->pessoa;
 			}
@@ -3293,7 +3376,7 @@
 			$res = dboQuery($sql);
 			if(dboAffectedRows())
 			{
-				while($lin = mysql_fetch_object($res))
+				while($lin = dboFetchObject($res))
 				{
 					$result[$lin->pessoa] = $lin->pessoa;
 				}

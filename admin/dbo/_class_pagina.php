@@ -707,7 +707,24 @@ if(!class_exists('pagina'))
 		{
 			global $_system;
 			ob_start();
-			$pagina = new pagina("WHERE status = 'publicado' AND deleted_by = 0 AND tipo = '".$pagina_tipo."' ORDER BY titulo");
+			$sql_part = "
+				WHERE 
+					status = 'publicado' AND 
+					deleted_by = 0 AND 
+					tipo = '".$pagina_tipo."' 
+					ORDER BY 
+						CASE
+							WHEN pagina.mae IS NULL
+							THEN titulo
+							ELSE (
+								SELECT pag_mae.titulo
+								FROM pagina pag_mae
+								WHERE pagina.mae = pag_mae.id
+							)
+						END
+						ASC
+			";
+			$pagina = new pagina($sql_part);
 			if($pagina->size())
 			{
 				?>
@@ -718,7 +735,7 @@ if(!class_exists('pagina'))
 							<?
 								do {
 									?>
-									<li><input type="checkbox" name="item-pagina[<?= $pagina->id ?>]" id="pagina-<?= $pagina->id ?>" data-titulo="<?= htmlSpecialChars($pagina->titulo()) ?>" data-slug="<?= $_system['pagina_tipo'][$pagina_tipo]['slug_prefix'] ? $_system['pagina_tipo'][$pagina_tipo]['slug_prefix']."/" : '' ?><?= $pagina->slug(); ?>" data-pagina_id="<?= $pagina->id ?>" data-tipo="pagina"/> <label for="pagina-<?= $pagina->id ?>"><?= $pagina->titulo(); ?></label></li>
+									<li><input type="checkbox" name="item-pagina[<?= $pagina->id ?>]" id="pagina-<?= $pagina->id ?>" data-titulo="<?= htmlSpecialChars($pagina->titulo()) ?>" data-slug="<?= $_system['pagina_tipo'][$pagina_tipo]['slug_prefix'] ? $_system['pagina_tipo'][$pagina_tipo]['slug_prefix']."/" : '' ?><?= $pagina->slug(); ?>" data-pagina_id="<?= $pagina->id ?>" data-tipo="pagina"/> <label for="pagina-<?= $pagina->id ?>"><?= $pagina->mae ? '----- ' : '' ?><?= $pagina->titulo(); ?></label></li>
 									<?
 								}while($pagina->fetch());
 							?>
@@ -952,7 +969,7 @@ if(!class_exists('pagina'))
 
 		function getTemplate()
 		{
-			return file_exists(DBO_TEMPLATE_PATH.'/pagina-'.$this->slug.'.php') ? 'pagina-'.$this->slug : 'pagina-blank';
+			return file_exists(DBO_TEMPLATE_PATH.'/pagina-'.$this->slug.'.php') ? 'pagina-'.$this->slug : (strlen(trim($this->getDetail('template'))) ? $this->getDetail('template') : 'pagina-blank');
 		}
 
 		function getListIdentifier($column)
@@ -1117,8 +1134,9 @@ function queryPaginas($params = array())
 	global $_pagina;
 	global $_pagina_backup;
 
-	if(is_array($_pagina_backup))
+	if(is_array($_pagina_backup)) {
 		$_pagina_backup[] = clone $_pagina;
+	}
 
 	return $_pagina->queryPaginas($params);
 }
@@ -1131,10 +1149,10 @@ function resetQueryPaginas()
 	if(is_array($_pagina_backup) && sizeof($_pagina_backup))
 	{
 		$_pagina = array_pop($_pagina_backup);
-		if(sizeof($_pagina_backup) == 0)
+		/*if(sizeof($_pagina_backup) == 0)
 		{
 			$_pagina_backup = false;
-		}
+		}*/
 	}
 }
 
@@ -1326,6 +1344,9 @@ $aux = array(
 	'icone' => 'file-text',
 	'genero' => 'a',
 	'cockpit_order_by' => -100,
+	'templates' => array(
+		'pagina-blank' => 'Página padrão',
+	),
 );
 
 if(!$_system['pagina_tipo']['pagina'])

@@ -187,7 +187,7 @@ function step2()
 			  PRIMARY KEY  (`id`)
 			) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4;
 		";
-		mysql_query($sql);
+		dboQuery($sql);
 
 		$sql = "
 			CREATE TABLE IF NOT EXISTS `perfil` (
@@ -197,7 +197,7 @@ function step2()
 			  PRIMARY KEY  (`id`)
 			) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4;
 		";
-		mysql_query($sql);
+		dboQuery($sql);
 
 		$sql = "
 			CREATE TABLE IF NOT EXISTS `pessoa_perfil` (
@@ -208,7 +208,7 @@ function step2()
 			  PRIMARY KEY  (`id`)
 			) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4;
 		";
-		mysql_query($sql);
+		dboQuery($sql);
 
 		$sql = "
 			CREATE TABLE IF NOT EXISTS `permissao` (
@@ -217,14 +217,14 @@ function step2()
 			  PRIMARY KEY  (`id`)
 			) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4;
 		";
-		mysql_query($sql);
+		dboQuery($sql);
 	}
 
 	//checks if the Admin profile exists. If now, inserts it.
 	checkDatabase();
 	$sql = "SELECT * FROM perfil WHERE nome = 'Desenv'";
-	mysql_query($sql);
-	if(!mysql_affected_rows())
+	dboQuery($sql);
+	if(!dboAffectedRows())
 	{
 		$sql = "
 			INSERT INTO perfil
@@ -232,7 +232,7 @@ function step2()
 			VALUES
 				('Desenv', 'pessoa###cockpit|||access|||insert|||update|||delete %%% perfil###sidebar|||access|||insert|||update|||delete|||Permissões %%% permissao###sidebar|||access|||insert|||update|||delete')
 		";
-		mysql_query($sql);
+		dboQuery($sql);
 	}
 
 	//checks if there is at least 1 admin user already on the system.
@@ -610,8 +610,8 @@ function registerAdminInformation()
 	checkDatabase();
 	//gets the Admin Profile id
 	$sql = "SELECT id FROM perfil WHERE nome = 'Desenv'";
-	$res = mysql_query($sql);
-	$lin = mysql_fetch_object($res);
+	$res = dboQuery($sql);
+	$lin = dboFetchObject($res);
 	$perfil = $lin->id;
 
 	//Inserts the user!
@@ -623,15 +623,15 @@ function registerAdminInformation()
 			'".addslashes($_SESSION['dbo_install']['admin_user'])."',
 			'".addslashes(hash('sha512', $_SESSION['dbo_install']['admin_pass']))."'
 		)";
-	mysql_query($sql);
-	$pessoa = mysql_insert_id();
+	dboQuery($sql);
+	$pessoa = dboInsertId();
 
 	$_SESSION['user'] = $_SESSION['dbo_install']['admin_user'];
 	$_SESSION['user_id'] = $pessoa;
 
 	//And inserts the ids in the relation table.
 	$sql = "INSERT INTO pessoa_perfil (pessoa, perfil) VALUES ('".addslashes($pessoa)."', '".addslashes($perfil)."')";
-	mysql_query($sql);
+	dboQuery($sql);
 
 	step2();
 }

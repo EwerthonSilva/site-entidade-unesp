@@ -622,4 +622,9 @@ hr.tiny { margin: 0.50em 0; }
 }
 .g-recaptcha > div { margin: 0 auto; margin-bottom: 1em; }
 
+/* bug inexplicável. */
+//não lembro exatamente quando isso foi colocado aqui ou porque, mas acredito que tenha relação com texteareas dentro de <td>s (talvez!!!)
+//foi comentado em 08/11/2016 porque estava impedindo o autosize de funcionar para dar resize nas textareas.
+//body > textarea { display: none; } 
+
 /* /Content Tools */

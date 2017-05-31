@@ -4190,7 +4190,7 @@ class Dbo extends Obj
 
 				dboInit();
 
-				<? if(!$_GET['sucesso']) { ?> "$('#<?= $id_formulario ?>').peixeAutoFocus();" <? } ?>
+				<? if(!$_GET['sucesso']) { ?> $('#<?= $id_formulario ?>').peixeAutoFocus(); <? } ?>
 
 				$(document).on('click', '.trigger-clear-closest-input', function(e){
 					e.preventDefault();

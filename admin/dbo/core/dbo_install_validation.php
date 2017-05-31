@@ -1,6 +1,7 @@
 <?
 
-include_once(INCLUDE_PATH."/connection.php");
+require_once(INCLUDE_PATH."/connection.php");
+require_once(INCLUDE_PATH."/../dbo/core/dbo-database-functions.php");
 
 function checkStructure()
 {
@@ -104,7 +105,7 @@ function checkDatabase($check = '')
 
 	if($check == '' || $check == 'connection')
 	{
-		if(!mysql_ping($link_connection))
+		if(!dboDatabasePing($link_connection))
 		{
 			return false;
 		}
@@ -114,8 +115,8 @@ function checkDatabase($check = '')
 		foreach($core_tables as $key => $value)
 		{
 			$sql = "SHOW TABLES FROM ".DB_BASE." LIKE '".$value."'";
-			$res = mysql_query($sql);
-			if(!mysql_affected_rows()) {
+			$res = dboQuery($sql);
+			if(!dboAffectedRows()) {
 				return false;
 			}
 		}

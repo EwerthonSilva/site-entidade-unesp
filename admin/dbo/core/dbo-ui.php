@@ -30,7 +30,7 @@ class dboUI
 				else
 				{
 					?>
-					<input type="text" name="<?= $name ?>" id="" value="" class="<?= (($required)?('required'):('')) ?> <?= $classes ?>" <?= (($required)?('required'):('')) ?>/>
+					<input type="text" name="<?= $name ?>" id="" value="" class="<?= (($required)?('required'):('')) ?> <?= $classes ?>" <?= (($required)?('required'):('')) ?> placeholder="<?= htmlSpecialChars($placeholder) ?>"/>
 					<?
 				}
 			}
@@ -46,7 +46,7 @@ class dboUI
 				else
 				{
 					?>
-					<input type="text" name="<?= $name ?>" id="" value="<?= (($edit_function)?($edit_function(htmlSpecialChars($value))):(htmlSpecialChars($value))) ?>" class="<?= (($required)?('required'):('')).' '.$classes ?>" data-name="<?= $titulo ?>" <?= (($required)?('required'):('')) ?>/>
+					<input type="text" name="<?= $name ?>" id="" value="<?= (($edit_function)?($edit_function(htmlSpecialChars($value))):(htmlSpecialChars($value))) ?>" class="<?= (($required)?('required'):('')).' '.$classes ?>" data-name="<?= $titulo ?>" <?= (($required)?('required'):('')) ?> placeholder="<?= htmlSpecialChars($placeholder) ?>"/>
 					<?
 				}
 			}
@@ -192,31 +192,41 @@ class dboUI
 			<?
 		}
 		//---------------------------------------------------------------------------------------------
+		// NUMBER--------------------------------------------------------------------------------------
+		//---------------------------------------------------------------------------------------------
+		elseif($field_type == 'number')
+		{
+			$params['decimals'] = $params['decimals'] ?: 0;
+
+			//montando a lista de data-attributes para o autoNumeric
+			if($params['thousand_separator']) { $number_data_attrs['a-sep'] = $params['thousand_separator']; }
+			if($params['decimal_separator']) { $number_data_attrs['a-dec'] = $params['decimal_separator']; }
+			if($params['sufix']) { $number_data_attrs['a-sign'] = ' '.$params['sufix']; $number_data_attrs['p-sign'] = 's'; }
+			if($params['prefix']) { $number_data_attrs['a-sign'] = $params['prefix'].' '; $number_data_attrs['p-sign'] = 'p'; }
+			if($params['min_value']) { $number_data_attrs['v-min'] = $params['min_value']; }
+			if($params['max_value']) { $number_data_attrs['v-max'] = $params['max_value']; }
+			if($params['decimals']) { $number_data_attrs['m-dec'] = $params['decimals']; }
+
+			//caractere alternativo para casas decimais (digitável)
+			$number_data_attrs['alt-dec'] = '.';
+			
+			//colocando o numero no padrão númerico padrão, separado por . e sem milhares
+			$value = (($value != null && $value != '')?(number_format($value, $params['decimals'], '.', '')):(null));
+			?>
+			<input type="text" name="<?= $name ?>" id="" data-name="<?= $titulo ?>" value="<?= (($edit_function)?($edit_function(htmlSpecialChars($value))):(htmlSpecialChars($value))) ?>" class="<?= (($required)?('required'):(''))." number auto-numeric text-right ".$classes ?>" <?= (($required)?('required'):('')) ?> placeholder="<?= htmlSpecialChars($placeholder) ?>" <?= dboParseDataAttributes($number_data_attrs) ?> />
+			<?php
+			dboUI::fieldJS('number');
+		}
+		//---------------------------------------------------------------------------------------------
 		// PRICE --------------------------------------------------------------------------------------
 		//---------------------------------------------------------------------------------------------
 		elseif($field_type == 'price')
 		{
 			//especifico do campo
 			$value = (($value != null && $value != '')?(number_format($value, 2, '.', '')):(null));
-			if(!$input_only)
-			{
-				?>
-				<div class="row collapse">
-					<div class="small-10 columns">
-				<?php
-			}
 			?>
-					<input type="text" name="<?= $name ?>" id="" data-name="<?= $titulo ?>" value="<?= (($edit_function)?($edit_function(htmlSpecialChars($value))):(htmlSpecialChars($value))) ?>" class="<?= (($required)?('required'):(''))." price price-".$formato." text-right ".$classes ?>" <?= (($required)?('required'):('')) ?>/>
+				<input type="text" name="<?= $name ?>" id="" data-name="<?= $titulo ?>" value="<?= (($edit_function)?($edit_function(htmlSpecialChars($value))):(htmlSpecialChars($value))) ?>" class="<?= (($required)?('required'):(''))." price price-".$formato." text-right ".$classes ?>" <?= (($required)?('required'):('')) ?> placeholder="<?= htmlSpecialChars($placeholder) ?>" />
 			<?php
-			if(!$input_only)
-			{
-				?>
-					</div>
-					<div class="small-2 columns"><span class="postfix radius pointer trigger-clear-closest-input" title="Limpar o valor do preço"><i class="fa fa-times"></i></span></div>
-				</div>
-				<?php
-			}
-			dboUI::jsSnippet('trigger-clear-closest-input');
 			dboUI::fieldJS('price');
 		}
 		//---------------------------------------------------------------------------------------------
@@ -888,6 +898,14 @@ class dboUI
 			//dboRegisterDocReady(singleLine(ob_get_clean()), true, 'field_content_tools');
 			dboRegisterDocReady(ob_get_clean(), true, 'field_content_tools');
 		}
+		elseif($field_type == 'number')
+		{
+			ob_start();
+			?>
+			$('.auto-numeric').autoNumeric('init');
+			<?
+			dboRegisterDboInit(singleLine(ob_get_clean()), true, 'field_number');
+		}
 		elseif($field_type == 'price')
 		{
 			ob_start();
@@ -1120,7 +1138,7 @@ class dboUI
 		//senão, trata as informações.
 		if($field_type == 'text')
 		{
-			return strlen(trim($raw_value)) ? $raw_value : (($isnull)?($dbo->null()):(''));
+			return strlen(trim((string)$raw_value)) ? (string)$raw_value : (($isnull)?($dbo->null()):(''));
 		}
 		elseif($field_type == 'password')
 		{
@@ -1129,7 +1147,7 @@ class dboUI
 		}
 		elseif($field_type == 'textarea')
 		{
-			return strlen(trim($raw_value)) ? $raw_value : (($isnull)?($dbo->null()):(''));
+			return strlen(trim((string)$raw_value)) ? (string)$raw_value : (($isnull)?($dbo->null()):(''));
 		}
 		elseif($field_type == 'textarea-rich')
 		{
@@ -1154,6 +1172,26 @@ class dboUI
 			{
 				return $isnull ? $dbo->null() : '';
 			}
+		}
+		elseif($field_type == 'number')
+		{
+			//antes de mais nada resmovemos o sufixo/prefixo
+			if($params['prefix']) { $valor_number = str_replace($params['prefix'].' ', '', $raw_value); }
+			elseif($params['sufix']) { $valor_number = str_replace(' '.$params['sufix'], '', $raw_value); }
+			
+			//tirando qualquer espaço que sobrou
+			$valor_number = trim($valor_number);
+
+			//agora trocamos o separador de decimais por um token
+			$valor_number = str_replace($params['decimal_separator'], '҉', $valor_number);
+
+			//agora removemos os milhares
+			$valor_number = str_replace($params['thousand_separator'], '', $valor_number);
+
+			//e colocamos ponto no local do separador maluco
+			$valor_number = str_replace('҉', '.', $valor_number);
+
+			return $isnull && !strlen(trim($valor_number)) ? $dbo->null() : $valor_number;
 		}
 		elseif($field_type == 'price')
 		{

@@ -20,15 +20,19 @@
 */
 
 class SimpleImage {
-
+	
+	var $original_filename;
 	var $image;
 	var $image_type;
+	var $resized;
 
 	function load($filename) {
 
 		define(IMAGETYPE_GIF, 1);
 		define(IMAGETYPE_JPEG, 2);
 		define(IMAGETYPE_PNG, 3);
+
+		$this->original_filename = $filename;
 
 		$image_info = getimagesize($filename);
 		$this->image_type = $image_info[2];
@@ -42,15 +46,22 @@ class SimpleImage {
 		}
 	}
 	function save($filename, $compression=100, $permissions=null) {
-		if( $this->image_type == IMAGETYPE_JPEG ) {
-			imagejpeg($this->image,$filename,$compression);
-		} elseif( $this->image_type == IMAGETYPE_GIF ) {
-			imagegif($this->image,$filename);
-		} elseif( $this->image_type == IMAGETYPE_PNG ) {
-			imagepng($this->image,$filename);
+		if($this->resized === true)
+		{
+			if( $this->image_type == IMAGETYPE_JPEG ) {
+				imagejpeg($this->image,$filename,$compression);
+			} elseif( $this->image_type == IMAGETYPE_GIF ) {
+				imagegif($this->image,$filename);
+			} elseif( $this->image_type == IMAGETYPE_PNG ) {
+				imagepng($this->image,$filename);
+			}
+			if( $permissions != null) {
+				chmod($filename,$permissions);
+			}
 		}
-		if( $permissions != null) {
-			chmod($filename,$permissions);
+		else
+		{
+			copy($this->original_filename, $filename);
 		}
 	}
 	function output($image_type=IMAGETYPE_JPEG) {
@@ -84,6 +95,7 @@ class SimpleImage {
 		$this->resize($width,$height);
 	}
 	function resize($n_width, $n_height) {
+		$this->resized = true;
 		$new_image = imagecreatetruecolor($n_width, $n_height);
 
 		//transparencia do PNG
