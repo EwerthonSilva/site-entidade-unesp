@@ -214,6 +214,49 @@ $module->campo[$field->coluna] = $field;
 
 /*==========================================*/
 
+$field = new Obj();
+$field->titulo = 'Tem desconto para membros?';
+$field->coluna = 'tem_desconto';
+$field->pk = false;
+$field->isnull = false;
+$field->add = true;
+$field->valida = true;
+$field->edit = true;
+$field->view = true;
+$field->lista = false;
+$field->filter = false;
+$field->order = false;
+$field->type = 'INT';
+$field->interaction = '';
+$field->tipo = 'radio';
+$field->valores = array(
+	'1' => 'Sim',
+	'0' => 'Não',
+);
+$module->campo[$field->coluna] = $field;
+
+/*==========================================*/
+
+$field = new Obj();
+$field->titulo = 'Valor do Desconto';
+$field->coluna = 'valor_desconto';
+$field->pk = false;
+$field->isnull = true;
+$field->add = true;
+$field->valida = false;
+$field->edit = true;
+$field->view = true;
+$field->lista = true;
+$field->filter = true;
+$field->order = true;
+$field->type = 'DOUBLE';
+$field->interaction = '';
+$field->tipo = 'price';
+$field->formato = 'real';
+$module->campo[$field->coluna] = $field;
+
+/*==========================================*/
+
 /* GRID FOR THE FORM LAYOUT ========================================================================================= */
 
 $grid = array();
@@ -222,7 +265,7 @@ $grid[] = array('12');
 $grid[] = array('12');
 $grid[] = array('12');
 $grid[] = array('4','4','4');
-$grid[] = array('4');
+$grid[] = array('4','4','4');
 
 $module->grid = $grid;
 
