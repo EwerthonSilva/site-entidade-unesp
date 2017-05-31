@@ -33,6 +33,7 @@ else
 	$media_folder_path = DBO_PATH.'/upload/dbo-media-manager/';
 	$media_folder_url = DBO_URL.'/upload/dbo-media-manager/';
 	$selected_file = ((file_exists($media_folder_path.$_GET['file']))?($_GET['file']):(false));
+	$default_size = $_GET['default_size'] ? $_GET['default_size'] : 'medium';
 
 	if(!is_writable($media_folder_path))
 	{
@@ -90,10 +91,32 @@ else
 							do {
 								?>
 								<li class="wrapper-media-item <?= (($selected_file == $pag->imagem_destaque)?('active'):('')) ?>">
-									<div class="media-item <?= (($selected_file == $pag->imagem_destaque)?('active'):('')) ?>" style="background-image: url('<?= $media_folder_url.'thumbs/small-'.$pag->imagem_destaque.(($selected_file == $pag->imagem_destaque)?('?='.$img_token):('')) ?>')" data-file="<?= $pag->imagem_destaque ?>">
-										<span class="trigger-delete" data-file="<?= $pag->imagem_destaque ?>" data-url="<?= secureUrl('ajax-dbo-media-manager-actions.php?action=delete-media&pagina_id='.$pag->id.'&'.CSRFVar()) ?>"><i class="fa fa-close"></i></span>
-										<span class="legenda"><?= $pag->titulo ? $pag->titulo : $pag->imagem_destaque ?></span>
-									</div>
+									<?php
+										$media_type = $pag->getDetail('media_type') ? $pag->getDetail('media_type') : 'image';
+
+										if($media_type == 'image')
+										{
+											?>
+											<div class="media-item <?= (($selected_file == $pag->imagem_destaque)?('active'):('')) ?>" style="background-image: url('<?= $media_folder_url.'thumbs/small-'.$pag->imagem_destaque.(($selected_file == $pag->imagem_destaque)?('?='.$img_token):('')) ?>')" data-file="<?= $pag->imagem_destaque ?>">
+												<span class="trigger-delete" data-file="<?= $pag->imagem_destaque ?>" data-url="<?= secureUrl('ajax-dbo-media-manager.php?action=delete-media&pagina_id='.$pag->id.'&'.CSRFVar()) ?>"><i class="fa fa-close"></i></span>
+												<span class="legenda"><?= $pag->titulo ? $pag->titulo : $pag->imagem_destaque ?></span>
+											</div>
+											<?php
+										}
+										elseif($media_type == 'video')
+										{
+											?>
+											<div class="media-item <?= (($selected_file == $pag->imagem_destaque)?('active'):('')) ?>" data-file="<?= $pag->imagem_destaque ?>">
+												<video width="100%" height="85%" controls style="position: absolute; top: 0; left: 0;" data-file="<?= $selected_file ?>"> 
+													<source src="<?= $media_folder_url.$pag->imagem_destaque ?>">
+													Your browser does not support the video tag.
+												</video>
+												<span class="trigger-delete" data-file="<?= $pag->imagem_destaque ?>" data-url="<?= secureUrl('ajax-dbo-media-manager.php?action=delete-media&pagina_id='.$pag->id.'&'.CSRFVar()) ?>"><i class="fa fa-close"></i></span>
+												<span class="legenda"><?= $pag->titulo ? $pag->titulo : $pag->imagem_destaque ?></span>
+											</div>											
+											<?php
+										}
+									?>
 								</li>
 								<?php
 							}while($pag->fetch());
@@ -113,19 +136,44 @@ else
 							'tipo' => 'midia',
 							'where' => "imagem_destaque = '".$selected_file."'",
 						));
-						list($width, $height, $lixo, $lixo) = getimagesize($media_folder_path.$selected_file);
-						$thumb_size = calcThumbSize($width, $height, 250);
+						$media_type = $pag->getDetail('media_type') ? $pag->getDetail('media_type') : 'image';
+						if($media_type == 'image')
+						{
+							list($width, $height, $lixo, $lixo) = getimagesize($media_folder_path.$selected_file);
+							$thumb_size = calcThumbSize($width, $height, 250);
+						}
 						?>
 						<h6>Detalhes</h6>
 						<a href="#" id="title-upload" class="font-13 top-minus-2" style="padding-left: 10px;"><span class="underline">Enviar novo arquivo</span></a>
 						<div id="detalhes">
 							<div class="inner-wrap">
 								<div class="text-center">
-									<div id="main-pic">
-										<img src="<?= $media_folder_url.$selected_file ?>?=<?= $img_token ?>" id="selected-image" data-width="<?= $width ?>" data-height="<?= $height ?>" data-file="<?= $selected_file ?>" style="background-color: #fff;" data-thumb-width="<?= $thumb_size[0] ?>" data-thumb-height="<?= $thumb_size[1] ?>"/>
-									</div>
-									<img src="<?= $media_folder_url.'thumbs/medium-'.$selected_file ?>?=<?= $img_token ?>" style="height: 0; width: 0; overflow: hidden;"/>
-									<img src="<?= $media_folder_url.'thumbs/large-'.$selected_file ?>?=<?= $img_token ?>" style="height: 0; width: 0; overflow: hidden;"/>
+									<?php
+										if($media_type == 'image')
+										{
+											?>
+											<div id="main-pic">
+												<img src="<?= $media_folder_url.$selected_file ?>?=<?= $img_token ?>" id="selected-image" data-width="<?= $width ?>" data-height="<?= $height ?>" data-file="<?= $selected_file ?>" style="background-color: #fff;" data-thumb-width="<?= $thumb_size[0] ?>" data-thumb-height="<?= $thumb_size[1] ?>"/>
+											</div>
+											<img src="<?= $media_folder_url.'thumbs/medium-'.$selected_file ?>?=<?= $img_token ?>" style="height: 0; width: 0; overflow: hidden;"/>
+											<img src="<?= $media_folder_url.'thumbs/large-'.$selected_file ?>?=<?= $img_token ?>" style="height: 0; width: 0; overflow: hidden;"/>
+											<input type="hidden" name="media_type" id="media_type" value="image"/>
+											<?php
+										}
+										elseif($media_type == 'video')
+										{
+											?>
+											<div id="main-pic">
+												<video width="100%" height="300" controls style="margin-bottom: 20px;" data-file="<?= $selected_file ?>"> 
+													<source src="<?= $media_folder_url.$selected_file ?>">
+													Your browser does not support the video tag.
+												</video>
+											</div>
+											<input type="hidden" name="media_type" id="media_type" value="video"/>
+											<input type="hidden" id="size-selector" value=""/>
+											<?php
+										}
+									?>
 								</div>
 								<ul id="drop-crop" class="f-dropdown" data-dropdown-content aria-hidden="true" tabindex="-1">
 									<?
@@ -141,8 +189,8 @@ else
 									?>
 								</ul>
 								<div id="wrapper-tabela-detalhes">
-									<div id="cropper-controls">
-										<form method="post" action="<?= secureUrl('ajax-dbo-media-manager-actions.php?action=do-crop&file='.$selected_file.'&'.CSRFVar()) ?>" class="no-margin peixe-json" id="form-crop" peixe-log>
+									<!-- <div id="cropper-controls">
+										<form method="post" action="<?= secureUrl('ajax-dbo-media-manager.php?action=do-crop&file='.$selected_file.'&'.CSRFVar()) ?>" class="no-margin peixe-json" id="form-crop" peixe-log>
 											<div class="font-14 text-left" style="padding-left: 100px; color: #fff;">
 												<p>
 													<span style="position: relative; top: -5px; color: #999;" class="font-14">Aplicar o recorte:</span><br />
@@ -159,41 +207,60 @@ else
 											<span class="button radius large" onClick="doCrop();">Recortar</span>
 											<span class="button radius secondary large" onClick="stopCrop();">Cancelar</span>
 										</form>
-									</div>
+									</div> -->
 									<!-- <span class="button-crop" data-dropdown="drop-crop" title="Recortar" data-tooltip><i class="fa fa-crop"></i></span> -->
 
 									<?php
-									$croppeUrl = secureUrl(DBO_URL.'/../dbo-cropper.php?dbo_modal=1&src='.$pag->imagem_destaque.'&modulo='.$pag->modulo_anexado.'&coluna=');
+										$croppeUrl = secureUrl(DBO_URL.'/../dbo-cropper.php?dbo_modal=1&src='.$pag->imagem_destaque.'&modulo='.$pag->modulo_anexado.'&coluna=');
+										if($media_type == 'image')
+										{
+											?>
+											<a title="Recortar" rel="modal" href="<?=$croppeUrl?>"><i class="button-crop fa fa-crop"></i></a>
+											<?php
+										}									
 									?>
-									<a title="Recortar" rel="modal" href="<?=$croppeUrl?>"><i class="button-crop fa fa-crop"></i></a>
-									<form action="<?= secureUrl(DBO_URL.'/../ajax-dbo-media-manager-actions.php?action=update-media-image&media_id='.$pag->id.'&'.CSRFVar()) ?>" method="post" class="no-margin" id="form-media-image">
+									<form action="<?= secureUrl(DBO_URL.'/../ajax-dbo-media-manager.php?action=update-media-image&media_id='.$pag->id.'&'.CSRFVar()) ?>" method="post" class="no-margin" id="form-media-image">
 										<table class="tools" style="margin-bottom: 2px">
 											<tbody>
-												<tr>
-													<td>Alinhamento</td>
-													<td style="position: relative;">
-														<div id="position-selector" class="selector">
-															<span class="active"><i class="fa fa-fw fa-align-justify" title="Nenhum" data-tooltip data-value="text-left"></i></span>
-															<span><i class="fa fa-fw fa-align-left" title="Esquerda" data-tooltip data-value="float-left"></i></span>
-															<span><i class="fa fa-fw fa-align-center" title="Centro" data-tooltip data-value="text-center"></i></span>
-															<span><i class="fa fa-fw fa-align-right" title="Direita" data-tooltip data-value="float-right"></i></span>
-														</div>
-													</td>
-												</tr>
+												<?php
+													if($media_type == 'image')
+													{
+														?>
+														<tr>
+															<td>Alinhamento</td>
+															<td style="position: relative;">
+																<div id="position-selector" class="selector">
+																	<span class="active"><i class="fa fa-fw fa-align-justify" title="Nenhum" data-tooltip data-value="text-left"></i></span>
+																	<span><i class="fa fa-fw fa-align-left" title="Esquerda" data-tooltip data-value="float-left"></i></span>
+																	<span><i class="fa fa-fw fa-align-center" title="Centro" data-tooltip data-value="text-center"></i></span>
+																	<span><i class="fa fa-fw fa-align-right" title="Direita" data-tooltip data-value="float-right"></i></span>
+																</div>
+															</td>
+														</tr>
+														<?php
+													}
+												?>
 												<tr>
 													<td>Título</td>
 													<td>
 														<input type="text" name="titulo" id="titulo" value="<?= htmlSpecialChars($pag->titulo) ?>" placeholder="Digite o título desta imagem" class="no-margin font-12"/>
 													</td>
 												</tr>
-												<tr>
-													<td>Legenda</td>
-													<td>
-														<input type="text" name="legenda" id="legenda" value="<?= $pag->getDetail('legenda') ?>" placeholder="Digite a legenda para a imagem" class="no-margin font-12"/>
-													</td>
-												</tr>
 												<?php
-												if($_GET['destiny'] != 'field')
+													if($media_type == 'image')
+													{
+														?>
+														<tr>
+															<td>Legenda</td>
+															<td>
+																<input type="text" name="legenda" id="legenda" value="<?= $pag->getDetail('legenda') ?>" placeholder="Digite a legenda para a imagem" class="no-margin font-12"/>
+															</td>
+														</tr>
+														<?php
+													}
+												?>
+												<?php
+												if($_GET['destiny'] != 'field' && $media_type == 'image')
 												{
 													?>
 													<tr>
@@ -205,7 +272,7 @@ else
 																{
 																	list($w, $h) = getimagesize($media_folder_path.'thumbs/'.$slug.'-'.$selected_file);
 																	?>
-																	<option data-slug="<?= $slug ?>" data-value="thumbs/<?= $slug ?>-" <?= (($slug == 'medium')?('selected'):('')) ?> value="thumbs/<?= $slug ?>-"><?= $data['name'] ?> - <?= $w ?> &times; <?= $h ?></option>
+																	<option data-slug="<?= $slug ?>" data-value="thumbs/<?= $slug ?>-" <?= (($slug == $default_size)?('selected'):('')) ?> value="thumbs/<?= $slug ?>-"><?= $data['name'] ?> - <?= $w ?> &times; <?= $h ?></option>
 																	<?
 																}
 																?>
@@ -214,7 +281,7 @@ else
 														</td>
 													</tr>
 													<?php
-													if($_GET['destiny'] != 'content-tools')
+													if($_GET['destiny'] != 'content-tools' && $media_type == 'image')
 													{
 														?>
 														<tr>
@@ -261,7 +328,7 @@ else
 				</div>
 				<div id="block-upload" style="padding-top: 30px;">
 					<form method="post" action="" class="no-margin" id="form-upload" enctype="multipart/form-data" style="<?= (($selected_file)?('display: none;'):('')) ?>">
-						<input type="file" name="arquivo" id="arquivo" peixe-ajax-file-upload data-action="<?= secureUrl('ajax-dbo-media-manager-actions.php?action=upload-file&'.CSRFVar()) ?>" data-modulo="<?= $_GET['modulo'] ?>" data-modulo_id="<?= $_GET['modulo_id'] ?>"/><label for="arquivo" id="arquivo-label"><i class="fa fa-cloud-upload" style="font-size: 20px;"></i> Enviar arquivo</label>
+						<input type="file" name="arquivo" id="arquivo" peixe-ajax-file-upload data-action="<?= secureUrl('ajax-dbo-media-manager.php?action=upload-file&'.CSRFVar()) ?>" data-modulo="<?= $_GET['modulo'] ?>" data-modulo_id="<?= $_GET['modulo_id'] ?>"/><label for="arquivo" id="arquivo-label"><i class="fa fa-cloud-upload" style="font-size: 20px;"></i> Enviar arquivo</label>
 					</form>
 				</div>
 			</div>
@@ -277,6 +344,7 @@ var scale;
 var timer_update_media;
 var destiny = '<?= $_GET['destiny']; ?>';
 var wrapper_id = '<?= $_GET['wrapper_id'] ?>';
+var input_id = '<?= $_GET['input_id'] ?>';
 var external_button = '<?= $_GET['external_button'] ?>';
 
 function startCrop(w, h) {
@@ -386,7 +454,17 @@ function inserirMidiaAtiva(destiny) {
 
 	destiny = typeof destiny == 'undefined' ? 'tinymce' : destiny;
 
-	var file_name = $('#main-pic img').data('file');
+	var media_type = $('#media_type').val();
+	var file_name = '';
+
+	if(media_type == 'image'){
+		file_name = $('#main-pic img').data('file');
+	}
+	else if(media_type == 'video'){
+		file_name = $('#main-pic video').data('file');
+	}
+
+	//file_name = $('#main-pic img').data('file');
 
 	if(destiny == 'field'){
 		wrapper = $('#'+wrapper_id, parent.document);
@@ -396,6 +474,31 @@ function inserirMidiaAtiva(destiny) {
 		wrapper.find('input[type="hidden"]').val(file_name);
 		button_update = wrapper.find('.button-media-update');
 		button_update.attr('data-url', keepUrl('file='+file_name, button_update.data('url')));
+		parent.$.fn.colorbox.close();
+	}
+	else if(destiny == 'background'){
+		wrapper = $('#'+wrapper_id, parent.document);
+		wrapper.css('background-image', 'url("dbo/upload/dbo-media-manager/' + $('#size-selector').val() + file_name+'?='+Math.random()+'")');
+		input = $('#'+input_id, parent.document);
+		input.val('dbo/upload/dbo-media-manager/'+$('#size-selector').val() + file_name);
+		/*wrapper.find('.media-controls-insert').hide();
+		wrapper.find('.media-controls-update').show();
+		wrapper.find('img').attr('src', 'dbo/upload/dbo-media-manager/thumbs/medium-'+file_name+'?='+Math.random());
+		wrapper.find('input[type="hidden"]').val(file_name);
+		button_update = wrapper.find('.button-media-update');
+		button_update.attr('data-url', keepUrl('file='+file_name, button_update.data('url')));*/
+		parent.$.fn.colorbox.close();
+	}
+	else if(destiny == 'input'){
+		console.log(input_id);
+		input = $('#'+input_id, parent.document);
+		input.val('dbo/upload/dbo-media-manager/'+$('#size-selector').val() + file_name);
+		/*wrapper.find('.media-controls-insert').hide();
+		wrapper.find('.media-controls-update').show();
+		wrapper.find('img').attr('src', 'dbo/upload/dbo-media-manager/thumbs/medium-'+file_name+'?='+Math.random());
+		wrapper.find('input[type="hidden"]').val(file_name);
+		button_update = wrapper.find('.button-media-update');
+		button_update.attr('data-url', keepUrl('file='+file_name, button_update.data('url')));*/
 		parent.$.fn.colorbox.close();
 	}
 	else if(destiny == 'content-tools'){

@@ -1,7 +1,7 @@
 <?
 
 /* ================================================================================================================== */
-/* DBO DEFINITION FILE FOR MODULE 'perfil' ====================================== AUTO-CREATED ON 16/08/2015 03:02:28 */
+/* DBO DEFINITION FILE FOR MODULE 'perfil' ====================================== AUTO-CREATED ON 14/09/2016 14:51:28 */
 /* ================================================================================================================== */
 
 
@@ -21,10 +21,12 @@ $module->delete = true;
 $module->insert = 'Novo Perfil';
 $module->preload_insert_form = false;
 $module->auto_view = false;
+$module->ignore_permissions = false;
 $module->restricao = '
 	if(!pessoaHasPerfil($_SESSION[\'user_id\'], \'Desenv\')) $rest = "WHERE dbo_flag_desenv = 0";
 ';
-$module->order_by = '4';
+$module->order_by = '2';
+$module->table_engine = 'InnoDB';
 
 /* FIELDS =========================================================================================================== */
 
@@ -59,7 +61,7 @@ $field->view = true;
 $field->lista = true;
 $field->filter = false;
 $field->order = false;
-$field->type = 'VARCHAR(255)';
+$field->type = 'VARCHAR(190)';
 $field->interaction = '';
 $field->tipo = 'text';
 $module->campo[$field->coluna] = $field;
@@ -104,11 +106,17 @@ $field->tipo = 'joinNN';
 	$join->modulo = 'pessoa';
 	$join->chave = 'id';
 	$join->valor = 'nome';
+	$join->on_update = 'CASCADE';
+	$join->on_delete = 'CASCADE';
 	$join->ajax = true;
 	$join->select2 = true;
 	$join->tabela_ligacao = 'pessoa_perfil';
 	$join->chave1 = 'perfil';
 	$join->chave2 = 'pessoa';
+	$join->chave1_on_update = 'CASCADE';
+	$join->chave1_on_delete = 'CASCADE';
+	$join->chave2_on_update = 'CASCADE';
+	$join->chave2_on_delete = 'CASCADE';
 	$join->tamanho_minimo = '3';
 	$join->tipo = 'select';
 	$join->order_by = 'id';

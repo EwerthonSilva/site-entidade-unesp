@@ -37,6 +37,18 @@ if(!isset($_system['media_manager']['crops']))
 			'height' => 1,
 			'force_resize' => false
 		),
+		'14_3' => array(
+			'name' => 'Recorte 4:3',
+			'width' => 4,
+			'height' => 3,
+			'force_resize' => false
+		),
+		'16_9' => array(
+			'name' => 'Recorte 16:9',
+			'width' => 16,
+			'height' => 9,
+			'force_resize' => false
+		),
 		'livre' => array(
 			'name' => 'Recorte livre',
 			'width' => '',
@@ -149,12 +161,12 @@ var $oldName = "<?=$_GET['src']?>";
 					</ul>
 					<ul class="button-group radius inline-block">
 						<li>
-							<button type="button" class="button small secondary" data-method="rotate" data-option="-45" title="Rotacionar para a esquerda">
+							<button type="button" class="button small secondary" data-method="rotate" data-option="-<?=$_system['media_manager']['tools']['rotate'] ? $_system['media_manager']['tools']['rotate'] : '45'?>" title="Rotacionar para a esquerda">
 								<i class="fa fa-rotate-left font-14"></i>
 							</button>
 						</li>
 						<li>
-							<button type="button" class="button small secondary" data-method="rotate" data-option="45" title="Rotacionar para a direita">
+							<button type="button" class="button small secondary" data-method="rotate" data-option="<?=$_system['media_manager']['tools']['rotate'] ? $_system['media_manager']['tools']['rotate'] : '45'?>" title="Rotacionar para a direita">
 								<i class="fa fa-rotate-right font-14"></i>
 							</button>
 						</li>
@@ -196,11 +208,11 @@ var $oldName = "<?=$_GET['src']?>";
 									<input type="radio" name="aplicar_crop" id="aplicar_crop_todos_menos_miniatura" value="todos_menos_miniatura"/><label for="aplicar_crop_todos_menos_miniatura" class="button small secondary radius">Todos, menos a miniatura</label>
 								</div>
 								<?php
-							} 
+							}
 							?>
 						</div>
 					</div>
-					
+
 				</div>
 				<div class="small-12 large-3 columns text-right">
 					<button type="button" class="button large radius" data-method="getCroppedCanvas" title="Visualizar a imagem recortada">

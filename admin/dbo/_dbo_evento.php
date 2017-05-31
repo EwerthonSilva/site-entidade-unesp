@@ -1,7 +1,7 @@
 <?
 
 /* ================================================================================================================== */
-/* DBO DEFINITION FILE FOR MODULE 'evento' ====================================== AUTO-CREATED ON 13/06/2016 10:21:33 */
+/* DBO DEFINITION FILE FOR MODULE 'evento' ====================================== AUTO-CREATED ON 30/11/2016 09:55:29 */
 /* ================================================================================================================== */
 
 
@@ -64,48 +64,6 @@ $field->tipo = 'text';
 $module->campo[$field->coluna] = $field;
 
 /*==========================================*/
-
-$field = new Obj();
-$field->titulo = 'Descrição';
-$field->coluna = 'descricao';
-$field->pk = false;
-$field->isnull = false;
-$field->add = true;
-$field->valida = false;
-$field->edit = true;
-$field->view = true;
-$field->lista = false;
-$field->filter = false;
-$field->order = false;
-$field->type = 'TEXT';
-$field->interaction = '';
-$field->classes = 'autosize';
-$field->tipo = 'textarea';
-$field->rows = 5;
-$module->campo[$field->coluna] = $field;
-
-/*==========================================*/
-
-$field = new Obj();
-$field->titulo = 'Instruções de Pagamento';
-$field->coluna = 'instrucao_pagamento';
-$field->pk = false;
-$field->isnull = false;
-$field->add = true;
-$field->valida = false;
-$field->edit = true;
-$field->view = true;
-$field->lista = false;
-$field->filter = false;
-$field->order = false;
-$field->type = 'TEXT';
-$field->interaction = '';
-$field->classes = 'autosize';
-$field->tipo = 'textarea';
-$field->rows = 5;
-$module->campo[$field->coluna] = $field;
-
-/*==========================================*/
 $field = new Obj();
 $field->titulo = 'Imagem de Fundo';
 $field->coluna = 'background_image';
@@ -131,12 +89,98 @@ $module->campo[$field->coluna] = $field;
 
 /*==========================================*/
 
+$field = new Obj();
+$field->titulo = 'Descrição';
+$field->coluna = 'descricao';
+$field->pk = false;
+$field->isnull = false;
+$field->add = true;
+$field->valida = false;
+$field->edit = true;
+$field->view = true;
+$field->lista = false;
+$field->filter = false;
+$field->order = false;
+$field->type = 'TEXT';
+$field->interaction = '';
+$field->tipo = 'content-tools';
+$field->params = array(
+	'template' => 'content-tools-blank',
+);
+$module->campo[$field->coluna] = $field;
 
+/*==========================================*/
+
+$field = new Obj();
+$field->titulo = 'Instruções de Pagamento';
+$field->coluna = 'instrucao_pagamento';
+$field->pk = false;
+$field->isnull = false;
+$field->add = true;
+$field->valida = false;
+$field->edit = true;
+$field->view = true;
+$field->lista = false;
+$field->filter = false;
+$field->order = false;
+$field->type = 'TEXT';
+$field->interaction = '';
+$field->classes = 'autosize';
+$field->tipo = 'textarea';
+$field->rows = 5;
+$module->campo[$field->coluna] = $field;
+
+
+/*==========================================*/
+
+$field = new Obj();
+$field->titulo = 'Inicio das inscrições';
+$field->coluna = 'data_insc_i';
+$field->pk = false;
+$field->isnull = true;
+$field->add = true;
+$field->valida = false;
+$field->edit = true;
+$field->view = true;
+$field->lista = true;
+$field->filter = true;
+$field->order = true;
+$field->type = 'DATETIME';
+$field->interaction = '';
+$field->classes = 'datetimepick';
+$field->tipo = 'datetime';
+$module->campo[$field->coluna] = $field;
+
+/*==========================================*/
+
+$field = new Obj();
+$field->titulo = 'Fim das inscrições';
+$field->coluna = 'data_insc_f';
+$field->pk = false;
+$field->isnull = true;
+$field->add = true;
+$field->valida = false;
+$field->edit = true;
+$field->view = true;
+$field->lista = true;
+$field->filter = true;
+$field->order = true;
+$field->type = 'DATETIME';
+$field->interaction = '';
+$field->classes = 'datetimepick';
+$field->tipo = 'datetime';
+$module->campo[$field->coluna] = $field;
+
+/*==========================================*/
 
 /* GRID FOR THE FORM LAYOUT ========================================================================================= */
 
 $grid = array();
 
+$grid[] = array('6.no-margin', '6');
+$grid[] = array('12');
+$grid[] = array('12');
+$grid[] = array('4','4.end');
 
 $module->grid = $grid;
 

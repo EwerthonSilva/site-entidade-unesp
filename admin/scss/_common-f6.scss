@@ -77,6 +77,7 @@ p:empty { display: none; }
 .block { display: block; }
 .uppercase { text-transform: uppercase; }
 img.width-100 { width: 100% !important; height: auto !important; }
+.clear-both { clear: both; }
 
 //peixe messages
 .wrapper-message { font-family: $body-font-family, Sans-serif; max-height: rem-calc(100); position: fixed; top: 0; left: 0px; width: 100%; line-height: 1.2; overflow: hidden; font-size: rem-calc(19); z-index: 10000; opacity: 0.95; text-align: center; transition: all 1.5s ease;
@@ -196,8 +197,14 @@ input[type="file"][peixe-ajax-file-upload] { position: absolute; width: 1px; hei
 
 //width control
 @include breakpoint(medium) { 
-	.width-80 { max-width: 80%; margin-left: auto; margin-right: auto; }
-	.width-50 { max-width: 50%; margin-left: auto; margin-right: auto; }
+	.width-80 { max-width: 80%; margin-left: auto !important; margin-right: auto !important; }
+	.width-70 { max-width: 70%; margin-left: auto !important; margin-right: auto !important; }
+	.width-60 { max-width: 60%; margin-left: auto !important; margin-right: auto !important; }
+	.width-50 { max-width: 50%; margin-left: auto !important; margin-right: auto !important; }
+	.width-40 { max-width: 40%; margin-left: auto !important; margin-right: auto !important; }
+	.width-30 { max-width: 30%; margin-left: auto !important; margin-right: auto !important; }
+	.width-20 { max-width: 20%; margin-left: auto !important; margin-right: auto !important; }
+	.width-10 { max-width: 10%; margin-left: auto !important; margin-right: auto !important; }
 }
 
 /* ------------------ */
@@ -234,6 +241,29 @@ input[type="file"][peixe-ajax-file-upload] { position: absolute; width: 1px; hei
 /*.slick-slide { display: none !important; }
 .slick-initialized,
 .slick-slide:first-child { display: block !important; }*/
+
+/* ------------------ */
+/* META TABLE ------- */
+/* ------------------ */
+/* make rows and columns behave like table in specific breakpoints-up */
+
+@each $value in $breakpoint-classes {
+	@if $value == small {}
+	@else {
+		.row.#{$value}-meta-table {
+			@include breakpoint($value) {
+				display: table;
+				&.#{$value}-expanded { width: 100%; }
+				> .columns { display: table-cell; width: auto; float: none; 
+					&:last-child:not(:first-child) { float: none; }
+					&.#{$value}-align-top { vertical-align: top; }
+					&.#{$value}-align-middle { vertical-align: middle; }
+					&.#{$value}-align-bottom { vertical-align: bottom; }
+				}
+			}		
+		}
+	}
+}
 
 /* ------------------ */
 /* CONTENT TOOLS ---- */
@@ -319,3 +349,53 @@ input[type="file"][peixe-ajax-file-upload] { position: absolute; width: 1px; hei
 }
 
 /* /Content Tools *//* /Content Tools */
+
+/* ------------------- */
+/* OAuth and Captcha - */
+/* ------------------- */
+
+$oauth-button-height: 50px !default;
+$oauth-icon-size: 28px !default; //este e o de baixo somandos tem que ser igual ao button-height
+$oauth-icon-padding: 11px !default;
+$oauth-font-size: 14px !default;
+
+//configurações do botão genérico
+.abcRioButtonContentWrapper { background: #f5f5f5; }
+.abcRioButton { height: $oauth-button-height !important; text-align: center !important;
+	* { text-align: center !important; } 
+}
+.abcRioButtonIcon { padding: $oauth-icon-padding !important; display: inline-block; width: $oauth-button-height !important; height: $oauth-button-height !important; text-align: center; float: left;
+	i { font-size: $oauth-icon-size; }
+}
+.abcRioButtonIconImage { width: $oauth-icon-size !important; height: $oauth-icon-size !important;
+	svg { width: $oauth-icon-size !important; height: $oauth-icon-size !important; }
+}
+.abcRioButtonContents { font-size: $oauth-font-size !important; line-height: $oauth-button-height !important; font-family: $body-font-family !important; margin-left: 6px; margin-right: 6px; vertical-align: top; display: inline-block; letter-spacing: 0.01em !important;
+	span { display: none !important; }
+}
+
+//configurações do botão do google
+.g-signin2 { height: $oauth-button-height;
+	> div { width: auto !important; }
+	.abcRioButtonContents { 
+		&:before { content: 'Logar com Google'; }
+	}
+}
+
+//configurações do botão do facebook
+.facebook-signin { background-color: #3b5998 !important;
+	* { color: #fff; }
+}
+
+//configurações do reCAPTCHA (centralizar)
+.g-recaptcha > div { margin: 0 auto; margin-bottom: 1em; }
+
+//confgurações dos slides do dbo
+.dbo-slide { overflow: hidden; }
+.dbo-slide-layer { background-size: contain; background-repeat: no-repeat; background-position: top left;
+	.dbo-layer-content { transition: all .15s ease; 
+		* { color: all .3s ease;  }
+	}
+	*:last-child { margin-bottom: 0; }
+	p { line-height: inherit; font-weight: inherit; font-size: inherit; }
+}

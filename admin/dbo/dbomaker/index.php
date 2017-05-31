@@ -3,8 +3,10 @@
 	$_SESSION['dbomaker_controls']['show_field_basic'] = TRUE;
 	$_SESSION['dbomaker_controls']['show_field_advanced'] = FALSE;
 	$_SESSION['dbomaker_controls']['show_field_type'] = FALSE;
-	
 ?>
+<style>
+	.wrapper-message { max-height: 1200px !important; }
+</style>
 <div class='toolbar'>
 	<div class='bg'>
 		<div class='button-sync'><span><i class="fa fa-refresh"></i> SYNC</span></div>

@@ -10,6 +10,8 @@
 /* STYLES DBO BACK END ----------------------------------------------------------------------------------------------------- */
 /* ------------------------------------------------------------------------------------------------------------------------- */
 
+#pretty-logo { animation-duration: 0.5s; }
+
 body { overflow-y: scroll; overflow-x: hidden; 
 	&.ct-editing {
 		.input-content-tools {
@@ -64,7 +66,7 @@ input + label { font-size: $input-font-size; text-transform: none; color: $input
 textarea { height: auto; }
 
 a { white-space: break-word;
-	&.grey { color: #bbb; 
+	&.grey { color: #bbb; transition: all .15s ease;
 		&:hover { color: #666; }
 	}
 }
@@ -359,12 +361,12 @@ table {
 		}
 		&.tablesorter-headerAsc {
 			.tablesorter-header-inner {
-				&:after { content: '\f0d7'; font-family: 'FontAwesome'; margin-left: 5px; }				
+				&:after { content: '\f0d8'; font-family: 'FontAwesome'; margin-left: 5px; }				
 			}
 		}
 		&.tablesorter-headerDesc {
 			.tablesorter-header-inner {
-				&:after { content: '\f0d8'; font-family: 'FontAwesome'; margin-left: 5px; }				
+				&:after { content: '\f0d7'; font-family: 'FontAwesome'; margin-left: 5px; }				
 			}
 		}
 		&.tablesorter-processing { 
@@ -449,7 +451,7 @@ table.responsive {
 .dbo-link-order-desc { background-image: url(../dbo/core/images/link-order-by-desc.png); }
 
 /* layout para os input-images */
-.thumb-lista { padding: 3px; border: 1px solid #CCC; -webkit-box-shadow: 0px 1px 3px #DDD; margin-bottom: 1em; display: block; }
+.thumb-lista { padding: 3px; border: 1px solid #CCC; -webkit-box-shadow: 0px 1px 3px #DDD; margin-bottom: 1em; display: block; background-color: #eee; }
 table.list .thumb-lista { margin-bottom: 0px !important; }
 
 /* ajustes de layout nas views dos cadastros */
@@ -526,6 +528,11 @@ table.list .thumb-lista { margin-bottom: 0px !important; }
 	ul.left, ul.right { 
 		a { border-bottom: 1px solid #ddd; }
 	}
+}
+
+//acertozinho o dropdown do foundation
+.f-dropdown {
+	&:before { pointer-events: none; }
 }
 
 //estilos para o bredcrumb inspirado no foundation
@@ -640,8 +647,9 @@ table.list .thumb-lista { margin-bottom: 0px !important; }
 		&.pointer:hover { color: darken($status-color-ongoing, 15%); }
 	}
 	&.cancel { color: $status-color-cancel; 
-		&.pointer:hover { color: darken($status-color-cancel, 15%); }
+		&:hover { color: darken($status-color-cancel, 15%); }
 	}
+	&.pointer { transition: all .15s ease; }
 }
 
 /* classes de visibilidade */
@@ -918,6 +926,10 @@ ul.accordion { list-style: none; border: 1px solid #ddd; border-bottom: none;
 			ul.right > li > a { color: #fff;
 				&:after { border-top-color: rgba(255,255,255,.7); }
 			}
+			ul.left > li:not(.active) > a { color: rgba(255,255,255,.5); border-color: transparent; background-color: rgba(1,1,1,.2); border-bottom-color: #ddd;
+				&:hover { color: rgba(255,255,255,.9); }
+				&:after { border-top-color: rgba(255,255,255,.7); }
+			}
 		}
 		/*.main-tabs { height: emCalc(45);
 			ul { padding: 0; }
@@ -1014,7 +1026,7 @@ ul.accordion { list-style: none; border: 1px solid #ddd; border-bottom: none;
 
 	#main-header { margin-bottom: emCalc(30);
 		&.pretty-header { height: auto !important;
-			#pretty-logo { position: relative !important; display: block !important; margin: 0 auto !important; top: 15px !important; left: 0px !important; text-align: center;
+			#pretty-logo { position: relative !important; display: block !important; margin: 0 auto !important; top: 15px !important; left: 0px !important; text-align: center; transform: none !important;
 				img { max-height: 100px !important; height: 100px !important; margin-bottom: 30px !important; }
 			}
 			.main-tabs { position: static !important; 

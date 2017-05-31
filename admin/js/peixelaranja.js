@@ -163,6 +163,24 @@ function peixeExecJSON(data, error_message, mode) {
 				$(key).fadeHtml(result.html[key]);
 			}
 		}
+		if(result.prepend){
+			for(var key in result.prepend)
+			{
+				for(var key2 in result.prepend[key])
+				{
+					$(key).prepend(result.prepend[key][key2]);
+				}
+			}
+		}
+		if(result.append){
+			for(var key in result.append)
+			{
+				for(var key2 in result.append[key])
+				{
+					$(key).append(result.append[key][key2]);
+				}
+			}
+		}
 		if(result.parent){
 			parent.peixeExecJSON(JSON.stringify(result.parent), error_message, mode);
 		}
@@ -227,9 +245,10 @@ function showPeixeLoader() {
 	//function que funciona como o .html() do jQuery, mas com um efeito de fade
 	$.fn.fadeHtml = function(content, callback) {
 		return this.each(function() {
-			$(this).fadeTo(peixe_fade_html_timer, 0, function(){
-				$(this).html(content);
-				$(this).fadeTo(peixe_fade_html_timer, 1, callback);
+			var c = $(this);
+			c.fadeTo(peixe_fade_html_timer, 0, function(){
+				c.html(content);
+				c.fadeTo(peixe_fade_html_timer, 1, callback);
 			});
 		});
 	}
@@ -238,11 +257,12 @@ function showPeixeLoader() {
 	$.fn.peixeUnrequire = function(callback) {
 		var size = this.length-1;
 		return this.each(function(i) {
+			var c = $(this);
 			if(this.nodeName != 'INPUT' && this.nodeName != 'SELECT' && this.nodeName != 'TEXTAREA'){
-				$(this).find('[required]').removeAttr('required').removeClass('required').attr('maybe-required', '');
+				c.find('[required]').removeAttr('required').removeClass('required').attr('maybe-required', '');
 			}
 			else {
-				$(this).removeAttr('required').removeClass('required').attr('maybe-required', '');
+				c.removeAttr('required').removeClass('required').attr('maybe-required', '');
 			}
 			if(size == i){
 				if(typeof callback == 'function'){
@@ -256,11 +276,12 @@ function showPeixeLoader() {
 	$.fn.peixeRequire = function(callback) {
 		var size = this.length-1;
 		return this.each(function(i) {
+			var c = $(this);
 			if(this.nodeName != 'INPUT' && this.nodeName != 'SELECT' && this.nodeName != 'TEXTAREA'){
-				$(this).find('[maybe-required]').removeAttr('maybe-required').addClass('required').attr('required', '');
+				c.find('[maybe-required]').removeAttr('maybe-required').addClass('required').attr('required', '');
 			}
 			else {
-				$(this).removeAttr('maybe-required').addClass('required').attr('required', '');
+				c.removeAttr('maybe-required').addClass('required').attr('required', '');
 			}
 			if(size == i){
 				if(typeof callback == 'function'){
@@ -295,7 +316,39 @@ function showPeixeLoader() {
 			});
 	}
 
+	//função para dar autofocus no primeiro elemento texto de um seletor
+	$.fn.peixeAutoFocus = function(){
+		$(this).find(':text').filter(':visible:first').focus();
+		console.log('peixe auto focus');
+	}
+
+	//funcao para animações
+	$.fn.extend({
+		peixeAnimate: function (animation_name = false, callback = false) {
+			var animation_end = 'webkitAnimationEnd mozAnimationEnd MSAnimationEnd oanimationend animationend';
+			return this.each(function(){
+				var c = $(this);
+				var animation_name = animation_name ? animation_name : c.data('peixe-animation');
+				var callback = callback ? callback : c.data('peixe-animation-callback');
+				if(c.data('peixe-animation-duration').length){
+					c.css('animation-duration', c.data('peixe-animation-duration'));
+				}
+				if(c.data('peixe-animation-delay').length){
+					c.data('peixe-animation-delay');
+					c.css('animation-delay', c.data('peixe-animation-delay'));
+				}
+				c.show().addClass('animated ' + animation_name).one(animation_end, function() {
+					c.removeClass('animated ' + animation_name);
+					if(callback == 'hide'){
+						c.hide();
+					}
+				});
+			})
+		}
+	});
+
 })(jQuery);	
+
 
 //mostra o loader de AJAX
 function hidePeixeLoader() {
@@ -546,6 +599,78 @@ function peixeSmartSave(c) {
 	}
 }
 
+//funcao para login com o google
+function googleSignIn(googleUser) {
+	var id_token = googleUser.getAuthResponse().id_token;
+	peixeJSON(DBO_OAUTH_URL, { google_id_token: id_token }, null, true);
+	return false;
+}
+
+function facebookSignin() {
+    FB.login( function(response) {
+		peixeJSON(DBO_OAUTH_URL, { facebook: true }, null, true);
+		return false;
+	}, { scope: 'email,public_profile' } );
+}
+
+/* abrindo modal direto, com iframe */
+function openColorBoxModal(url, width, height, params) {
+	var width = ((typeof width != 'undefined')?(width):(1000));
+	var height = ((typeof height != 'undefined')?(height):('98%'));
+	height = (($(window).width() < 810)?('90%'):(height));
+	$.colorbox({
+		href: url,
+		iframe: true,
+		width: width,
+		height: height,
+		maxWidth: '100%',
+		maxHeight: '100%',
+		overlayClose: (params && params.overlayClose ? true : false),
+		escKey: (params && params.escKey ? true : false),
+		fixed: true,
+		transition: (params && params.transition) || 'elastic'
+	});
+}
+
+/* abre o modal do tipo reveal */
+function openRevealModal(url, params = {}) {
+	showPeixeLoader();
+	//verifica se o modal existe, se não existir, cria como append do body
+	var modal_id = params.id ? params.id : '#modal-generico-peixe-laranja';
+	var modal = $(modal_id);
+	if(!modal.size()){
+		$('body').append('<div id="modal-generico-peixe-laranja" class="reveal reveal-modal smart medium" data-reveal></div>');
+		if(Foundation.version != '4.3.0'){
+			$(document).foundation();
+		}
+		modal = $(modal_id);
+	}
+
+	//acerta as classes
+	if(params.size || modal_id == '#modal-generico-peixe-laranja'){
+		modal.removeClass('tiny small medium large full').addClass(params.size || 'medium');
+	}
+
+	$.ajax(url).done(function(data){
+		//tentando com foundation 4 e 6
+		if(Foundation.version != '4.3.0'){
+			modal.html(data).foundation('open', {
+				animationIn: 'slide-in-left'
+			});
+		}
+		else {
+			modal.html(data).foundation('reveal', 'open');
+		}
+		hidePeixeLoader();
+		//se tiver callback, executa
+		if(typeof params.done == 'function'){
+			setTimeout(function(){
+				params.done();
+			}, 250);
+		}
+	})
+}
+
 $(document).ready(function(){
 
 	if(jQuery.hotkeys){
@@ -578,6 +703,30 @@ $(document).ready(function(){
 		setTimeout(function(){
 			slidePeixeMessageUp();
 		}, 3000);
+	});
+
+	//tratando modais
+	/* modals */
+	$(document).on('click', '[rel="modal"]', function(e){
+		e.preventDefault();
+		e.stopPropagation();
+		var c = $(this);
+		var params = {};
+		var url = c.attr('href') ? c.attr('href') : c.data('url');
+		if(c.is('[data-modal-ajax]')){ //reveal
+			//verifica se está setado um modal-id para abrir
+			params.id = c.data('modal-ajax');
+			params.size = c.data('modal-size');
+			params.done = c.attr('data-modal-done') ? eval('('+c.attr('data-modal-done')+')') : null;
+			openRevealModal(url, params);
+		}
+		else { //colorBox
+			var width = c.data('modal-width') || c.data('width') || 1000;
+			var height = c.data('modal-height') || c.data('height') || '98%';
+			params.escKey = c.data('modal-esc') || false;
+			params.overlayClose = c.data('modal-overlay-close') || false;
+			openColorBoxModal(url, width, height, params);
+		}
 	});
 
 	//botao de submit que só funciona com javascript, e impede dupla submissão
@@ -747,6 +896,19 @@ $(document).ready(function(){
 		var c = $(this);
 		peixeSmartSave(c);
 		return true;
+	});
+
+	//Fazendo as tabs funcionarem
+	$(document).on('click', '[data-peixe-tabs] a', function(e){
+		e.preventDefault();
+		var c = $(this);
+		var wrapper = c.closest('[data-peixe-tabs]');
+		var container = wrapper.data('peixe-tabs');
+		wrapper.find('.active').removeClass('active');
+		c.parent().addClass('active');
+		$(container).find('[data-peixe-tab]:visible').fadeOut('fast', function(){
+			$(c.attr('href')).fadeIn('show');
+		})
 	});
 
 	//colcando ajax loader e screen freezer

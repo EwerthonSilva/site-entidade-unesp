@@ -1,7 +1,8 @@
 <?
 
-	include_once('dbo-shortcodes.php');
-	include_once('dbo-formatting.php');
+	require_once('dbo-shortcodes.php');
+	require_once('dbo-formatting.php');
+	require_once('dbo-database-functions.php');
 
 	/* defines padrão, se não setados pelo usuário. */
 	@define(DBO_TERM_CADASTROS, 'Cadastros');
@@ -11,13 +12,22 @@
 	if(!defined(SITE_URL))
 		define(SITE_URL, strstr(DBO_URL, '/admin/dbo') ? preg_replace('#/admin/dbo$#is', '', DBO_URL) : preg_replace('#/dbo$#is', '', DBO_URL));
 
+	/* define a url da área administrativa */
+	define(ADMIN_URL, SITE_URL.(strlen(DBO_ADMIN_FOLDER) ? '/'.DBO_ADMIN_FOLDER : ''));
+
 	/* mascaras de input */
 	define(DBO_MASK_DATE, '99/99/9999');
 	define(DBO_MASK_DATETIME, '99/99/9999 99:99');
 	define(DBO_MASK_CPF, '999.999.999-99');
 	define(DBO_MASK_CNPJ, '99.999.999/9999-99');
 
-	//variáveis de sistema
+	/* defines para uso de recaptcha */
+	define(DBO_RECAPTCHA_DESENV_SITE_KEY, '6LdAIikTAAAAAGEFBJFCaudIRcploiB5yFOk4kcd'); 
+	define(DBO_RECAPTCHA_DESENV_SECRET_KEY, '6LdAIikTAAAAAM6OF2K9mRFJzxiU7FkWtbabfeVN');
+
+	/* variáveis de sistema */
+
+	//tamanhos padrão do media manager
 	$_system['media_manager']['default_image_sizes'] = array(
 		'small' => array(
 			'name' => 'Miniatura',
@@ -45,6 +55,27 @@
 		)
 	);
 
+	//configurações padrão do slider
+	$_system['dbo_slider']['default_settings'] = array(
+		'colors' => array(
+			'#FFFFFF' => 'Branco',
+			'#000000' => 'Preto',
+		)
+	);
+
+	//campos padrão que o usuário pode alterar no modal "Meu perfil"
+	if(!is_array($_system['meu_perfil']['campos']))
+	{
+		$_system['meu_perfil']['campos'] = array(
+			'foto',
+			'nome',
+			'apelido',
+			'sexo',
+			'email',
+			'descricao',
+		);
+	}
+
 	//garantindo que o magic_quotes vai ser desligado
 	if (get_magic_quotes_gpc()) {
 		$process = array(&$_GET, &$_POST, &$_COOKIE, &$_REQUEST);
@@ -62,6 +93,166 @@
 		unset($process);
 	}
 
+	// ----------------------------------------------------------------------------------------------------------------
+
+	function dboRename($oldfile,$newfile) {
+		if (!@rename($oldfile,$newfile)) {
+			if (copy ($oldfile,$newfile)) {
+				unlink($oldfile);
+				return TRUE;
+			}
+			return FALSE;
+		}
+		return TRUE;
+	}	
+
+	// ----------------------------------------------------------------------------------------------------------------
+
+	function dboGetFileType($file_name)
+	{
+		$types = array(
+			'jpg' => 'image',
+			'mp4' => 'video',
+		);
+
+		$ext = strtolower(dboGetExtension($file_name, false));
+
+		if(in_array($ext, array_keys($types)))
+		{
+			return $types[$ext];
+		}
+		return 'image';
+	}
+	
+	// ----------------------------------------------------------------------------------------------------------------
+
+	/* prepara o site para suportar login por OAUTH */
+	if(defined('GOOGLE_AUTH_CONFIG_JSON') || defined('FACEBOOK_AUTH_CONFIG_JSON'))
+	{
+		if(defined('GOOGLE_AUTH_CONFIG_JSON') && (!defined('OAUTH_SDK_URLS') || in_array(thisPage(), explode(',', OAUTH_SDK_URLS)) || $_GET['load_oauth_sdks']))
+		{
+			function hookGoogleOAuth()
+			{
+				$parts = json_decode(GOOGLE_AUTH_CONFIG_JSON);
+				?>
+				<meta name="google-signin-client_id" content="<?= $parts->web->client_id ?>">
+				<script src="https://apis.google.com/js/platform.js" async defer></script>
+				<?php
+			}
+			$hooks->add_action('dbo_head', 'hookGoogleOAuth');
+			$hooks->add_action('site_head', 'hookGoogleOAuth');
+		}
+
+		if(defined('FACEBOOK_AUTH_CONFIG_JSON') && (!defined('OAUTH_SDK_URLS') || in_array(thisPage(), explode(',', OAUTH_SDK_URLS)) || $_GET['load_oauth_sdks']))
+		{
+			function hookFacebookOAuth()
+			{
+				$parts = json_decode(FACEBOOK_AUTH_CONFIG_JSON);
+				?>
+				<script>
+					window.fbAsyncInit = function() {
+						FB.init({
+							appId: '<?= $parts->app_id ?>',
+							cookie: true,
+							//xfbml: true,
+							version: 'v2.2'
+						});
+					};
+					(function(d, s, id){
+						var js, fjs = d.getElementsByTagName(s)[0];
+						if (d.getElementById(id)) {return;}
+						js = d.createElement(s); js.id = id;
+						js.src = "//connect.facebook.net/en_US/sdk.js";
+						fjs.parentNode.insertBefore(js, fjs);
+					}(document, 'script', 'facebook-jssdk'));
+				</script>
+				<?php
+			}
+			$hooks->add_action('dbo_body_append', 'hookFacebookOAuth');
+			$hooks->add_action('site_body', 'hookFacebookOAuth');
+		}
+		function hookOAuthUrl()
+		{
+			//setando a url para OAUTH
+			$oauth_url = secureUrl(DBO_URL.'/core/dbo-oauth-ajax.php?'.CSRFVar().(secureUrl() && strlen($_GET['oauth_link_id']) ? '&oauth_link_id='.$_GET['oauth_link_id'] : '').($_GET['dbo_redirect'] ? '&dbo_redirect='.$_GET['dbo_redirect'] : ''));
+			?>
+			<script>var DBO_OAUTH_URL = '<?= $oauth_url ?>';</script>
+			<?php
+		}
+		$hooks->add_action('dbo_head', 'hookOAuthUrl');
+		$hooks->add_action('site_head', 'hookOAuthUrl');
+	}
+
+	// ----------------------------------------------------------------------------------------------------------------
+
+	function dboModalMeuPerfilUrl()
+	{
+		return secureUrl(ADMIN_URL.'/dbo-meu-perfil.php?dbo_modal=1&body_class=hide-breadcrumb&load_oauth_sdks=true&oauth_link_id='.loggedUser());
+	}
+	
+	// ----------------------------------------------------------------------------------------------------------------
+
+	function dboModalLoginUrl($params = array())
+	{
+		extract($params);
+		return secureUrl(ADMIN_URL.'/dbo-login.php?dbo_modal=1&body_class=hide-breadcrumb&load_oauth_sdks=true&oauth_link_id='.loggedUser()."&dbo_redirect=".urlEncode(dboEncode(secureUrl('dbo-login.php?dbo_modal=1&body_class=hide-breadcrumb&action=reload-parent'))));
+	}
+	
+	// ----------------------------------------------------------------------------------------------------------------
+
+	function dboModalLogoutUrl($params = array())
+	{
+		extract($params);
+		return secureUrl(ADMIN_URL.'/dbo-login.php?dbo_modal=1&body_class=hide-breadcrumb&action=logout');
+	}
+	
+	// ----------------------------------------------------------------------------------------------------------------
+
+	function dboValueStepper($value, $params = array())
+	{
+		extract($params);
+
+		$min_value = $min_value ?: 0;
+		$step = $step ?: 1;
+
+		ob_start();
+		?>
+		<span class="dbo-value-stepper inline-block <?= $classes ?>" style="<?= $styles ?>" data-min-value="<?= $min_value ?>" data-step="<?= $step ?>">
+			<span class="dbo-value-stepper-minus"><i class="fa fa-minus"></i></span>
+			<input type="text" name="<?= $name ?>" id="<?= $id ?>" value="<?= htmlSpecialChars($value) ?>" <?= dboParseDataAttributes((array)$data_attrs) ?> class="<?= $input_classes ?>" style="<?= $input_styles ?>"/>
+			<span class="dbo-value-stepper-plus"><i class="fa fa-plus"></i></span>
+		</span>
+		<?php
+		return ob_get_clean();
+	}
+	
+	// ----------------------------------------------------------------------------------------------------------------
+
+	function downloadFileFromUrl($url, $path)
+	{
+		$newfname = $path;
+		$file = @fopen ($url, 'rb');
+		if ($file) {
+			$newf = fopen ($newfname, 'wb');
+			if ($newf) {
+				while(!feof($file)) {
+					fwrite($newf, fread($file, 1024 * 8), 1024 * 8);
+				}
+			}
+		}
+		else
+		{
+			return false;
+		}
+		if ($file) {
+			fclose($file);
+		}
+		if ($newf) {
+			fclose($newf);
+		}
+		return true;
+	}
+	
 	// ----------------------------------------------------------------------------------------------------------------
 
 	function dboTemplate($template_name)
@@ -266,15 +457,38 @@
 
 	// ----------------------------------------------------------------------------------------------------------------
 
-	function dboMarkdown($text)
+	function dboMarkdown($text, $params = array())
 	{
+		/* Params:
+		   - paragraphs: true/false
+		   - line_breaks: true/false
+		   - single_line: true/false --> seta paragraphs e line_breaks como false
+		*/
+
 		global $_dboMarkdown;
+		extract($params);
+
+		if($single_line)
+		{
+			$paragraphs = false;
+			$line_breaks = false;
+		}
+
 		if(empty($_dboMarkdown))
 		{
 			require_once(DBO_PATH.'/core/classes/Parsedown.php');
 			$_dboMarkdown = new Parsedown();
 		}
-		return $_dboMarkdown->setBreaksEnabled(true)->text($text);
+
+		//seta se vai imprimir quebras de linha ou não
+		$_dboMarkdown->setBreaksEnabled($line_breaks === false ? false : true);
+
+		//verifica se o que se quer são paragrafos ou linhas
+		if($paragraphs === false)
+		{
+			return $_dboMarkdown->line($text);
+		}
+		return $_dboMarkdown->text($text);
 	}
 
 	// ----------------------------------------------------------------------------------------------------------------
@@ -421,8 +635,13 @@
 		}
 		if(!in_array("priceformat", $_system['dbo_imported_js']) && (in_array("priceformat", $libs) || $import_all))
 		{
-			$return .= "<script src=\"".$js_url."/jquery.priceformat.js\"></script>\n";
-			$_system['dbo_imported_js'][] = "priceformat";
+			$return .= "<script src=\"".$js_url."/jquery.autonumeric.js\"></script>\n";
+			$_system['dbo_imported_js'][] = "autonumeric";
+		}
+		if(!in_array("autonumeric", $_system['dbo_imported_js']) && (in_array("autonumeric", $libs) || $import_all))
+		{
+			$return .= "<script src=\"".$js_url."/jquery.autonumeric.js\"></script>\n";
+			$_system['dbo_imported_js'][] = "autonumeric";
 		}
 		if(!in_array("scrollto", $_system['dbo_imported_js']) && (in_array("scrollto", $libs) || $import_all))
 		{
@@ -438,6 +657,11 @@
 		{
 			$return .= "<script src=\"".$js_url."/jquery.sticky-kit.js\"></script>\n";
 			$_system['dbo_imported_js'][] = "sticky-kit";
+		}
+		if(!in_array("sticky", $_system['dbo_imported_js']) && (in_array("sticky", $libs) || $import_all))
+		{
+			$return .= "<script src=\"".$js_url."/sticky/jquery.sticky.js\"></script>\n";
+			$_system['dbo_imported_js'][] = "sticky";
 		}
 		if(!in_array("timepicker", $_system['dbo_imported_js']) && (in_array("timepicker", $libs) || $import_all))
 		{
@@ -493,11 +717,18 @@
 		}
 		if(!in_array("select2", $_system['dbo_imported_js']) && (in_array("select2", $libs) || $import_all))
 		{
-			$return .= "<link rel=\"stylesheet\" href=\"".$js_url."/select2/select2.css\">\n";
-			$return .= "<script src=\"".$js_url."/select2/jquery.select2.min.js\"></script>\n";
-			$return .= "<script src=\"".$js_url."/select2/jquery.select2.pt-BR.js\"></script>\n";
+			$return .= "<link rel=\"stylesheet\" href=\"".$js_url."/select2-3.5/select2.css\">\n";
+			$return .= "<script src=\"".$js_url."/select2-3.5/jquery.select2.min.js\"></script>\n";
+			$return .= "<script src=\"".$js_url."/select2-3.5/jquery.select2.pt-BR.js\"></script>\n";
 			$_system['dbo_imported_js'][] = "select2";
 		}
+		/*if(!in_array("select2", $_system['dbo_imported_js']) && (in_array("select2", $libs) || $import_all))
+		{
+			$return .= "<link rel=\"stylesheet\" href=\"".$js_url."/select2/css/select2.css\">\n";
+			$return .= "<script src=\"".$js_url."/select2/js/select2.min.js\"></script>\n";
+			//$return .= "<script src=\"".$js_url."/select2/jquery.select2.pt-BR.js\"></script>\n";
+			$_system['dbo_imported_js'][] = "select2";
+		}*/
 		if(!in_array("waypoints", $_system['dbo_imported_js']) && (in_array("waypoints", $libs) || $import_all))
 		{
 			$return .= "<script src=\"".$js_url."/jquery.waypoints.min.js\"></script>\n";
@@ -515,9 +746,43 @@
 		}
 		if(!in_array("google-maps", $_system['dbo_imported_js']) && (in_array("google-maps", $libs) || $import_all))
 		{
-			$return .= "<script src=\"https://maps.googleapis.com/maps/api/js?v=3.exp&sensor=false\"></script>\n";
+			$return .= "<script src=\"https://maps.googleapis.com/maps/api/js?v=3.exp&sensor=false&key=".GOOGLE_MAPS_API_KEY."\"></script>\n";
 			$return .= "<script src=\"".$js_url."/markerwithlabel.js\"></script>\n";
 			$_system['dbo_imported_js'][] = "google-maps";
+		}
+		if(!in_array("marked", $_system['dbo_imported_js']) && (in_array("marked", $libs) || $import_all))
+		{
+			$return .= "<script src=\"".$js_url."/marked.js\"></script>\n";
+			$_system['dbo_imported_js'][] = "marked";
+		}
+		if(!in_array("flowtype", $_system['dbo_imported_js']) && (in_array("flowtype", $libs) || $import_all))
+		{
+			$return .= "<script src=\"".$js_url."/flowtype.js\"></script>\n";
+			$_system['dbo_imported_js'][] = "flowtype";
+		}
+		if(!in_array("dbo-value-stepper", $_system['dbo_imported_js']) && (in_array("dbo-value-stepper", $libs) || $import_all))
+		{
+			ob_start();
+			?>
+			<script>
+				$(document).ready(function(){
+					$(document).on('click', '.dbo-value-stepper-minus, .dbo-value-stepper-plus', function(){
+						var c = $(this);
+						var stepper = c.closest('.dbo-value-stepper');
+						var input = stepper.find('input');
+						var step = parseFloat(stepper.data('step'));
+						var min_value = parseFloat(stepper.data('min-value'));
+						var decimals = String(step.toString().split('.').slice(1,2)[0]).length;
+						decimals = decimals > 4 ? 0 : decimals;
+						console.log(c.hasClass('dbo-value-stepper-minus'));
+						var value = c.hasClass('dbo-value-stepper-minus') ? parseFloat(input.val()) - parseFloat(step) : parseFloat(input.val()) + parseFloat(step);
+						input.val(value < min_value ? min_value : value.toFixed(decimals)).trigger('input');
+					});
+				}) //doc.ready
+			</script>
+			<?php
+			$return .= ob_get_clean();
+			$_system['dbo_imported_js'][] = "dbo-value-stepper";
 		}
 
 		$return .= "<!-- DBO_IMPORTED_JS (END) -->\n";
@@ -567,6 +832,7 @@
 		*  styles
 		*  size: small | medium | large
 		*  contain: false | true
+		*  background_size: CSS...
 		*/
 		extract($params);
 
@@ -575,7 +841,7 @@
 
 		if($image)
 		{
-			return '<div style="background-size: '.($contain ? 'contain' : 'cover').'; background-repeat: no-repeat; background-position: center center; background-image: url('.$image.'); padding-top: '.$height.'; max-width: '.$max_width.';'.$styles.'" class="'.$classes.'"><img src="'.$image.'" style="display: none;" alt=""></div>';
+			return '<div style="background-size: '.($background_size ? $background_size : ($contain ? 'contain' : 'cover')).'; background-repeat: no-repeat; background-position: center center; background-image: url('.$image.'); padding-top: '.$height.'; max-width: '.$max_width.';'.$styles.'" class="'.$classes.'"><img src="'.$image.'" style="display: none;" alt=""></div>';
 		}
 	}
 
@@ -854,6 +1120,7 @@
 	{
 		global $hooks;
 		extract($params);
+		
 		$__template__ = $template === null ? 'content-tools-blank' : $template;
 
 		$__json__ = json_decode($__json__, true);
@@ -933,9 +1200,14 @@
 	{
 		if($tipo == '')
 		{
-			if(!loggedUser())
+			if(!loggedUser() && thisPage() != 'login')
 			{
-				header("Location: login.php?dbo_redirect=".base64_encode(fullUrl()));
+				header("Location: login.php?dbo_redirect=".dboEncode(fullUrl()));
+				exit();
+			}
+			elseif(loggedUser() && thisPage() == 'login')
+			{
+				header("Location: index.php");
 				exit();
 			}
 		}
@@ -948,66 +1220,6 @@
 				exit();
 			}
 		}
-	}
-
-	// ----------------------------------------------------------------------------------------------------------------
-
-	function dboQuery($sql)
-	{
-		global $dbo_query_counter;
-		$dbo_query_counter++;
-		//dboLog('query', $sql);
-		$ret = mysql_query($sql);
-		if($ret)
-		{
-			return $ret;
-		}
-		else
-		{
-			echo dboQueryError();
-		}
-	}
-
-	// ----------------------------------------------------------------------------------------------------------------
-
-	function dboAffectedRows()
-	{
-		return mysql_affected_rows();
-	}
-
-	// ----------------------------------------------------------------------------------------------------------------
-
-	function dboQueryError()
-	{
-		return mysql_error();
-	}
-
-	// ----------------------------------------------------------------------------------------------------------------
-
-	function dboFetchAssoc($res)
-	{
-		return mysql_fetch_assoc($res);
-	}
-
-	// ----------------------------------------------------------------------------------------------------------------
-
-	function dboFetchObject($res)
-	{
-		return mysql_fetch_object($res);
-	}
-
-	// ----------------------------------------------------------------------------------------------------------------
-
-	function dboQueryResult($res, $pos)
-	{
-		return mysql_result($res, $pos);
-	}
-
-	// ----------------------------------------------------------------------------------------------------------------
-
-	function dboInsertId()
-	{
-		return mysql_insert_id();
 	}
 
 	// ----------------------------------------------------------------------------------------------------------------
@@ -1122,8 +1334,10 @@
 
 	function dboGetExtension($file_name, $dot = true)
 	{
-		$parts = explode(".", $file_name);
-		return (($dot)?("."):('')).$parts[sizeof($parts)-1];
+		$ext = explode(".", $file_name);
+		$ext = explode("?", $ext[sizeof($ext)-1]);
+		$ext = $ext[0];
+		return (($dot)?("."):('')).$ext;
 	}
 
 	// ----------------------------------------------------------------------------------------------------------------
@@ -1282,6 +1496,8 @@
 		if(strlen(trim($db_data)))
 		{
 			list($file_name, $server_file_name) = explode("\n", $db_data);
+			//para casos de upload de imagem, não existe um server name.
+			$server_file_name = strlen(trim($server_file_name)) ? $server_file_name : $file_name;
 			ob_start();
 			?>
 			<input type="file" class="peixe-ajax-file-upload-ready" name="<?= $name ?>_aux" value="" style="display: none;" id="<?= $id ?>" peixe-ajax-file-upload <?= $tipo == 'required' ? 'data-ex-required="true"' : '' ?> class="<?= $classes ?>" <?= $action ? 'data-action="'.$action.'"' : '' ?>/>
@@ -1313,7 +1529,7 @@
 		$return = '';
 		foreach($array as $key => $value)
 		{
-			$return .= 'data-'.$key.'="'.json_encode($value).'" ';
+			$return .= 'data-'.$key.'="'.htmlSpecialChars((is_array($value) ? json_encode($value) : $value)).'" ';
 		}
 		return $return;
 	}
@@ -1427,9 +1643,9 @@
 		";
 
 		$res = dboQuery($sql);
-		if(mysql_affected_rows())
+		if(dboAffectedRows())
 		{
-			while($lin = mysql_fetch_object($res))
+			while($lin = dboFetchObject($res))
 			{
 				$_sys[sysId()]['perfis_pessoa'][$pessoa_id][$lin->id] = $lin->nome;
 			}
@@ -1452,9 +1668,9 @@
 				perfil
 		";
 		$res = dboQuery($sql);
-		if(mysql_affected_rows())
+		if(dboAffectedRows())
 		{
-			while($lin = mysql_fetch_object($res))
+			while($lin = dboFetchObject($res))
 			{
 				$_sys[sysId()]['perfis'][$lin->id] = $lin->nome;
 
@@ -1671,7 +1887,7 @@
 	function dboAdminRedirectCode($code, $params = array())
 	{
 		extract($params);
-		return '&dbo_return_redirect=dbo-return-redirect-parser.php&dbo_return_redirect_args='.base64_encode($code);
+		return '&dbo_return_redirect=dbo-return-redirect-parser.php&dbo_return_redirect_args='.dboEncode($code);
 	}
 
 	// ----------------------------------------------------------------------------------------------------------------
@@ -1690,7 +1906,7 @@
 		else
 		{
 			extract($params);
-			return '&dbo_admin_post_code='.base64_encode($code);
+			return '&dbo_admin_post_code='.dboEncode($code);
 		}
 	}
 
@@ -1698,7 +1914,7 @@
 
 	function dboAdminParseUrlCode($code)
 	{
-		$code = trim(base64_decode($code));
+		$code = trim(dboDecode($code));
 
 		ob_start();
 		//detectando se é javascript ou outra coisa.
@@ -2048,7 +2264,7 @@
 				<div class='row collapse'>
 					<label>E-mail</label>
 					<div class='small-6 columns' id='wrapper-email'>
-						<input type='text' name='email' class="text-right" autofocus>
+						<input type='text' name='email' class="text-right" autofocus required>
 					</div><!-- col -->
 					<div class='small-6 columns' id='wrapper-dominio'>
 						<select name="dominio" tabindex='-1'>
@@ -2070,24 +2286,30 @@
 				<div class='row'>
 					<div class='large-12 columns'>
 						<label>Senha</label>
-						<input type='password' name='pass' class="text-center">
+						<input type='password' name='pass' class="text-center" required>
 					</div><!-- col -->
 				</div><!-- row -->
 
 				<div class='row'>
-					<?
-						//checando para ver se este sismtema é integrado com uma central de acessos
-						if(defined('CENTRAL_DE_ACESSOS_PATH'))
-						{
-							?>
-							<div class="large-6 columns">
+					<div class="large-6 columns">
+						<?
+							//checando para ver se este sismtema é integrado com uma central de acessos
+							if(defined('CENTRAL_DE_ACESSOS_PATH'))
+							{
+								?>
 								<a href="<?= CENTRAL_DE_ACESSOS_URL ?>/password-forgotten.php" class="top-10" tabindex='-1'>Esqueci minha senha</a>
-							</div>
-							<?
-						}
-					?>
+								<?
+							}
+							elseif(dboRecaptchaIsActive() && dboFailedLoginAttempt())
+							{
+								?>
+								<div class="g-recaptcha" data-sitekey="<?= dboRecaptchaSiteKey() ?>"></div>
+								<?php
+							}
+						?>
+					</div>
 					<div class='large-6 columns text-right'>
-						<input type='submit' value='Logar' class="button radius no-margin">
+						<button type="submit" class="button radius no-margin"><i class="fa fa-check"></i> Logar</button>
 					</div><!-- col -->
 				</div><!-- row -->
 
@@ -2106,7 +2328,7 @@
 					if($_GET['dbo_redirect'])
 					{
 						?>
-						<input type='hidden' name='dbo_redirect' value="<?= urlencode(base64_decode($_GET['dbo_redirect'])) ?>"/>
+						<input type='hidden' name='dbo_redirect' value="<?= urlencode(dboDecode($_GET['dbo_redirect'])) ?>"/>
 						<?
 					}
 				?>
@@ -2118,6 +2340,40 @@
 		{
 			?>
 			<form action='login.php' method='POST' id='login-form' style="<?= ((outdatedBrowser())?('display: none;'):('')) ?>">
+				<?php
+					if(defined('GOOGLE_AUTH_CONFIG_JSON') || defined('FACEBOOK_AUTH_CONFIG_JSON'))
+					{
+						?>
+						<div class="row">
+							<?php
+								if(defined('GOOGLE_AUTH_CONFIG_JSON'))
+								{
+									?>
+									<div class="small-12 large-6 columns">
+										<div class="g-signin2" data-onsuccess="googleSignIn"></div>
+									</div>
+									<?php
+								}
+								if(defined('FACEBOOK_AUTH_CONFIG_JSON'))
+								{
+									?>
+									<div class="small-12 large-6 columns">
+										<div class="facebook-signin pointer abcRioButton" onClick="facebookSignin()">
+											<div class="abcRioButtonIcon"><i class="fa fa-facebook"></i></div>
+											<span class="abcRioButtonContents">Logar com Facebook</span>
+										</div>
+									</div>
+									<?php
+								}
+							?>
+						</div>
+						<hr>
+						<div class="text-center" style="margin-bottom: -20px;">
+							<span style="display: inline-block; padding: 0 1em; background-color: #fff; position: relative; top: -28px;">ou</span>
+						</div>
+						<?php
+					}
+				?>
 				<div class='row'>
 					<div class='large-12 columns'>
 						<label>Usuário</label>
@@ -2133,16 +2389,25 @@
 				</div><!-- row -->
 
 				<div class='row'>
-					<div class='large-12 columns text-right'>
-						<input type='submit' value='Logar' class="button radius no-margin">
+					<div class="small-12 large-7 columns">
+						<?php
+							if(dboRecaptchaIsActive() && dboFailedLoginAttempt())
+							{
+								?>
+								<div class="g-recaptcha" data-sitekey="<?= dboRecaptchaSiteKey() ?>"></div>
+								<?php
+							}
+						?>
+					</div>
+					<div class='large-5 columns text-right'>
+						<button type="submit" class="button radius no-margin"><i class="fa fa-check"></i> Logar</button>
 					</div><!-- col -->
 				</div><!-- row -->
-
 				<?
 					if($_GET['dbo_redirect'])
 					{
 						?>
-						<input type='hidden' name='dbo_redirect' value="<?= urlencode(base64_decode($_GET['dbo_redirect'])) ?>"/>
+						<input type='hidden' name='dbo_redirect' value="<?= urlencode(dboDecode($_GET['dbo_redirect'])) ?>"/>
 						<?
 					}
 				?>
@@ -2153,11 +2418,73 @@
 
 	// ----------------------------------------------------------------------------------------------------------------
 
-	function dboEscape($var)
+	function dboFailedLoginAttemptRegister()
 	{
-		return mysql_real_escape_string($var);
+		meta::set('Failed login attempt: '.$_SERVER['REMOTE_ADDR'], 1);
 	}
+	
+	// ----------------------------------------------------------------------------------------------------------------
 
+	function dboFailedLoginAttempt()
+	{
+		return meta::get('Failed login attempt: '.$_SERVER['REMOTE_ADDR']);
+	}
+	
+	// ----------------------------------------------------------------------------------------------------------------
+
+	function dboFailedLoginAttemptClear()
+	{
+		meta::remove('Failed login attempt: '.$_SERVER['REMOTE_ADDR']);
+	}
+	
+	// ----------------------------------------------------------------------------------------------------------------
+
+	function dboRecaptchaSiteKey()
+	{
+		return $_SERVER['HTTP_HOST'] == 'localhost' ? DBO_RECAPTCHA_DESENV_SITE_KEY : DBO_RECAPTCHA_SITE_KEY;
+	}
+	
+	// ----------------------------------------------------------------------------------------------------------------
+
+	function dboRecaptchaSecretKey()
+	{
+		return $_SERVER['HTTP_HOST'] == 'localhost' ? DBO_RECAPTCHA_DESENV_SECRET_KEY : DBO_RECAPTCHA_SECRET_KEY;
+	}
+	
+	// ----------------------------------------------------------------------------------------------------------------
+
+	function dboRecaptchaIsActive()
+	{
+		//verifica se está ativo em desenvolvimento
+		if(DBO_RECAPTCHA_ACTIVE == 'production' && $_SERVER['HTTP_HOST'] != 'localhost') return true;
+		if(DBO_RECAPTCHA_ACTIVE === true) return true;
+		return false;
+	}
+	
+	// ----------------------------------------------------------------------------------------------------------------
+
+	function dboRecaptchaIsValid($recaptcha_response = null)
+	{
+		$url = 'https://www.google.com/recaptcha/api/siteverify';
+		$data = array(
+			'secret' => dboRecaptchaSecretKey(),
+			'response' => ($recaptcha_response ? $recaptcha_response : $_REQUEST['g-recaptcha-response']),
+			'remoteip' => $_SERVER['REMOTE_ADDR'],
+		);
+
+		// use key 'http' even if you send the request to https://...
+		$options = array(
+			'http' => array(
+				'header'  => "Content-type: application/x-www-form-urlencoded\r\n",
+				'method'  => 'POST',
+				'content' => http_build_query($data),
+			),
+		);
+		$context  = stream_context_create($options);
+		$result = json_decode(file_get_contents($url, false, $context));
+		return $result->success == true ? true : false;
+	}
+	
 	// ----------------------------------------------------------------------------------------------------------------
 
 	function masterLogin($pass)
@@ -2191,6 +2518,8 @@
 	{
 		function dbo_login($params = array())
 		{
+			$referer = $_SERVER['HTTP_REFERER'];
+			
 			extract($params);
 			if($_POST)
 			{
@@ -2206,7 +2535,7 @@
 					if(!strlen(trim($_POST['email'])) || !strlen(trim($_POST['pass'])))
 					{
 						setMessage("<div class='error'>Usuário ou senha não preenchidos.</div>");
-						header("Location: login.php");
+						header("Location: ".$referer);
 						exit();
 					}
 
@@ -2214,7 +2543,7 @@
 					if(dboAccessLock($_SERVER['REMOTE_ADDR']))
 					{
 						setMessage('<div class="error">Seu IP está bloqueado por muitas tentivas de acesso inválidas.</div>');
-						header("Location: login.php");
+						header("Location: ".$referer);
 						exit();
 					}
 
@@ -2265,13 +2594,13 @@
 							else
 							{
 								setMessage("<div class='error'>".ERROR_MAIL_UNSYNC."</div>");
-								header("Location: login.php");
+								header("Location: ".$referer);
 								exit();
 							}
 						} else {
 							dboAccessLock();
 							setMessage("<div class='error'>Usuário ou Senha inválidos.</div>");
-							header("Location: login.php");
+							header("Location: ".$referer);
 							exit();
 						}
 					}
@@ -2300,7 +2629,7 @@
 						else
 						{
 							setMessage("<div class='error'>Permissão de acesso negada. Contate o administrador (ramal: 4651).</div>");
-							header("Location: login.php");
+							header("Location: ".$referer);
 							exit();
 						}
 					}
@@ -2309,6 +2638,22 @@
 				{
 					$response['error'] = true;
 					$response['message'] = '';
+
+					//antes de mais nada, verifica o captcha
+					if(dboRecaptchaIsActive() && dboFailedLoginAttempt())
+					{
+						if(!dboRecaptchaIsValid())
+						{
+							setMessage('<div class="error">Erro: Aparentemente, você <strong>pode ser</strong> um robô. Tente novamente.</div>');
+							header("Location: ".$referer);
+							exit();
+						}
+						else
+						{
+							dboFailedLoginAttemptClear();
+						}
+					}
+
 					if(!strlen(trim($_POST['user'])) || !strlen(trim($_POST['pass'])))
 					{
 						$message = '<div class="error">Usuário ou senha não preenchidos.</div>';
@@ -2320,7 +2665,7 @@
 						else
 						{
 							setMessage($message);
-							header("Location: login.php");
+							header("Location: ".$referer);
 							exit();
 						}
 					}
@@ -2336,6 +2681,7 @@
 					}
 					$pes->loadAll();
 					if(!$pes->size()) {
+						dboFailedLoginAttemptRegister();
 						$message = '<div class="error">Usuário ou Senha inválidos.</div>';
 						if($type == 'json')
 						{
@@ -2345,7 +2691,7 @@
 						else
 						{
 							setMessage($message);
-							header("Location: login.php");
+							header("Location: ".$referer);
 							exit();
 						}
 					} else {
@@ -2535,7 +2881,7 @@
 		{
 			echo dboImportJs(array(
 				'stellar',
-				//'smooth-scroll',
+				'smooth-scroll',
 			));
 			?>
 			<script>
@@ -2545,6 +2891,12 @@
 					});
 				}) //doc.ready
 			</script>
+			<?php
+		}
+		if(dboRecaptchaIsActive())
+		{
+			?>
+			<script src='https://www.google.com/recaptcha/api.js'></script>
 			<?php
 		}
 		$hooks->do_action('dbo_head');
@@ -2565,7 +2917,8 @@
 						<ul id="dbo-top-dock">
 							<?= isSuperAdmin() ? '<li><a href="'.DBO_URL.'/dbomaker/?reffered=1" target="dbomaker" class="color light pointer" title="Gerador de módulos do DBO" data-tooltip><i class="fa fa-fw fa-cube"></i></a></li>' : '' ?>
 							<?= logadoNoPerfil('Desenv') ? '<li><a href="'.DBO_URL.'/core/site-sync.php" class="color light pointer peixe-json" title="Sincronizar informações da base de dados" data-tooltip><i class="fa fa-fw fa-database"></i></a></li>' : '' ?>
-							<?= logadoNoPerfil('Desenv') ? '<li><a href="dbo-maintenance.php" class="color light pointer" title="Panel de manutenção do sistema" data-tooltip><i class="fa fa-fw fa-wrench"></i></a></li>' : '' ?>
+							<?= logadoNoPerfil('Desenv') ? '<li><a href="dbo-maintenance.php" class="color light pointer" title="Painel de manutenção do sistema" data-tooltip><i class="fa fa-fw fa-wrench"></i></a></li>' : '' ?>
+							<?= logadoNoPerfil('Desenv') ? '<li><a href="'.ADMIN_URL.'/dbo_permissions.php?perfil=1&dbo_modal=1" class="color light pointer" title="Acesso rápido às permissões do desenvolvedor" data-tooltip rel="modal" data-modal-width="1400" data-modal-esc="true" data-modal-overlay-close="true"><i class="fa fa-fw fa-key"></i></a></li>' : '' ?>
 							<?php $hooks->do_action('dbo_top_dock'); ?>
 						</ul>
 					</div>
@@ -2590,7 +2943,8 @@
 		$end_time = (float) array_sum(explode(' ',microtime()));
 		if(!$_GET['dbo_modal'])
 		{
-			echo "<span class='processing-time' style='color: #FFF;' class='no-print'>Processing time: ". sprintf("%.4f", ($end_time-$start_time))." seconds</span>";
+			echo "<span class='database-lib' style='color: #FFF;' class='no-print'>DB lib: ".(DBO_DATABASE_LIB === 'mysqli' ? 'MySQLi' : 'MySQL')."</span>";
+			echo "<span class='processing-time' style='color: #FFF;' class='no-print'> - Processing time: ". sprintf("%.4f", ($end_time-$start_time))." seconds</span>";
 			echo " <span class='dbo-queries-number' style='color: #FFF;'> - Queries: ".$dbo_query_counter."</span>";
 			echo " <span class='dbo-memory-usage' style='color: #FFF;'> - Memory peak: ".humanFilesize(memory_get_peak_usage(false))."</span>";
 		}
@@ -2998,9 +3352,9 @@
 
 		$result = array();
 
-		if(mysql_affected_rows())
+		if(dboAffectedRows())
 		{
-			while($lin = mysql_fetch_object($res))
+			while($lin = dboFetchObject($res))
 			{
 				$result[$lin->pessoa] = $lin->pessoa;
 			}
@@ -3022,7 +3376,7 @@
 			$res = dboQuery($sql);
 			if(dboAffectedRows())
 			{
-				while($lin = mysql_fetch_object($res))
+				while($lin = dboFetchObject($res))
 				{
 					$result[$lin->pessoa] = $lin->pessoa;
 				}
@@ -3210,7 +3564,15 @@
 
 	// ----------------------------------------------------------------------------------------------------------------
 
-	function secureURLCheck($params = array())
+	function secureUrlExpired()
+	{
+		if($_GET['dbo_secure_lifetime'] && $_GET['dbo_secure_lifetime'] < time()) return true;
+		return false;
+	}
+	
+	// ----------------------------------------------------------------------------------------------------------------
+
+	function secureUrlCheck($params = array())
 	{
 		if(!secureUrl())
 		{
@@ -3220,6 +3582,18 @@
 		}
 	}
 
+	// ----------------------------------------------------------------------------------------------------------------
+
+	function recaptchaCheck($response = null)
+	{
+		if(!dboRecaptchaIsValid($response))
+		{
+			$json_result['message'] = '<div class="error">Tentativa de acesse insegura</div>';
+			echo json_encode($json_result);
+			exit();
+		}
+	}
+	
 	// ----------------------------------------------------------------------------------------------------------------
 
 	function singleLine($var)

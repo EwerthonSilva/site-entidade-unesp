@@ -73,7 +73,7 @@
 			$modulos_array[$module->order_by][$module->modulo]['Editar'] = 'update';
 			$modulos_array[$module->order_by][$module->modulo]['Excluir'] = 'delete';
 			$modulos_array[$module->order_by][$module->modulo]['Visualizar'] = 'view';
-			$modulos_array_nomes[$module->modulo]['nome'] = $module->titulo;
+			$modulos_array_nomes[$module->modulo]['nome'] = $module->titulo_big_button ? $module->titulo_big_button : $module->titulo;
 
 			//instanciando botoes
 			if(is_array($module->button))

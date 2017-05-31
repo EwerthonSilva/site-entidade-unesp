@@ -36,6 +36,10 @@ if(!class_exists('pessoa'))
 			{
 				$this->pass = dbo::cryptPassword($this->pass);
 			}
+			if(!strlen(trim($this->token)))
+			{
+				$this->token = uniqid();
+			}
 			return parent::save();
 		}
 
@@ -45,6 +49,10 @@ if(!class_exists('pessoa'))
 			if(strlen(trim($this->pass)) != '128' && strlen(trim($this->pass)) > 0)
 			{
 				$this->pass = dbo::cryptPassword($this->pass);
+			}
+			if(!strlen(trim($this->token)))
+			{
+				$this->token = uniqid();
 			}
 			return parent::update();
 		}
@@ -66,6 +74,28 @@ if(!class_exists('pessoa'))
 			}
 		}
 
+		function getShortName()
+		{
+			global $_system;
+			if(!$_system['pessoa'][$this->id]['short_name'])
+			{
+				if(strlen(trim($this->apelido)))
+				{
+					$_system['pessoa'][$this->id]['short_name'] = $this->apelido;
+				}
+				else
+				{
+					$partes = explode(" ", $this->nome);
+					$_system['pessoa'][$this->id]['short_name'] = ((strlen($partes[0])>=4)?($partes[0]):($partes[0]." ".$partes[1]));
+				}
+			}
+			return $_system['pessoa'][$this->id]['short_name'];
+		}
+
+		function getGenero()
+		{
+			return $this->sexo == 'f' ? 'a' : 'o';
+		}
 
 	} //class declaration
 } //if ! class exists

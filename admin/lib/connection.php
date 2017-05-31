@@ -1,23 +1,19 @@
 <?
-@include_once('defines.php');
-$mysql_error = false;
 
-if($link_connection = @mysql_connect(DB_HOST, DB_USER, DB_PASS)) {
-	if($db = mysql_select_db(DB_BASE, $link_connection)) {
-	} else {
-		$mysql_error = 'database';
-	}
-} else {
-	$mysql_error = 'connection';
+@include_once(__DIR__.'/defines.php');
+require_once(__DIR__.'/../dbo/core/dbo-database-functions.php');
+
+if($dbo_default_link_connection = dboDatabaseConnect(DB_HOST, DB_USER, DB_PASS, DB_BASE))
+{
+	define(HAS_CONNECTION, TRUE);
+	dboQuery("SET NAMES 'utf8mb4'");
+	dboQuery("SET character_set_connection=utf8mb4");
+	dboQuery("SET character_set_client=utf8mb4");
+	dboQuery("SET character_set_results=utf8mb4");
 }
-if($mysql_error)
+else
 {
 	define(HAS_CONNECTION, FALSE);
-} else {
-	define(HAS_CONNECTION, TRUE);
-	mysql_query("SET NAMES 'utf8'");
-	mysql_query('SET character_set_connection=utf8');
-	mysql_query('SET character_set_client=utf8');
-	mysql_query('SET character_set_results=utf8');
 }
+
 ?>

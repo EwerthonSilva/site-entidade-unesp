@@ -25,6 +25,7 @@ $module->permissoes_custom = '
 	painel-cadastros | Permissão de acesso do usuário ao painel de cadastros do sistema.
 ';
 $module->order_by = '3';
+$module->table_engine = 'InnoDB';
 
 /* FIELDS =========================================================================================================== */
 
@@ -59,7 +60,7 @@ $field->view = true;
 $field->lista = true;
 $field->filter = false;
 $field->order = false;
-$field->type = 'VARCHAR(255)';
+$field->type = 'VARCHAR(190)';
 $field->interaction = '';
 $field->tipo = 'text';
 $module->campo[$field->coluna] = $field;

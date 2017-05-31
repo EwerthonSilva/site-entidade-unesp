@@ -27,6 +27,7 @@ $module->permissoes_custom = '
 ';
 $module->order_by = '-980';
 $module->dbo_maker_read_only = true;
+$module->table_engine = 'InnoDB';
 
 /* FIELDS =========================================================================================================== */
 

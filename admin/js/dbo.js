@@ -35,38 +35,18 @@ function openDboModal(url, tamanho, callback) {
 	})
 }
 
-function openColorBoxModal(url, width, height, params) {
-	var width = ((typeof width != 'undefined')?(width):(1000));
-	var height = ((typeof height != 'undefined')?(height):('98%'));
-	height = (($(window).width() < 810)?('90%'):(height));
-	$.colorbox({
-		href: url,
-		iframe: true,
-		width: width,
-		height: height,
-		maxWidth: '100%',
-		maxHeight: '100%',
-		overlayClose: false,
-		escKey: false,
-		fixed: true,
-		transition: (params && params.transition) || 'elastic'
-	});
+function dboSetPreference(mk, jk, jv) {
+	peixeJSONSilent(DBO_URL+'/core/dbo-meta-ajax.php?action=set-pref', {
+		meta_key: mk,
+		json_key: jk,
+		json_value: jv
+	}, null, false);
 }
 
 $(document).ready(function(){
 	//fade nas mensagens
 
 	showDboMessage();
-
-	/* modals */
-	$(document).on('click', '[rel="modal"]', function(e){
-		e.preventDefault();
-		e.stopPropagation();
-		clicado = $(this);
-		width = clicado.data('modal-width') || clicado.data('width') || 1000;
-		height = clicado.data('modal-height') || clicado.data('height') || '98%';
-		openColorBoxModal(clicado.attr('href') ? clicado.attr('href') : clicado.data('url'), width, height);
-	});
 
 	$(document).on('click', '[rel="redirect"]', function(e){
 		e.preventDefault();
@@ -90,7 +70,7 @@ $(document).ready(function(){
 	$(document).on('click', '.trigger-change-password', function(e){
 		e.preventDefault();
 		$('#modal-change-password').foundation('reveal', 'open', {
-			url: 'modal-dbo-change-password.php'
+			url: 'dbo-modal-change-password.php'
 		});
 	});
 
@@ -164,11 +144,7 @@ $(document).ready(function(){
 		mk = (typeof c.dataset.meta_key !== 'undefined' ? c.dataset.meta_key : null);
 		jk = c.dataset.pref_key;
 		jv = c.dataset.pref_value;
-		peixeJSONSilent(DBO_URL+'/core/dbo-meta-ajax.php?action=set-pref', {
-			meta_key: mk,
-			json_key: jk,
-			json_value: jv
-		}, null, true);
+		dboSetPreference(mk, jk, jv);
 		if(typeof c.dataset.toggle !== 'undefined'){
 			c.dataset.pref_value = jv == 'true' ? 'false' : 'true';
 		}

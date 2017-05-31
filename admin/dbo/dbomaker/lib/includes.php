@@ -15,16 +15,20 @@ If it doesn't work you should try to include your own connection...
 Or use the maker without connection.
 It also works, but with some few limitations.
 */
-@include('../../lib/connection.php');
 @include('../../lib/defines.php');
 @include('../../local-defines.php');  
+@include('../../lib/connection.php');
+
+/* definindo o tipo de tabela do mysql */
+define(MYSQL_TABLE_TYPE, $_GET['table_engine'] == 'MyISAM' ? 'MyISAM' : 'InnoDB');
+define(CREATE_FKS, MYSQL_TABLE_TYPE == 'InnoDB' ? true : false);
 
 $sql = "SHOW TABLES";
-if(@mysql_query($sql))
+if(@dboQuery($sql))
 {
 	define (MYSQL_CONNECTION, TRUE);
 	$sql = "SELECT * FROM perfil"; /* checks if the perfil table exists. */
-	if(mysql_query($sql))
+	if(dboQuery($sql))
 	{
 		define(HAS_PROFILES, TRUE);
 	} else {
@@ -47,6 +51,173 @@ if(!function_exists('safeArrayKey'))
 	}
 }
 
+/* ---------------------------------------------------------------------------------------------------------- */
+
+function dboConstraintName($string, $params = array())
+{
+	extract($params);
+	$size = $size ?: 3;
+	$separador = $separator ?: "_";
+	
+	$vogais = array('a','e','i','o','u');
+
+	$string = str_replace('-', '_', $string);
+	$parts = explode('_', $string);
+	$parts = array_filter($parts);
+
+	$abbr = array();
+
+	foreach($parts as $part)
+	{
+		$i = 0;
+		$word = '';
+		$vogal = false;
+		while(strlen($word) < $size && $i < strlen($part))
+		{
+			$word .= $part[$i];
+			if(!$vogal && in_array($part[$i], $vogais))
+			{
+				$vogal = true;
+				$i++;
+				continue;
+			}
+			$i++;
+		}
+		$abbr[] = $word;
+	}
+
+	return md5($string);
+
+	return implode($separador, $abbr);
+}
+
+/* ---------------------------------------------------------------------------------------------------------- */
+
+function renderSelectFkActions($input_name, $selected, $operation)
+{
+	$selected = $selected ? $selected : ($operation == 'update' ? 'CASCADE' : ($operation == 'delete' ? 'SET NULL' : ''));
+	ob_start();
+	?>
+	<select name="<?= $input_name ?>">
+		<option <?= $selected == 'RESTRICT' ? 'selected' : '' ?>>RESTRICT</option>
+		<option <?= $selected == 'NO ACTION' ? 'selected' : '' ?>>NO ACTION</option>
+		<option <?= $selected == 'CASCADE' ? 'selected' : '' ?>>CASCADE</option>
+		<option <?= $selected == 'SET NULL' ? 'selected' : '' ?>>SET NULL</option>
+		<option <?= $selected == 'SET DEFAULT' ? 'selected' : '' ?>>SET DEFAULT</option>
+	</select>
+	<?php
+	return ob_get_clean();
+}
+
+/* ---------------------------------------------------------------------------------------------------------- */
+
+function createFksIfNotExists($foo = array())
+{
+	/* Foo:
+	   - table
+	   - column
+	   - referenced_table
+	   - referenced_column
+	*/
+	//verificando se AS FKs estão ativas e o array de data tem conteudo
+	//criando as chaves estrangeiras
+	if(CREATE_FKS && sizeof((array)$foo))
+	{
+		foreach($foo as $data)
+		{
+			//extraindo as variaveis do array para melhor semântica
+			extract($data);
+
+			//se houver um ponto na tabela e o banco de dados não for o da conexão ativa, não criamos a constraint.
+			//isso tem que ser feito na conexão do outro banco.
+			if(strstr($table, '.'))
+			{
+				list($test_db, $test_table) = explode('.', $table);
+				if($test_db != DB_BASE) continue;
+			}
+
+			$update_action = $on_update ? $on_update : 'CASCADE';
+			$delete_action = $on_delete ? $on_delete : 'SET NULL';
+
+			//não criar para campos automaticos do dbo
+			if(in_array($column, array('created_by', 'updated_by', 'deleted_by'))) continue;
+
+			//verifica se a tabela em que a chave vai ser criada é do tipo InnoDB
+			$sql = "SHOW TABLE STATUS WHERE Name = '".$table."'";
+			$res = dboQuery($sql);
+			$lin = dboFetchObject($res);
+			//se a tabela é InnoDB, declaramos o nome da constraint
+			if($lin->Engine == 'InnoDB')
+			{
+				//definindo o nome da constraint
+				//$const_name = "const_".uniqid()."_fk";
+				$const_name = "t_".dboConstraintName(str_replace('.', '_', $module)."_c_".$column)."_fk";			
+				//$const_name = "t_".str_replace('.', '_', $table)."_c_".$column."_fk";			
+
+				//verifica se a constraint já existe
+				/*$sql = "
+					SELECT 
+						RC.*,
+						KCU.COLUMN_NAME
+					FROM 
+						information_schema.REFERENTIAL_CONSTRAINTS RC
+					JOIN information_schema.KEY_COLUMN_USAGE KCU ON
+						RC.CONSTRAINT_NAME = KCU.CONSTRAINT_NAME AND
+						RC.CONSTRAINT_SCHEMA = KCU.CONSTRAINT_SCHEMA AND
+						RC.TABLE_NAME = KCU.TABLE_NAME
+					WHERE 
+						RC.CONSTRAINT_SCHEMA = '".DB_BASE."' AND 
+						RC.REFERENCED_TABLE_NAME = '".$referenced_table."' AND
+						KCU.COLUMN_NAME = '".$column."'
+				";*/
+
+				//precisamos separar o banco de dados da tabela na hora de procurar as constraints. Se houver um ponto no nome da tabela, pode ser que a referencia seja a outro db.
+				//dessa forma, separamos em 2 partes
+				if(strstr($referenced_table, '.'))
+				{
+					list($sql_referenced_db, $sql_referenced_table) = explode('.', $referenced_table);
+				}
+				else
+				{
+					$sql_referenced_db = DB_BASE;
+					$sql_referenced_table = $referenced_table;
+				}
+
+				$sql = "
+					SELECT *
+					FROM information_schema.REFERENTIAL_CONSTRAINTS
+					WHERE CONSTRAINT_SCHEMA = '".DB_BASE."'
+					AND UNIQUE_CONSTRAINT_SCHEMA = '".$sql_referenced_db."'
+					AND REFERENCED_TABLE_NAME = '".$sql_referenced_table."'
+					AND CONSTRAINT_NAME = '".$const_name."'				
+				";
+				$res = dboQuery($sql);
+				$lin = dboFetchObject($res);
+				
+				//agora, verificamos se as regras de updade ou delete são diferentes do desejado
+				//se for, dropamos a FK e recriamos (ou criamos pela primeira vez, se for o caso)
+				//if(false)
+				if($lin->UPDATE_RULE != $update_action || $lin->DELETE_RULE != $delete_action)
+				{
+					//dropa a constraint, se existe
+					if(dboAffectedRows())
+					{
+						$sql = "ALTER TABLE ".$table." DROP FOREIGN KEY ".$const_name;
+						dboQuery($sql);
+					}
+
+					//cria a constraint (ou recria, dependendo do caso)
+					$sql = "ALTER TABLE ".$table." ADD CONSTRAINT ".$const_name." FOREIGN KEY ".$column."_fk (".$column.") REFERENCES ".$referenced_table." (".$referenced_column.") ON DELETE ".$delete_action." ON UPDATE ".$update_action;
+					//echo "FK criada: ".$const_name.', ';
+					if(dboQuery($sql))
+					{
+						echo "FK criada: ".$table."(".$column.") -> ".$referenced_table."(".$referenced_column.") ||| ";
+					};
+				}
+			}
+		}
+	}
+}
 
 /* ---------------------------------------------------------------------------------------------------------- */
 
@@ -212,8 +383,49 @@ function diskDelete($mod)
 
 /* ---------------------------------------------------------------------------------------------------------- */
 
+function getModuleTable($module)
+{
+	if($_SESSION['dbomaker_modulos'][$module]->tabela)
+	{
+		return $_SESSION['dbomaker_modulos'][$module]->tabela;
+	}
+	else
+	{
+		return $_SESSION['dbomaker_modulos_read_only'][$module]->tabela;
+	}
+}
+
+/* ---------------------------------------------------------------------------------------------------------- */
+
+function dropModuleFks($module)
+{
+	foreach((array)$module->campo as $key => $campo)
+	{
+		if($campo->tipo == 'join')
+		{
+			//nao criar para campos automaticos do sistema.
+			if(in_array($campo->coluna, array('created_by', 'updated_by', 'deleted_by'))) continue;
+
+			$const_name = "t_".dboConstraintName(str_replace('.', '_', $module->tabela)."_c_".$campo->coluna)."_fk";
+			$sql = "ALTER TABLE ".$module->tabela." DROP FOREIGN KEY ".$const_name.";";
+			if(!dboQuery($sql))
+			{
+				echo dboQueryError()."<br />";
+			}
+		}
+	}
+}
+
+/* ---------------------------------------------------------------------------------------------------------- */
+
 function syncTable($module)
 {
+
+	//echo $module->modulo.", ";
+
+	//se for um modulo que não possui nenhum campo, já remove.
+	if(!sizeof((array)$module->campo)) return;
+
 	//trying to create the tables.
 	$sql = "CREATE TABLE IF NOT EXISTS ".$module->tabela." (\n";
 	if(is_array($module->campo))
@@ -228,17 +440,52 @@ function syncTable($module)
 				$pk = $field->coluna;
 				$sql_parts[] = "\t".$field->coluna." int(11) NOT NULL auto_increment";
 			}
+			elseif($field->tipo == 'join')
+			{
+				//se o tipo da tabela for InnoDB, tenta criar as chaves
+				if($module->table_engine == 'InnoDB')
+				{
+					$fks[] = array(
+						'table' => $module->tabela,
+						'column' => $field->coluna,
+						'referenced_table' => getModuleTable($field->join->modulo),
+						'referenced_column' => $field->join->chave,
+						'on_update' => $field->join->on_update,
+						'on_delete' => $field->join->on_delete,
+						'module' => $module->modulo,
+					);
+				}
+				$sql_parts[] = "\t".$field->coluna." ".$field->type." ".(($field->isnull)?("NULL"):("NOT NULL"));
+			}
 			//para o caso de PKs não A.I.
 			elseif($field->tipo == 'joinNN')
 			{
+				//montando as configurações de chave estrangeira
+				$fks[] = array(
+					'table' => $field->join->tabela_ligacao,
+					'column' => $field->join->chave1,
+					'referenced_table' => $module->tabela,
+					'referenced_column' => $field->join->chave1_pk ? $field->join->chave1_pk : 'id',
+					'on_update' => $field->join->chave1_on_update,
+					'on_delete' => $field->join->chave1_on_delete,
+				);
+				$fks[] = array(
+					'table' => $field->join->tabela_ligacao,
+					'column' => $field->join->chave2,
+					'referenced_table' => getModuleTable($field->join->modulo),
+					'referenced_column' => $field->join->chave2_pk ? $field->join->chave2_pk : 'id',
+					'on_update' => $field->join->chave2_on_update,
+					'on_delete' => $field->join->chave2_on_delete,
+				);
+				
 				$sql_join  = "CREATE TABLE IF NOT EXISTS ".$field->join->tabela_ligacao." (\n";
 				$sql_join .= "\tid int(11) NOT NULL auto_increment,\n";
-				$sql_join .= "\t".$field->join->chave1." int(11) NOT NULL,\n";
-				$sql_join .= "\t".$field->join->chave2." int(11) NOT NULL,\n";
+				$sql_join .= "\t".$field->join->chave1." int(11) NULL,\n";
+				$sql_join .= "\t".$field->join->chave2." int(11) NULL,\n";
 				$sql_join .= "UNIQUE (".$field->join->chave1.", ".$field->join->chave2."),\n";
 				$sql_join .= "PRIMARY KEY (id)\n";
-				$sql_join .= ") ENGINE = MYISAM DEFAULT CHARSET=utf8; ";
-				mysql_query($sql_join);
+				$sql_join .= ") ENGINE = InnoDB DEFAULT CHARSET=utf8mb4; ";
+				dboQuery($sql_join);
 
 				//salvando a definição dos joinNN para o alter table
 				$joinNN[] = $field->join;
@@ -253,7 +500,7 @@ function syncTable($module)
 				if($field->pk == true) {
 					$pk = $field->coluna;
 				}
-				$sql_parts[] = "\t".$field->coluna." ".$field->type." ".(($field->isnull)?("NULL"):("NOT NULL"));
+				$sql_parts[] = "\t".$field->coluna." ".$field->type." ".(($field->isnull)?("NULL"):("NOT NULL")).($field->unique ? ' UNIQUE' : '');
 			}
 		}
 	}
@@ -262,23 +509,35 @@ function syncTable($module)
 		$sql_parts[] .= "PRIMARY KEY ( ".$pk." )";
 	}
 	$sql .= @implode(",\n", $sql_parts);
-	$sql .= ") ENGINE = MYISAM DEFAULT CHARSET=utf8; ";
+	$sql .= ") ENGINE = ".($module->table_engine ? $module->table_engine : MYSQL_TABLE_TYPE)." DEFAULT CHARSET=utf8mb4; ";
 
-	mysql_query($sql);
-	/*if($sql_join)
+	dboQuery($sql);
+
+	//agora, tenta verificar se a tabela em questão é do mesmo engine que está no modulo
+	$sql = "SHOW TABLE STATUS WHERE Name = '".$module->tabela."'";
+	$res = dboQuery($sql);
+	$lin = dboFetchObject($res);
+	if($module->table_engine && $module->table_engine != $lin->Engine)
 	{
-		echo $module->tabela." ##### ".$sql_join;
-	}*/
+		//se o módulo for MyISAM, remove todas as constraints da tabela antes de fazer a alteração
+		if($module->table_engine == 'MyISAM') dropModuleFks($module);
+
+		//finalmente, altera o engine da tabela
+		$sql = "ALTER TABLE ".$module->tabela." ENGINE = ".$module->table_engine.";";
+		if(!dboQuery($sql))
+		{
+			echo dboQueryError();
+		};
+	}
 
 	//and now checking for the fields in the table. alter tables to create extra-fields.
-
 	$sql = "SHOW COLUMNS FROM ".$module->tabela;
-	$res = mysql_query($sql);
+	$res = dboQuery($sql);
 
 	//saving all fields in the temp array
-	if(mysql_affected_rows())
+	if(dboAffectedRows())
 	{
-		while($lin = @mysql_fetch_object($res))
+		while($lin = @dboFetchObject($res))
 		{
 			$fields[] = $lin->Field;
 		}
@@ -301,10 +560,10 @@ function syncTable($module)
 				}
 				else
 				{
-					$sql = "ALTER TABLE ".$module->tabela." ADD ".$field->coluna." ".fieldType($field->type)." ".((checkTypeForCollate($field->type))?("CHARACTER SET utf8 COLLATE utf8_general_ci"):(""))." ".(($field->isnull)?("NULL"):("NOT NULL"));
+					$sql = "ALTER TABLE ".$module->tabela." ADD ".$field->coluna." ".fieldType($field->type)." ".((checkTypeForCollate($field->type))?("CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci"):(""))." ".(($field->isnull)?("NULL"):("NOT NULL"));
 				}
 				echo $sql;
-				mysql_query($sql);
+				dboQuery($sql);
 			}
 		}
 	}
@@ -320,13 +579,13 @@ function syncTable($module)
 		foreach($joinNN as $join)
 		{
 			$sql = "SHOW COLUMNS FROM ".$join->tabela_ligacao;
-			$res = mysql_query($sql);
+			$res = dboQuery($sql);
 
 			//saving all fields in the temp array
-			if(mysql_affected_rows())
+			if(dboAffectedRows())
 			{
 				$fields = array();
-				while($lin = @mysql_fetch_object($res))
+				while($lin = @dboFetchObject($res))
 				{
 					$fields[] = $lin->Field;
 				}
@@ -336,12 +595,15 @@ function syncTable($module)
 					{
 						$sql = "ALTER TABLE ".$join->tabela_ligacao." ADD ".$join->{$coluna}." INT(11);";
 						echo $sql;
-						mysql_query($sql);
+						dboQuery($sql);
 					}
 				}
 			}
 		}		
 	}
+
+	//cria as chaves estrangeiras no banco de dados, se for o caso.
+	createFksIfNotExists($fks);
 }
 
 /* ---------------------------------------------------------------------------------------------------------- */

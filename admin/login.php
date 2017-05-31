@@ -2,7 +2,8 @@
 if(!file_exists('custom-login.php'))
 {
 	require('header.php');	
-	
+	require_once('auth.php');
+
 	dboLogin();
 
 	if(!loggedUser())

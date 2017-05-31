@@ -1,0 +1,110 @@
+// Setting the correct charset
+@charset "UTF-8";
+// This includes all of the foundation global elements that are needed to work with any of the other files.
+@import "foundation/variables";
+@import "peixe-laranja";
+@import "project";
+@import "compass/css3/border-radius";
+
+body { overflow: visible !important; }
+#wrapper-dbo-slider { background-image: url(../images/transparent-placeholder.png); box-shadow: 0px 0px 10px rgba(1,1,1,.3); padding: 32px 0; overflow: hidden; }
+
+#dbo-wrapper-slider { 
+	&.animated { transition: all .3s ease-out; }
+}
+
+#dbo-slider { outline: 1px solid rgba(1,1,1,.3); margin: 0 auto; position: relative; 
+	&.animated { transition: all .3s ease-out; }
+	&.hide-borders {
+		.dbo-slide-layer { outline: none; box-shadow: none; }
+		.ui-resizable-handle { opacity: 0; pointer-events: none; }
+	}
+}
+
+#dbo-slider-bleed { outline: 1px solid #999; }
+.tabs .ui-sortable-placeholder { padding-top: 0 !important; padding-bottom: 0; margin: 0 !important; }
+.tabs .ui-sortable-helper { border-color: transparent !important; }
+.fixed-width { width: 150px; }
+.dbo-slide-layer { outline: 1px dashed #999; position: absolute; 
+	&.active { outline: 1px solid #fff; box-shadow: 0px 0px 5px rgba(1,1,1,.7); }
+}
+
+#wrapper-camadas { top: 50px; left: 50px; width: 300px;
+	&.ui-draggable-dragging { opacity:.5; }
+	&.hide-borders {
+		.trigger-show-borders { display: inline-block; }
+		.trigger-hide-borders { display: none; }
+	}
+	.ct-tool-groups { padding: 0 5px; }
+	.trigger-show-borders { display: none; }
+}
+
+#drop-nova-camada {
+	li { font-size: 14px; }
+	i { margin-right: 7px; }
+}
+
+#lista-camadas {
+	> li { font-size: 12px; padding: 2px 5px; margin-bottom: 2px; background: #eee; box-shadow: 0px 1px 1px rgba(1,1,1,.3); }
+	.dbo-value-stepper { position: relative; width: calc(100% - 28px);
+		&.no-icon { width: 100%; }
+		input { width: 100%; }
+		[class^="dbo-value-stepper-"] { position: absolute; width: 13px; height: 13px; background: #ddd; font-size: 10px; text-align: center; line-height: 15px; cursor: pointer; right: 0; transition: all .15s ease;
+			&:hover { background: #bbb; }
+		}
+		.dbo-value-stepper-minus { top: 13px; }
+		.dbo-value-stepper-plus { top: 0; }
+	}
+}
+
+.dbo-slide-layer-tab {
+	&.active { outline: 2px solid $primary-color;
+		.details { display: block; }
+		.open-close { 
+			.close { display: none; }
+			.open { display: inline-block; }
+		}
+	}
+	.details { display: none; }
+	.button-group { box-shadow: 0px 0px 1px rgba(1,1,1,.5);
+		&.left { margin-right: 7px; }
+		label { margin: 0; }
+	}
+	.layer-name {
+		input { margin: 0; width: auto; background: transparent; box-shadow: none; border: 0; padding: 2px; height: auto; cursor: pointer; float: left; }
+	}
+	.handle { float: right; cursor: move; height: 14px; line-height: 20px !important; }
+	.open-close { float: right; cursor: pointer; height: 14px; line-height: 20px !important; 
+		.open { display: none; }
+	}
+	input[type="radio"]:checked,
+	input[type="checkbox"]:checked {
+		& + label { background-color: #333 !important; color: #fff !important; }	
+	}
+}
+
+input, select, textarea {
+	&.icon-label { display: inline-block; width: calc(100% - 28px); font-size: 11px; 
+		&.no-icon { width: 100%; }
+	}
+}
+
+
+
+
+
+
+
+
+
+
+
+/* isso precisa ser colocado no common do dbo */
+
+.dbo-slide-layer { background-size: contain; background-repeat: no-repeat; background-position: top left;
+	.dbo-layer-content { transition: all .15s ease; 
+		* { color: all .3s ease;  }
+	}
+	*:last-child { margin-bottom: 0; }
+	p { line-height: inherit; font-weight: inherit; font-size: inherit; }
+}

@@ -293,7 +293,7 @@ function showModules ($params = array())
 			}
 		}
 	?>
-		<a title='Order: <?= $count++ ?> <?= $modulo->imported_module ? '| Módulo integrado com a Central de Acessos, deve ser editado por lá.' : '' ?>' href='<?= $modulo->modulo ?>' class='sortable draggable <?= $class ?> module-<?= $modulo->modulo ?> module <?= $modulo->imported_module ? 'imported' : '' ?>' module='<?= $modulo->modulo ?>' id='module-<?= encNameAjax($modulo->modulo) ?>'><?= $modulo->titulo ?></a>
+		<a title='Order: <?= $count++ ?> <?= $modulo->imported_module ? '| Módulo integrado com a Central de Acessos, deve ser editado por lá.' : '' ?>' href='<?= $modulo->modulo ?>' class='sortable draggable <?= $class ?> module-<?= $modulo->modulo ?> module <?= $modulo->imported_module ? 'imported' : '' ?>' module='<?= $modulo->modulo ?>' id='module-<?= encNameAjax($modulo->modulo) ?>'><?= $modulo->titulo_big_button ? $modulo->titulo_big_button : $modulo->titulo ?></a>
 	<?
 	}
 	?><div class='new-module button-new' id="button-novo-modulo">Novo <u>M</u>ódulo</div><?
@@ -574,6 +574,18 @@ function getModuleForm ($module)
 							</div>
 						</div>
 					</div><!-- row -->
+
+					<div class='row standard'>
+						<div class='item'>
+							<label title="Engine da tabela no MySQL">Engine da tabela</label>
+							<div class='input'>
+								<select name="table_engine" style="max-width: 100px;">
+									<option <?= $module->table_engine == 'InnoDB' || $module->modulo == 'temporary_module_key_5658' ? 'selected' : '' ?>>InnoDB</option>
+									<option <?= $module->table_engine == 'MyISAM' || (!isset($module->table_engine) && $module->modulo != 'temporary_module_key_5658') ? 'selected' : '' ?>>MyISAM</option>
+								</select>
+							</div>
+						</div>
+					</div>
 
 					<div class='row'>
 						<div class='item'>
@@ -1129,6 +1141,16 @@ function getFieldForm ($mod,$field)
 
 				<div class='row'>
 					<div class='item'>
+						<label>Unique</label>
+						<div class='input'>
+							<input type='radio' name='unique' value="1" <?= ($campo->unique)?('CHECKED'):('') ?>/>Sim &nbsp;&nbsp;&nbsp;
+							<input type='radio' name='unique' value="0" <?= (!$campo->unique)?('CHECKED'):('') ?>/>Não
+						</div>
+					</div>
+				</div><!-- row -->
+
+				<div class='row'>
+					<div class='item'>
 						<label title="Selecione para definir esse campo como chave primária do módulo atual.">Chave Primária</label>
 						<div class='input'>
 							<select name='pk'>
@@ -1166,8 +1188,8 @@ function getFieldForm ($mod,$field)
 							<div class='perfil' style='float: left; border-left: 1px solid #CCC; padding-left: 10px; margin-left: 10px; '>
 							<?
 							$sql = "SELECT * FROM perfil ORDER BY nome";
-							$res = mysql_query($sql);
-							while($lin = mysql_fetch_object($res)) { ?>
+							$res = dboQuery($sql);
+							while($lin = dboFetchObject($res)) { ?>
 								<input type='checkbox' class='campo_perfil' name='perfil[]' value='<?= $lin->nome ?>' <?= (@in_array($lin->nome, $campo->perfil))?("CHECKED"):("") ?>> <?= $lin->nome ?><br>
 							<? } ?>
 							</div>
@@ -1257,6 +1279,7 @@ function getFieldForm ($mod,$field)
 								<option value='checkbox' <?= ($campo->tipo == 'checkbox')?('SELECTED'):('') ?>>Checkbox</option>
 								<option value='date' <?= ($campo->tipo == 'date')?('SELECTED'):('') ?>>Data</option>
 								<option value='datetime' <?= ($campo->tipo == 'datetime')?('SELECTED'):('') ?>>Data e Hora</option>
+								<option value='number' <?= ($campo->tipo == 'number')?('SELECTED'):('') ?>>Número</option>
 								<option value='price' <?= ($campo->tipo == 'price')?('SELECTED'):('') ?>>Preço</option>
 								<option value='file' <?= ($campo->tipo == 'file')?('SELECTED'):('') ?>>Arquivo</option>
 								<option value='image' <?= ($campo->tipo == 'image')?('SELECTED'):('') ?>>Imagem</option>
@@ -1413,6 +1436,88 @@ function getFieldTypeDetail ($type = '', $mod = '',$field = '')
 						</div>
 					</div><!-- row -->
 		<?
+		// Númber ------------------------------------------------------------------------------------------------------------------------
+		} elseif($type == 'number') {
+		?>
+			<div class="wrapper-plugin-detail">				
+				<div class="row wide">
+					<div class="item">
+						<div class="input">
+							<div class="wrapper-field-type-detail">
+								<div class="row standard">
+									<div class="item">
+										<label>
+											Parâmetros (1 por linha):<br><br>
+
+											decimals:
+											<span class="param-desc">
+												número da casas decimais Ex: 2<br /><br />
+											</span>
+
+											decimal_separator:
+											<span class="param-desc">
+												caractere separador dos decimais Ex: ,<br /><br />
+											</span>
+
+											thousand_separator:
+											<span class="param-desc">
+												caractere separador dos milhares Ex: .<br /><br />
+											</span>
+
+											prefix:
+											<span class="param-desc">
+												símbolo prefixo do número Ex: R$<br /><br />
+											</span>
+
+											sufix:
+											<span class="param-desc">
+												símbolo sufixo do número Ex: Kg<br /><br />
+											</span>
+
+											max_value:
+											<span class="param-desc">
+												valor máximo Ex: 1500.50<br /><br />
+											</span>
+
+											min_value:
+											<span class="param-desc">
+												valor mínimo Ex: -200.33
+											</span>
+										</label>
+										<div class="input">
+											<textarea rows="10" name="params"><?php
+												if(!in_array('decimals', array_keys((array)$campo->params)))
+												{
+													echo "decimals: 0\n";
+												}
+												foreach((array)$campo->params as $key => $value)
+												{
+													echo $key.': ';
+													if($value === true)
+													{
+														echo 'true';
+													}
+													elseif($value === false)
+													{
+														echo 'false';
+													}
+													else
+													{
+														echo $value;
+													}
+													echo "\n";
+												}	
+											?></textarea>
+										</div><!-- input -->
+									</div><!-- item -->
+								</div><!-- row -->
+								<div class="clear"></div>
+							</div><!-- wrapper-field-type-detail -->
+						</div><!-- input -->
+					</div><!-- item -->
+				</div><!-- row -->
+			</div>
+		<?
 		// PRICE ------------------------------------------------------------------------------------------------------------------------
 		} elseif($type == 'price') {
 		?>
@@ -1430,14 +1535,25 @@ function getFieldTypeDetail ($type = '', $mod = '',$field = '')
 		// IMAGE ------------------------------------------------------------------------------------------------------------------------
 		} elseif($type == 'image') {
 		?>
-					<div class='row wide'>
-						<div class='item'>
-							<label title="Permite que o usuário aumente as margens da imagem na edição">Permitir expansão do canvas</label>
+					<div class="row wide">
+						<div class="item item-33">
+							<label title="Permite que o usuário aumente as margens da imagem na edição" class="help">Permitir expansão do canvas <i class="fa fa-question-circle"></i></label>
 							<select name="allow_canvas_expansion">
 								<option value="false" <?= (($campo->allow_canvas_expansion == false)?('selected'):('')) ?>>Não</option>
 								<option value="true" <?= (($campo->allow_canvas_expansion == true)?('selected'):('')) ?>>Sim</option>
 							</select>
-							<label title="Não utilize prefixo para o primeiro elemento. As dimensões representam dimensões máximas que a imagem pode ter.">Dimensões</label>
+						</div>
+						<div class="item item-33">
+							<label title="Permite que o sistema redimensione imagens pequenas para tamanhos maiores na geração dos thumbnails" class="help">Redimensionar para maior <i class="fa fa-question-circle"></i></label>
+							<select name="allow_size_expansion">
+								<option value="false" <?= (($campo->allow_size_expansion == false)?('selected'):('')) ?>>Não</option>
+								<option value="true" <?= (($campo->allow_size_expansion == true)?('selected'):('')) ?>>Sim</option>
+							</select>
+						</div>
+					</div>
+					<div class='row wide'>
+						<div class='item'>
+							<label title="Não utilize prefixo para o primeiro elemento. As dimensões representam dimensões máximas que a imagem pode ter." class="help">Dimensões <i class="fa fa-question-circle"></i></label>
 							<div class='input' style='position: relative; padding-bottom: 20px;'>
 							<a href='#' class='image-new-size'><span>Novo tamanho</span></a>
 							<?
@@ -1518,6 +1634,23 @@ function getFieldTypeDetail ($type = '', $mod = '',$field = '')
 											</select>
 										</div><!-- item -->
 									</div><!-- row -->
+									<?php
+										if(CREATE_FKS)
+										{
+											?>
+											<div class='row'>
+												<div class='item item-33'>
+													<label>On update</label>
+													<?= renderSelectFkActions('join[on_update]', $campo->join->on_update, 'update') ?>
+												</div><!-- item -->
+												<div class='item item-33'>
+													<label>On delete</label>
+													<?= renderSelectFkActions('join[on_delete]', $campo->join->on_delete, 'delete') ?>
+												</div><!-- item -->
+											</div><!-- row -->
+											<?php
+										}
+									?>
 									<div class="row cf">
 										<div class='item item-33'>
 											<label>AJAX</label>
@@ -1584,19 +1717,44 @@ function getFieldTypeDetail ($type = '', $mod = '',$field = '')
 												<label title="Irá conter a chave do campo atual.">Campo 1 (modulo atual)</label>
 												<input type='text' name='join[chave1]' value='<?= $campo->join->chave1 ?>'>
 											</div><!-- item -->
+											<div class='item item-25 border-right'>
+												<label>PK 1 (PK no mód. atual (id))</label>
+												<input type='text' name='join[chave1_pk]' value='<?= $campo->join->chave1_pk ?>'>
+											</div><!-- item -->
 											<div class='item item-25'>
 												<label title="Irá conter a chave do campo relacionado">Campo 2 (modulo extrangeiro)</label>
 												<input type='text' name='join[chave2]' value='<?= $campo->join->chave2 ?>'>
-											</div><!-- item -->
-											<div class='item item-25'>
-												<label>PK 1 (PK no mód. atual (id))</label>
-												<input type='text' name='join[chave1_pk]' value='<?= $campo->join->chave1_pk ?>'>
 											</div><!-- item -->
 											<div class='item item-25'>
 												<label>PK 2 (PK no mód. extrangeiro (id))</label>
 												<input type='text' name='join[chave2_pk]' value='<?= $campo->join->chave2_pk ?>'>
 											</div><!-- item -->
 										</div><!-- row -->
+										<?php
+											if(CREATE_FKS)
+											{
+												?>
+												<div class='row'>
+													<div class='item item-25'>
+														<label title="Ação da chave primária no campo 1 no update">On update</label>
+														<?= renderSelectFkActions('join[chave1_on_update]', $campo->join->chave1_on_update, 'update') ?>
+													</div><!-- item -->
+													<div class='item item-25 border-right'>
+														<label title="Ação da chave primária no campo 1 no delete">On delete</label>
+														<?= renderSelectFkActions('join[chave1_on_delete]', $campo->join->chave1_on_delete, 'delete') ?>
+													</div><!-- item -->
+													<div class='item item-25'>
+														<label title="Ação da chave primária no campo 2 no update">On update</label>
+														<?= renderSelectFkActions('join[chave2_on_update]', $campo->join->chave2_on_update, 'update') ?>
+													</div><!-- item -->
+													<div class='item item-25'>
+														<label title="Ação da chave primária no campo 2 no delete">On delete</label>
+														<?= renderSelectFkActions('join[chave2_on_delete]', $campo->join->chave2_on_delete, 'delete') ?>
+													</div><!-- item -->
+												</div><!-- row -->
+												<?php
+											}
+										?>
 										<div class='row'>
 											<div class='item item-50'>
 												<label>Relação adicional <span style="cursor: help;" title="Utiliza uma função para criar uma relação adicional neste join. Recebe como parâmetro a variável $obj. Ex: getUnidadeAtiva"><i class="fa fa-question-circle"></i></span></label>
@@ -1855,6 +2013,7 @@ function getNewFieldForm($mod)
 				<li><input type='radio' name='tipo' id="tipo-checkbox" value='checkbox'/><label for="tipo-checkbox">Checkbox (múltiplos valores)</label></li>
 				<li><input type='radio' name='tipo' id="tipo-date" value='date'/><label for="tipo-date">Data com Calendário</label></li>
 				<li><input type='radio' name='tipo' id="tipo-datetime" value='datetime'/><label for="tipo-datetime">Data e Hora com Calendário</label></li>
+				<li><input type='radio' name='tipo' id="tipo-number" value='number'/><label for="tipo-number">Número</label></li>
 				<li><input type='radio' name='tipo' id="tipo-price" value='price'/><label for="tipo-price">Preço</label></li>
 				<li><input type='radio' name='tipo' id="tipo-join" value='join'/><label for="tipo-join">Join com outro Módulo</label></li>
 				<li><input type='radio' name='tipo' id="tipo-query" value='query'/><label for="tipo-query">Query (campo virtual)</label></li>
@@ -2078,6 +2237,24 @@ function runUpdateField($post_data)
 
 		$_SESSION['dbomaker_modulos'][$mod]->campo[$field]->valores = $values;
 	}
+	//number ----------------------------------------------------------------------------------------
+	elseif($post_data['tipo'] == 'number')
+	{
+		$params = array();
+		$post_params = explode("\n", trim($post_data['params']));
+		foreach($post_params as $key => $param)
+		{
+			$parts = explode(":", $param);
+			$parts = array_reverse($parts);
+			$identifier = array_pop($parts);
+			$parts = array_reverse($parts);
+			$parts = stripslashes(trim(implode(":", $parts)));
+			if(strtolower($parts) == 'false') { $parts = false; }
+			if(strtolower($parts) == 'true') { $parts = true; }
+			$params[$identifier] = $parts;
+		}
+		$_SESSION['dbomaker_modulos'][$mod]->campo[$field]->params = $params;
+	}
 	//preco ----------------------------------------------------------------------------------------
 	elseif($post_data['tipo'] == 'price')
 	{
@@ -2087,6 +2264,7 @@ function runUpdateField($post_data)
 	elseif($post_data['tipo'] == 'image')
 	{
 		$_SESSION['dbomaker_modulos'][$mod]->campo[$field]->allow_canvas_expansion = $post_data['allow_canvas_expansion'] == 'true' ? true : false;
+		$_SESSION['dbomaker_modulos'][$mod]->campo[$field]->allow_size_expansion = $post_data['allow_size_expansion'] == 'true' ? true : false;
 		$image = array();
 		foreach($post_data['dbo_image_array'] as $key => $value)
 		{
@@ -2129,6 +2307,16 @@ function runUpdateField($post_data)
 		$join->chave = $post_data['join']['chave'];
 		$join->valor = $post_data['join']['valor'];
 		$join->order_by = $post_data['join']['order_by'];
+
+		//foreign key actions
+		if(strlen(trim($post_data['join']['on_update'])))
+		{
+			$join->on_update = $post_data['join']['on_update'];
+		}
+		if(strlen(trim($post_data['join']['on_delete'])))
+		{
+			$join->on_delete = $post_data['join']['on_delete'];
+		}
 
 		//verificando metodo de retorno
 		if(strlen(trim($post_data['join']['metodo_retorno'])))
@@ -2227,6 +2415,12 @@ function runUpdateField($post_data)
 			{
 				unset($join->relacao_adicional_funcao);
 			}
+
+			//setando ações das constraints
+			$join->chave1_on_update = $post_data['join']['chave1_on_update'];
+			$join->chave1_on_delete = $post_data['join']['chave1_on_delete'];
+			$join->chave2_on_update = $post_data['join']['chave2_on_update'];
+			$join->chave2_on_delete = $post_data['join']['chave2_on_delete'];
 		}
 
 		//finally, updates the session.
@@ -2320,7 +2514,7 @@ function runNewField($post_data)
 	$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->coluna = "temporary_field_key_5658";
 
 	//inicial default definitions (custom type)
-	$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->type = "VARCHAR(255)";
+	$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->type = "VARCHAR(190)";
 	$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->pk = false;
 	$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->isnull = false;
 	$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->tipo = 'text';
@@ -2353,7 +2547,7 @@ function runNewField($post_data)
 	//Input text
 	elseif($post_data['tipo'] == 'text')
 	{
-		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->type = "VARCHAR(255)";
+		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->type = "VARCHAR(190)";
 		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->tipo = 'text';
 		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->lista = true;
 		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->order = true;
@@ -2385,7 +2579,7 @@ function runNewField($post_data)
 	//Password
 	elseif($post_data['tipo'] == 'password')
 	{
-		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->type = "VARCHAR(255)";
+		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->type = "VARCHAR(190)";
 		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->tipo = 'password';
 	}
 	//Imagem
@@ -2394,6 +2588,30 @@ function runNewField($post_data)
 		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->type = "TEXT";
 		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->tipo = 'image';
 		$_SESSION['dbomaker_controls']['show_field_type'] = TRUE;
+			$image = new Obj();
+			$image->width = 1920;
+			$image->height = 1600;
+			$image->prefix = '';
+			$image->quality = 75;
+		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->image[] = $image;
+			$image = new Obj();
+			$image->width = 1200;
+			$image->height = 1200;
+			$image->prefix = 'large-';
+			$image->quality = 80;
+		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->image[] = $image;
+			$image = new Obj();
+			$image->width = 800;
+			$image->height = 800;
+			$image->prefix = 'medium-';
+			$image->quality = 80;
+		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->image[] = $image;
+			$image = new Obj();
+			$image->width = 400;
+			$image->height = 400;
+			$image->prefix = 'small-';
+			$image->quality = 90;
+		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->image[] = $image;
 	}
 	//File
 	elseif($post_data['tipo'] == 'file')
@@ -2404,13 +2622,13 @@ function runNewField($post_data)
 	//Mídia
 	elseif($post_data['tipo'] == 'media')
 	{
-		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->type = "VARCHAR(255)";
+		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->type = "VARCHAR(190)";
 		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->tipo = 'media';
 	}
 	//Select
 	elseif($post_data['tipo'] == 'select')
 	{
-		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->type = "VARCHAR(255)";
+		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->type = "VARCHAR(190)";
 		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->tipo = 'select';
 		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->lista = true;
 		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->order = true;
@@ -2420,7 +2638,7 @@ function runNewField($post_data)
 	//Radio
 	elseif($post_data['tipo'] == 'radio')
 	{
-		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->type = "VARCHAR(255)";
+		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->type = "VARCHAR(190)";
 		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->tipo = 'radio';
 		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->lista = true;
 		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->order = true;
@@ -2456,7 +2674,17 @@ function runNewField($post_data)
 		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->isnull = true;
 		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->classes = 'datetimepick';
 	}
-	//Datetime
+	//Number
+	elseif($post_data['tipo'] == 'number')
+	{
+		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->type = "DOUBLE";
+		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->tipo = 'number';
+		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->lista = true;
+		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->order = true;
+		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->filter = true;
+		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->isnull = true;
+	}
+	//Price
 	elseif($post_data['tipo'] == 'price')
 	{
 		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->type = "DOUBLE";
@@ -2477,7 +2705,7 @@ function runNewField($post_data)
 	//Join
 	elseif($post_data['tipo'] == 'query')
 	{
-		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->type = "VARCHAR(255)";
+		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->type = "VARCHAR(190)";
 		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->tipo = 'query';
 		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->add = false;
 		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->edit = false;
@@ -2584,7 +2812,7 @@ function runNewField($post_data)
 	{
 		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->titulo = "Deletado Porque";
 		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->coluna = "deleted_because";
-		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->type = "VARCHAR(255)";
+		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->type = "VARCHAR(190)";
 		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->tipo = 'text';
 		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->add = false;
 		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->edit = false;
@@ -2619,7 +2847,7 @@ function runNewField($post_data)
 	{
 		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->titulo = "Permalink";
 		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->coluna = "permalink";
-		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->type = "VARCHAR(255)";
+		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->type = "VARCHAR(190)";
 		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->tipo = 'text';
 		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->add = false;
 		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->edit = false;
@@ -2830,6 +3058,7 @@ function runUpdateModule($post_data)
 	$_SESSION['dbomaker_modulos'][$mod]->titulo_listagem = stripslashes($post_data['titulo_listagem']);
 	$_SESSION['dbomaker_modulos'][$mod]->classes_listagem = stripslashes($post_data['classes_listagem']);
 	$_SESSION['dbomaker_modulos'][$mod]->force_order_by = stripslashes($post_data['force_order_by']);
+	$_SESSION['dbomaker_modulos'][$mod]->table_engine = stripslashes($post_data['table_engine']);
 	$_SESSION['dbomaker_modulos'][$mod]->module_icon = stripslashes($post_data['module_icon']);
 	$_SESSION['dbomaker_modulos'][$mod]->insert_button_text = stripslashes($post_data['insert_button_text']);
 
@@ -3179,6 +3408,10 @@ function writeModuleFile($mod)
 			fwrite($fh, "\$module->force_order_by = '".singleScape($module->force_order_by)."';\n");
 		}
 		fwrite($fh, "\$module->order_by = '".($module->force_order_by ? $module->force_order_by : $module->order_by)."';\n");
+		if(strlen($module->table_engine))
+		{
+			fwrite($fh, "\$module->table_engine = '".singleScape($module->table_engine)."';\n");
+		}
 
 		/* WRITES THE FIELD DEFINITIONS */
 
@@ -3217,6 +3450,10 @@ function writeModuleFile($mod)
 					}
 					fwrite($fh, "\$field->pk = ".(($field->pk === true)?('true'):('false')).";\n");
 					fwrite($fh, "\$field->isnull = ".(($field->isnull === true)?('true'):('false')).";\n");
+					if(strlen($field->unique))
+					{
+						fwrite($fh, "\$field->unique = true;\n");
+					}
 					fwrite($fh, "\$field->add = ".(($field->add === true)?('true'):('false')).";\n");
 					fwrite($fh, "\$field->valida = ".(($field->valida === true)?('true'):('false')).";\n");
 					fwrite($fh, "\$field->edit = ".(($field->edit === true)?('true'):('false')).";\n");
@@ -3294,6 +3531,19 @@ function writeModuleFile($mod)
 						}
 						fwrite($fh, ");\n");
 					}
+					//number
+					elseif($field->tipo == 'number')
+					{
+						if(is_array($field->params))
+						{
+							fwrite($fh, "\$field->params = array(\n");
+							foreach($field->params as $key => $value)
+							{
+								fwrite($fh, "\t'".$key."' => ".(($value === true)?("true"):((($value === false)?("false"):("'".singleScape($value)."'")))).",\n");
+							}
+							fwrite($fh, ");\n");
+						}
+					}
 					//price
 					elseif($field->tipo == 'price')
 					{
@@ -3305,6 +3555,10 @@ function writeModuleFile($mod)
 						if($field->allow_canvas_expansion)
 						{
 							fwrite($fh, "\$field->allow_canvas_expansion = true;\n");
+						}
+						if($field->allow_size_expansion)
+						{
+							fwrite($fh, "\$field->allow_size_expansion = true;\n");
 						}
 						if(is_array($field->image))
 						{
@@ -3346,6 +3600,16 @@ function writeModuleFile($mod)
 						fwrite($fh, "\t\$join->modulo = '".$field->join->modulo."';\n");
 						fwrite($fh, "\t\$join->chave = '".$field->join->chave."';\n");
 						fwrite($fh, "\t\$join->valor = '".$field->join->valor."';\n");
+
+						//constraints
+						if(strlen(trim($field->join->on_update)))
+						{
+							fwrite($fh, "\t\$join->on_update = '".$field->join->on_update."';\n");
+						}
+						if(strlen(trim($field->join->on_delete)))
+						{
+							fwrite($fh, "\t\$join->on_delete = '".$field->join->on_delete."';\n");
+						}
 						
 						//checando se vai ajax
 						if($field->join->ajax == 1)
@@ -3380,6 +3644,24 @@ function writeModuleFile($mod)
 							if(strlen(trim($field->join->relacao_adicional_funcao)))
 							{
 								fwrite($fh, "\t\$join->relacao_adicional_funcao = '".$field->join->relacao_adicional_funcao."';\n");
+							}
+
+							//constraints
+							if(strlen(trim($field->join->chave1_on_update)))
+							{
+								fwrite($fh, "\t\$join->chave1_on_update = '".$field->join->chave1_on_update."';\n");
+							}
+							if(strlen(trim($field->join->chave1_on_delete)))
+							{
+								fwrite($fh, "\t\$join->chave1_on_delete = '".$field->join->chave1_on_delete."';\n");
+							}
+							if(strlen(trim($field->join->chave2_on_update)))
+							{
+								fwrite($fh, "\t\$join->chave2_on_update = '".$field->join->chave2_on_update."';\n");
+							}
+							if(strlen(trim($field->join->chave2_on_delete)))
+							{
+								fwrite($fh, "\t\$join->chave2_on_delete = '".$field->join->chave2_on_delete."';\n");
 							}
 						}
 						//checando se foi definido um metodo de retorno

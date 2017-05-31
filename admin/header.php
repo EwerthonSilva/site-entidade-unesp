@@ -12,6 +12,7 @@
 	<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
 
 	<title><?= SYSTEM_NAME ?> - <?= SYSTEM_DESCRIPTION ?></title>
+	<?= ALLOW_ADMIN_INDEXING !== true ? '<meta name="robots" content="noindex, nofollow">' : '' ?>
 	<meta name="description" content="">
 	<meta name="author" content="Peixe Laranja">
 	<base href="<?= preg_replace('#/dbo$#', '', DBO_URL) ?>/">
@@ -26,6 +27,7 @@
 	<link rel="stylesheet" media="screen" href="css/style-dbo.css">
 	<link rel="stylesheet" media="screen" href="fonts/museo-sans/stylesheet.css">
 	<link rel="stylesheet" media="screen" href="fonts/font-awesome/css/font-awesome.css">
+	<link rel="stylesheet" media="screen" href="css/animate.css">
 	<?= file_exists(DBO_PATH.'/../css/style.css') ? '<link rel="stylesheet" media="screen" href="css/style.css">' : '' ?>
 
 	<?php $hooks->do_action('head') ?>

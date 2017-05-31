@@ -56,7 +56,14 @@
 			$json_result = $uploaded_file_data;
 
 			//aqui temos que fazer os resamples das imagens, baseado nos tamanhos definidos no sistema.
-			resampleThumbs($new_file_name, $file_path);
+			if(dboGetFileType($new_file_name) == 'video')
+			{
+				//does nothing
+			}
+			else
+			{
+				resampleThumbs($new_file_name, $file_path);
+			}
 
 			//criando uma página do tipo midia, caso exista a classe de páginas.
 			if(class_exists('pagina'))
@@ -66,6 +73,7 @@
 					'modulo' => $_POST['modulo'],
 					'modulo_id' => $_POST['modulo_id'],
 					'update_slug' => true,
+					'media_type' => dboGetFileType($new_file_name),
 				));
 			}
 		}

@@ -25,6 +25,7 @@ else{
 		!strlen(trim($_POST['cidade']))				||
 		!strlen(trim($_POST['uf']))				||
 		!strlen(trim($_POST['formacao']))          ||
+		!strlen(trim($_POST['cep']))          ||
 		!strlen(trim($_POST['faculdade']))
 		){
 			$error = "Erro: Todos os campos são obrigatórios";
@@ -50,7 +51,11 @@ else{
 
 			foreach($_POST['palestra'] as $key => $value){
 				ob_start();
+
 				$pal = new palestra($value);
+				if(($pal->tem_desconto = 1)&&(substr($_POST['email'], strrpos($_POST['email'],"@"))=='@allpharmajr.com.br')){
+					$pal->valor = $pal->valor - $pal->valor_desconto;
+				}
 				$palestras[] = $pal->titulo.' - R$ '.number_format($pal->valor, 2, ',', '.');
 				$valor_total += $pal->valor;
 				$mensagem = $pal->_evento->instrucao_pagamento;
@@ -68,6 +73,7 @@ else{
 				}
 				$ins->palestra = $value;
 				$ins->cpf = $_POST['cpf'];
+				$ins->cep = $_POST['cep'];
 				$ins->endereco = $_POST['logradouro'].', '.$_POST['numero'].', '.$_POST['bairro']."\n".$_POST['cidade'].'/'.$_POST['estado'];
 				$ins->forma_pagamento = $_POST['forma_pagamento'];
 				$ins->save();
@@ -81,27 +87,28 @@ else{
 					<h1>Sucesso!</h1>
 					<p>Sua inscrição foi efetuada com sucesso.</p>
 				</div>
-			</div>
-			<?
-			if($valor_total != 0){
-				if(($mensagem != '')&&($mensagem != NULL)){
-					?>
-					<div class="row">
+				<?
+				if($valor_total != 0){
+					if(($mensagem != '')&&($mensagem != NULL)){
+						?>
+						<div class="row">
+							<div class="obrigado text-center large-12 columns">
+								<?= dboMarkdown($mensagem) ?>
+								<p>Obrigado!</p>
+							</div>
+						</div>
+						<?
+					}else {
+						?>
 						<div class="obrigado text-center large-12 columns">
-							<?= dboMarkdown($mensagem) ?>
+							<p>Você receberá o boleto em até 3 dias, com prazo para pagamento de 7 dias após o recebimento.</p>
 							<p>Obrigado!</p>
 						</div>
-					</div>
-					<?
-				}else {
+						<?
+					}
 					?>
-					<div class="obrigado text-center large-12 columns">
-						<p>Você receberá o boleto em até 3 dias, com prazo para pagamento de 7 dias após o recebimento.</p>
-						<p>Obrigado!</p>
-					</div>
-					<?
-				}
-
+				</div>
+				<?php
 			}
 			$to = $_POST['email'];
 			$subject =  SYSTEM_NAME."- Confirmação de Inscrição";

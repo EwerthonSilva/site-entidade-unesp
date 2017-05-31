@@ -30,7 +30,7 @@ class dboUI
 				else
 				{
 					?>
-					<input type="text" name="<?= $name ?>" id="" value="" class="<?= (($required)?('required'):('')) ?> <?= $classes ?>" <?= (($required)?('required'):('')) ?>/>
+					<input type="text" name="<?= $name ?>" id="" value="" class="<?= (($required)?('required'):('')) ?> <?= $classes ?>" <?= (($required)?('required'):('')) ?> placeholder="<?= htmlSpecialChars($placeholder) ?>"/>
 					<?
 				}
 			}
@@ -46,7 +46,7 @@ class dboUI
 				else
 				{
 					?>
-					<input type="text" name="<?= $name ?>" id="" value="<?= (($edit_function)?($edit_function(htmlSpecialChars($value))):(htmlSpecialChars($value))) ?>" class="<?= (($required)?('required'):('')).' '.$classes ?>" data-name="<?= $titulo ?>" <?= (($required)?('required'):('')) ?>/>
+					<input type="text" name="<?= $name ?>" id="" value="<?= (($edit_function)?($edit_function(htmlSpecialChars($value))):(htmlSpecialChars($value))) ?>" class="<?= (($required)?('required'):('')).' '.$classes ?>" data-name="<?= $titulo ?>" <?= (($required)?('required'):('')) ?> placeholder="<?= htmlSpecialChars($placeholder) ?>"/>
 					<?
 				}
 			}
@@ -192,31 +192,41 @@ class dboUI
 			<?
 		}
 		//---------------------------------------------------------------------------------------------
+		// NUMBER--------------------------------------------------------------------------------------
+		//---------------------------------------------------------------------------------------------
+		elseif($field_type == 'number')
+		{
+			$params['decimals'] = $params['decimals'] ?: 0;
+
+			//montando a lista de data-attributes para o autoNumeric
+			if($params['thousand_separator']) { $number_data_attrs['a-sep'] = $params['thousand_separator']; }
+			if($params['decimal_separator']) { $number_data_attrs['a-dec'] = $params['decimal_separator']; }
+			if($params['sufix']) { $number_data_attrs['a-sign'] = ' '.$params['sufix']; $number_data_attrs['p-sign'] = 's'; }
+			if($params['prefix']) { $number_data_attrs['a-sign'] = $params['prefix'].' '; $number_data_attrs['p-sign'] = 'p'; }
+			if($params['min_value']) { $number_data_attrs['v-min'] = $params['min_value']; }
+			if($params['max_value']) { $number_data_attrs['v-max'] = $params['max_value']; }
+			if($params['decimals']) { $number_data_attrs['m-dec'] = $params['decimals']; }
+
+			//caractere alternativo para casas decimais (digitável)
+			$number_data_attrs['alt-dec'] = '.';
+			
+			//colocando o numero no padrão númerico padrão, separado por . e sem milhares
+			$value = (($value != null && $value != '')?(number_format($value, $params['decimals'], '.', '')):(null));
+			?>
+			<input type="text" name="<?= $name ?>" id="" data-name="<?= $titulo ?>" value="<?= (($edit_function)?($edit_function(htmlSpecialChars($value))):(htmlSpecialChars($value))) ?>" class="<?= (($required)?('required'):(''))." number auto-numeric text-right ".$classes ?>" <?= (($required)?('required'):('')) ?> placeholder="<?= htmlSpecialChars($placeholder) ?>" <?= dboParseDataAttributes($number_data_attrs) ?> />
+			<?php
+			dboUI::fieldJS('number');
+		}
+		//---------------------------------------------------------------------------------------------
 		// PRICE --------------------------------------------------------------------------------------
 		//---------------------------------------------------------------------------------------------
 		elseif($field_type == 'price')
 		{
 			//especifico do campo
-			$value = (($value != null && $value != '')?(number_format($value, 2, '', '.')):(null));
-			if(!$input_only)
-			{
-				?>
-				<div class="row collapse">
-					<div class="small-10 columns">
-				<?php
-			}
+			$value = (($value != null && $value != '')?(number_format($value, 2, '.', '')):(null));
 			?>
-					<input type="text" name="<?= $name ?>" id="" data-name="<?= $titulo ?>" value="<?= (($edit_function)?($edit_function(htmlSpecialChars($value))):(htmlSpecialChars($value))) ?>" class="<?= (($required)?('required'):(''))." price price-".$formato." text-right ".$classes ?>" <?= (($required)?('required'):('')) ?>/>
+				<input type="text" name="<?= $name ?>" id="" data-name="<?= $titulo ?>" value="<?= (($edit_function)?($edit_function(htmlSpecialChars($value))):(htmlSpecialChars($value))) ?>" class="<?= (($required)?('required'):(''))." price price-".$formato." text-right ".$classes ?>" <?= (($required)?('required'):('')) ?> placeholder="<?= htmlSpecialChars($placeholder) ?>" />
 			<?php
-			if(!$input_only)
-			{
-				?>
-					</div>
-					<div class="small-2 columns"><span class="postfix radius pointer trigger-clear-closest-input" title="Limpar o valor do preço"><i class="fa fa-times"></i></span></div>
-				</div>
-				<?php
-			}
-			dboUI::jsSnippet('trigger-clear-closest-input');
 			dboUI::fieldJS('price');
 		}
 		//---------------------------------------------------------------------------------------------
@@ -683,6 +693,7 @@ class dboUI
 
 	static function fieldJS($field_type, $params = array())
 	{
+		global $_system;
 		extract($params);
 		if($field_type == 'textarea-rich')
 		{
@@ -817,7 +828,18 @@ class dboUI
 					new ContentTools.Style('Margem inferior 4x', 'margin-bottom-4x', ['p', 'h1', 'h2', 'h3', 'iframe']),
 					new ContentTools.Style('Maiúsculas', 'uppercase', ['p', 'h1', 'h2', 'h3']),
 					new ContentTools.Style('Citação', 'quote', ['p', 'h1', 'h2', 'h3']),
+					new ContentTools.Style('Nova linha', 'clear-both', ['p', 'h1', 'h2', 'h3']),
 					new ContentTools.Style('Largura máxima', 'width-100', ['img']),
+					<?
+						foreach((array)$_system['content_tools']['styles'] as $value)
+						{
+							list($ct_title, $ct_class, $ct_tags) = $value;
+							$ct_tags = explode(' ', $ct_tags);
+							$ct_tags = array_filter($ct_tags);
+							$ct_styles[] = "new ContentTools.Style('".$ct_title."', '".$ct_class."', ['".implode("','", $ct_tags)."'])";
+						}
+						echo implode(",", (array)$ct_styles);
+					?>
 				]);
 
 				/* setando o editor para utilizar h2 e h3 */
@@ -876,26 +898,37 @@ class dboUI
 			//dboRegisterDocReady(singleLine(ob_get_clean()), true, 'field_content_tools');
 			dboRegisterDocReady(ob_get_clean(), true, 'field_content_tools');
 		}
+		elseif($field_type == 'number')
+		{
+			ob_start();
+			?>
+			$('.auto-numeric').autoNumeric('init');
+			<?
+			dboRegisterDboInit(singleLine(ob_get_clean()), true, 'field_number');
+		}
 		elseif($field_type == 'price')
 		{
 			ob_start();
 			?>
-			$('.price.price-real').priceFormat({
-				prefix: 'R$ ',
-				centsSeparator: ',',
-				thousandsSeparator: '.'
+			$('.price.price-real').autoNumeric('init', {
+				aSign: 'R$ ',
+				aDec: ',',
+				aSep: '.',
+				altDec: '.'
 			});
 
-			$('.price.price-generico').priceFormat({
-				prefix: '$ ',
-				centsSeparator: ',',
-				thousandsSeparator: '.'
+			$('.price.price-generico').autoNumeric('init', {
+				aSign: '$ ',
+				aDec: ',',
+				aSep: '.',
+				altDec: '.'
 			});
 
-			$('.price.price-dolar').priceFormat({
-				prefix: 'US$ ',
-				centsSeparator: '.',
-				thousandsSeparator: ','
+			$('.price.price-dolar').autoNumeric('init', {
+				aSign: 'US$ ',
+				aDec: '.',
+				aSep: ',',
+				altDec: '.'
 			});
 			<?
 			dboRegisterDboInit(singleLine(ob_get_clean()), true, 'field_price');
@@ -1105,7 +1138,7 @@ class dboUI
 		//senão, trata as informações.
 		if($field_type == 'text')
 		{
-			return strlen(trim($raw_value)) ? $raw_value : (($isnull)?($dbo->null()):(''));
+			return strlen(trim((string)$raw_value)) ? (string)$raw_value : (($isnull)?($dbo->null()):(''));
 		}
 		elseif($field_type == 'password')
 		{
@@ -1114,7 +1147,7 @@ class dboUI
 		}
 		elseif($field_type == 'textarea')
 		{
-			return strlen(trim($raw_value)) ? $raw_value : (($isnull)?($dbo->null()):(''));
+			return strlen(trim((string)$raw_value)) ? (string)$raw_value : (($isnull)?($dbo->null()):(''));
 		}
 		elseif($field_type == 'textarea-rich')
 		{
@@ -1139,6 +1172,26 @@ class dboUI
 			{
 				return $isnull ? $dbo->null() : '';
 			}
+		}
+		elseif($field_type == 'number')
+		{
+			//antes de mais nada resmovemos o sufixo/prefixo
+			if($params['prefix']) { $valor_number = str_replace($params['prefix'].' ', '', $raw_value); }
+			elseif($params['sufix']) { $valor_number = str_replace(' '.$params['sufix'], '', $raw_value); }
+			
+			//tirando qualquer espaço que sobrou
+			$valor_number = trim($valor_number);
+
+			//agora trocamos o separador de decimais por um token
+			$valor_number = str_replace($params['decimal_separator'], '҉', $valor_number);
+
+			//agora removemos os milhares
+			$valor_number = str_replace($params['thousand_separator'], '', $valor_number);
+
+			//e colocamos ponto no local do separador maluco
+			$valor_number = str_replace('҉', '.', $valor_number);
+
+			return $isnull && !strlen(trim($valor_number)) ? $dbo->null() : $valor_number;
 		}
 		elseif($field_type == 'price')
 		{
@@ -1300,8 +1353,6 @@ class dboUI
 				//classe para fazer resize das imagens
 				include_once(DBO_PATH."/core/classes/simpleimage.php");
 
-
-
 				foreach($image as $chave2 => $valor2) //processando o resize para todos os tamanhos das imagens
 				{
 					$valor2 = (array)$valor2;
@@ -1309,26 +1360,48 @@ class dboUI
 					$h = $valor2['height'];
 					$q = $valor2['quality'];
 					$image_prefix = $valor2['prefix'];
-					$image = new SimpleImage();
-					$image->load($hosted_file_path);
+					$img = new SimpleImage();
+					$img->load($hosted_file_path);
+
+					//para cada situação, verifica se pode redimensionar para maior
 					if($w && !$h)
 					{
-						$image->resizeToWidth($w);
+						if($img->getWidth() > $w || $allow_size_expansion)
+						{
+							$img->resizeToWidth($w);
+						}
 					}
 					elseif ($h && !$w)
 					{
-						$image->resizeToHeight($h);
+						if($img->getHeight() > $h || $allow_size_expansion)
+						{
+							$img->resizeToHeight($h);
+						}
 					}
 					else
 					{
-						if($w >= $h) {
-							$image->resizeToWidth($w);
+						if($img->getWidth() >= $img->getHeight()) {
+							if($img->getWidth() > $w || $allow_size_expansion)
+							{
+								$img->resizeToWidth($w);
+							}
+							elseif($img->getHeight() > $h || $allow_size_expansion)
+							{
+								$img->resizeToHeight($h);
+							}
 						} else {
-							$image->resizeToHeight($h);
+							if($img->getHeight() > $h || $allow_size_expansion)
+							{
+								$img->resizeToHeight($h);
+							}
+							elseif($img->getWidth() > $w || $allow_size_expansion)
+							{
+								$img->resizeToWidth($w);
+							}
 						}
 					}
 					$file_path = DBO_PATH."/upload/images/".$image_prefix.$raw_value;
-					$image->save($file_path, $q); //salvando o arquivo no server
+					$img->save($file_path, $q); //salvando o arquivo no server
 				}
 			}
 
