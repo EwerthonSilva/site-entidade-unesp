@@ -16,3 +16,5 @@
 	RewriteRule ^([a-zA-Z0-9-_]+)/?$ pagina.php?slug=$1&%{QUERY_STRING} [NC,L]
 
 </IfModule>
+Header add Access-Control-Allow-Origin "*"
+Header add Access-Control-Allow-Methods: "GET,POST,OPTIONS,DELETE,PUT"
