@@ -34,8 +34,8 @@ if(!class_exists('palestra'))
 		{
 			$total = $this->vagas;
 			$sql = "SELECT COUNT(*) AS total FROM inscricao WHERE palestra = '".$this->id."'";
-			$res = mysql_query($sql);
-			$lin = mysql_fetch_object($res);
+			$res = dboQuery($sql);
+			$lin = dboFetchObject($res);
 			return $total - $lin->total;
 		}
 
