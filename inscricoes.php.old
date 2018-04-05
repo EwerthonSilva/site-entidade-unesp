@@ -65,18 +65,7 @@ elseif(siteConfig()->background_image)
 			</header>
 			<?php
 			if((dboNow() >= $ev->data_insc_i) && (dboNow() <= $ev->data_insc_f)){
-				$data_parcelamento = explode("\n",$ev->data_final_parcelamento );
-				foreach ($data_parcelamento as $key => $value) {
-					foreach (explode("=>", $value) as $k => $val) {
-						if($k == 0){
-							$aux = $val;
-						}else{
-							$data = explode('-',$val);
-							$val = trim($data[2])."-".trim($data[1])."-".trim($data[0]);
-							$parcelamento[$aux] = trim($val);
-						}
-					}
-				}
+
 				$pal= new palestra("WHERE evento = '".$ev->id."' ORDER BY data, horario");
 				if($pal->size())
 				{
@@ -158,17 +147,17 @@ elseif(siteConfig()->background_image)
 													<label for="email">E-mail</label>
 													<input type="email" name="email" required="">
 												</div>
-
 												<div id="forma-pagamento-input" class="large-4 columns">
 													<label for="forma_pagamento">Forma de pagamento</label>
 													<select name="forma_pagamento">
 														<option value="à vista">À vista</option>
 														<?php
-														foreach ($parcelamento as $key => $value) {
-															$hoje = dboNow('date');
-															if($hoje <= $value){
-																echo '<option value="'.$key.'">'.$key.'</option>';
-															}
+														//TODO MUDAR A DATA MANUAL PARA UMA VARIÁVEL DO MODULO DE ATIVIDADE
+														if(dboNow('date') <= '2018-05-03'){
+															echo '<option value="2x">2x</option>';
+														}
+														if(dboNow('date') <= '2018-03-16'){
+															echo '<option value="3x">3x</option>';
 														}
 														?>
 													</select>

@@ -16,25 +16,25 @@ else{
 		}
 
 		if(
-		!strlen(trim($_POST['nome']))         ||
-		!strlen(trim($_POST['cpf']))        ||
-		!strlen(trim($_POST['email']))     ||
-		!strlen(trim($_POST['logradouro']))		||
-		!strlen(trim($_POST['numero']))				||
-		!strlen(trim($_POST['bairro']))				||
-		!strlen(trim($_POST['cidade']))				||
-		!strlen(trim($_POST['uf']))				||
-		!strlen(trim($_POST['formacao']))          ||
-		!strlen(trim($_POST['cep']))          ||
-		!strlen(trim($_POST['faculdade']))
+			!strlen(trim($_POST['nome']))         ||
+			!strlen(trim($_POST['cpf']))        ||
+			!strlen(trim($_POST['email']))     ||
+			!strlen(trim($_POST['logradouro']))		||
+			!strlen(trim($_POST['numero']))				||
+			!strlen(trim($_POST['bairro']))				||
+			!strlen(trim($_POST['cidade']))				||
+			!strlen(trim($_POST['uf']))				||
+			!strlen(trim($_POST['formacao']))          ||
+			!strlen(trim($_POST['cep']))          ||
+			!strlen(trim($_POST['faculdade']))
 		){
 			$error = "Erro: Todos os campos são obrigatórios";
 		}
 
 		if($_POST['formacao'] == 'Graduação'){
 			if(
-			!strlen(trim($_POST['periodo'])) ||
-			!strlen(trim($_POST['ano']))
+				!strlen(trim($_POST['periodo'])) ||
+				!strlen(trim($_POST['ano']))
 			){
 				$error = "Erro: Todos os campos são obrigatórios";
 			}
@@ -91,12 +91,12 @@ else{
 				if($valor_total != 0){
 					if(($mensagem != '')&&($mensagem != NULL)){
 						?>
-						<div class="row">
-							<div class="obrigado text-center large-12 columns">
-								<?= dboMarkdown($mensagem) ?>
-								<p>Obrigado!</p>
-							</div>
+
+						<div class="obrigado text-center large-12 columns">
+							<?= dboMarkdown($mensagem) ?>
+							<p>Obrigado!</p>
 						</div>
+						
 						<?
 					}else {
 						?>

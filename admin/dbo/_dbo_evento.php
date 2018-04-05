@@ -1,7 +1,7 @@
 <?
 
 /* ================================================================================================================== */
-/* DBO DEFINITION FILE FOR MODULE 'evento' ====================================== AUTO-CREATED ON 30/11/2016 09:55:29 */
+/* DBO DEFINITION FILE FOR MODULE 'evento' ====================================== AUTO-CREATED ON 05/04/2018 12:30:43 */
 /* ================================================================================================================== */
 
 
@@ -23,6 +23,7 @@ $module->preload_insert_form = true;
 $module->auto_view = false;
 $module->ignore_permissions = false;
 $module->order_by = '3';
+$module->table_engine = 'MyISAM';
 
 /* FIELDS =========================================================================================================== */
 
@@ -64,6 +65,7 @@ $field->tipo = 'text';
 $module->campo[$field->coluna] = $field;
 
 /*==========================================*/
+
 $field = new Obj();
 $field->titulo = 'Imagem de Fundo';
 $field->coluna = 'background_image';
@@ -130,7 +132,6 @@ $field->tipo = 'textarea';
 $field->rows = 5;
 $module->campo[$field->coluna] = $field;
 
-
 /*==========================================*/
 
 $field = new Obj();
@@ -173,14 +174,37 @@ $module->campo[$field->coluna] = $field;
 
 /*==========================================*/
 
+$field = new Obj();
+$field->titulo = 'Data final parcelamento';
+$field->coluna = 'data_final_parcelamento';
+$field->dica = 'Utilizar o seguinte formato: 2x=>dd-mm-aaaa (dia-mês-ano) 1 por linha, não deixar linha em branco';
+$field->pk = false;
+$field->isnull = false;
+$field->add = true;
+$field->valida = false;
+$field->edit = true;
+$field->view = true;
+$field->lista = false;
+$field->filter = false;
+$field->order = false;
+$field->type = 'TEXT';
+$field->interaction = '';
+$field->classes = 'autosize';
+$field->tipo = 'textarea';
+$field->rows = 3;
+$module->campo[$field->coluna] = $field;
+
+/*==========================================*/
+
 /* GRID FOR THE FORM LAYOUT ========================================================================================= */
 
 $grid = array();
 
-$grid[] = array('6.no-margin', '6');
+$grid[] = array('6.no-margin','6');
 $grid[] = array('12');
 $grid[] = array('12');
 $grid[] = array('4','4.end');
+$grid[] = array('12');
 
 $module->grid = $grid;
 
