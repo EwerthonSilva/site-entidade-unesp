@@ -1,7 +1,6 @@
 <?
 	require_once('lib/includes.php');
-
-	
+	require_once(DBO_PATH.'/core/classes/DboMediaManager.php');
 
 	if(!secureUrl())
 	{
@@ -194,6 +193,41 @@
 				'exclude_id' => $pag->id,
 			));*/
 			$pag->update();
+		}
+	}
+	elseif($_GET['action'] == 'create-new-folder')
+	{
+		$dmm = new DboMediaManager();
+		//antes de mais nada verifica se existem caracteres inválidos no nome da pasta. Basicamente, só não pode \ ou /
+		if(strstr($_POST['folder'], '/'))
+		{
+			$json_result['message'] = '<div class="error">Erro: O nome da pasta não pode possuir <strong>barras</strong> (/) ou <strong>barras invertidas</strong> (\).</div>';
+		}
+		elseif(!strlen(trim($_POST['folder'])))
+		{
+			$json_result['message'] = '<div class="error">Erro: o nome da pasta não pode ser <strong>em branco</strong>.</div>';
+		}
+		else
+		{
+			$dmm->setCurrentFolder($_GET['current_folder']);
+
+			//verifica se a subpasta já não existe na pasta atual
+			if(!$dmm->folderExists($_POST['folder']))
+			{
+				//criando a pasta
+				if($dmm->createFolder($_POST['folder']))
+				{
+					$json_result['message'] = '<div class="success">Erro: A pasta <strong>'.htmlSpecialChars($_POST['folder']).'</strong> foi criada com sucesso.</div>';
+				}
+				else
+				{
+					$json_result['message'] = '<div class="error">Erro a tentar criar a pasta <strong>'.htmlSpecialChars($_POST['folder']).'</strong>.</div>';
+				}
+			}
+			else
+			{
+				$json_result['message'] = '<div class="error">Erro: Já existe uma subpasta com o nome <strong>'.htmlSpecialChars($_POST['folder']).'</strong> na pasta atual.</div>';
+			}
 		}
 	}
 

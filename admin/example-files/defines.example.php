@@ -3,6 +3,24 @@
 /* configurações de conexão com o banco de dados */
 //define(DBO_DATABASE_LIB, 'mysqli');
 
+/* definições de idioma. Para o pereito funcionamento, use a linha abaixo no functions.php */
+//require_once(DBO_PATH.'/core/dbo-multi-languages.php');
+
+/* definição do idioma default do sistema */
+//$_system['dbo_default_language'] = 'en-us';
+
+/* definição do idioma ativo do sistema */
+//$_system['dbo_active_language'] = 'en-us';
+
+/* configurações de linguagem do sistema */
+//$_system['dbo_languages'] = array(
+	//'en-us' => 'English',
+	//'pt-br' => 'Português',
+//);
+
+/* instagram api token */
+//define(INSTAGRAM_TOKEN, '5778503402.1677ed0.fe72d990179e4348bb233bd7ca407512');
+
 /* define a senha mestra para login no site */
 //define(MASTER_PASSWORD, 'e771ebe40a650de43bd9ed531015268d106700b5bda5a3a98b70d9bef1577642d13f75da34d97bd6f8ca0121019d6cacf79582b2708749e3899ba5c9da1de16b');
 
@@ -97,9 +115,13 @@
 	//'descricao',
 //);
 
-/* configurações de templates para páginas do sistema */
+/* configurações de layouts e diagramação para páginas do sistema */
 //$_system['pagina_tipo']['pagina'] = array(
-	//'templates' => array(
+	//'layouts' => array( //layouts: duplique o arquivo pagina.php para outro nome, layout-algo.php a altera o que quiser. o array recebe o nome do arquivo sem .php
+		//'' => 'Pagina padrão',
+		//'layout-teste' => 'Teste',
+	//),
+	//'templates' => array( //diagramações
 		//'pagina-blank' => 'Página padrão',
 		//'pagina-template-evento-ativo' => 'Página de evento',
 	//),
@@ -138,6 +160,10 @@
 		//'categorias',
 		//'imagem_destaque',
 	//), 
+	//'templates' => array(
+		//'pagina-blank' => 'Página padrão',
+		//'pagina-chronicle' => 'Chronicle',
+	//),
 //);
 
 /* definindo configuracoes espeficidas para slugs de páginas do sistema */

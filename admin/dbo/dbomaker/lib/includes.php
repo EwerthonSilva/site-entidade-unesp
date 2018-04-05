@@ -440,7 +440,7 @@ function syncTable($module)
 				$pk = $field->coluna;
 				$sql_parts[] = "\t".$field->coluna." int(11) NOT NULL auto_increment";
 			}
-			elseif($field->tipo == 'join')
+			elseif($field->tipo == 'join' && $field->join->control_fks !== false)
 			{
 				//se o tipo da tabela for InnoDB, tenta criar as chaves
 				if($module->table_engine == 'InnoDB')
@@ -458,7 +458,7 @@ function syncTable($module)
 				$sql_parts[] = "\t".$field->coluna." ".$field->type." ".(($field->isnull)?("NULL"):("NOT NULL"));
 			}
 			//para o caso de PKs não A.I.
-			elseif($field->tipo == 'joinNN')
+			elseif($field->tipo == 'joinNN' && $field->join->control_fks !== false)
 			{
 				//montando as configurações de chave estrangeira
 				$fks[] = array(

@@ -6,9 +6,6 @@ chown www-data scss/
 chown www-data scss/foundation/
 chown www-data dbo/plugins/jcrop_dbo/
 chown www-data dbo/plugins/jcrop_dbo/temp/
-chown www-data dbo/_class_*
-chown www-data dbo/_dbo_*
-
 
 echo " "
 echo "------------------------------------------------------"

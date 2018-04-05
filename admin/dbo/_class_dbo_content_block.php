@@ -108,24 +108,36 @@ if(!class_exists('dbo_content_block'))
 				$params['markdown'] = $params['markdown'] === null ? true : $params['markdown'];
 			}
 
-			ob_start();
-			?>
-			<div class="row">
-				<div class="large-<?= $params['markdown'] ? 9 : 12 ?> columns"><label><?= $params['label'] ?><?= $params['dica'] ? ' <i data-tooltip class="fa fa-question-circle has-tip tip-top" title="'.htmlSpecialChars($params['dica']).'"></i>' : '' ?></label></div>
-				<?php
-					if($params['markdown'])
-					{
-						?>
-						<div class="large-3 columns text-right"><a href="https://guides.github.com/features/mastering-markdown/" target="_blank" class="has-tip tip-top font-14 top-minus-3" data-tooltip title="O Markdown está ativo. Clique para saber mais."><i class="fa fa-arrow-circle-down"></i></a></div>
-						<?php
-					}
+			if($params['media_context'] == 'background' && $params['field_type'] == 'media')
+			{
+				//é esperado que o params tenha um target_id, para o JS saber onde atualizar o background image.
+				//também é desejável que se tenha um "size" para o script saber qual o tamanho da imagem que deve ser inserida no BG.
+				$params['field_layout'] = 'compact';
+				ob_start();
+				echo dboUI::field($params['field_type'], 'update', false, $params);
+				return ob_get_clean();
+			}
+			else
+			{
+				ob_start();
 				?>
-			</div>
-			<span class="input input-<?= $params['field_type'] ?>">
-				<?= dboUI::field($params['field_type'], 'update', false, $params); ?>
-			</span>
-			<?php
-			return ob_get_clean();
+				<div class="row">
+					<div class="large-<?= $params['markdown'] ? 9 : 12 ?> columns"><label><?= $params['label'] ?><?= $params['dica'] ? ' <i data-tooltip class="fa fa-question-circle has-tip tip-top" title="'.htmlSpecialChars($params['dica']).'"></i>' : '' ?></label></div>
+					<?php
+						if($params['markdown'])
+						{
+							?>
+							<div class="large-3 columns text-right"><a href="https://guides.github.com/features/mastering-markdown/" target="_blank" class="has-tip tip-top font-14 top-minus-3" data-tooltip title="O Markdown está ativo. Clique para saber mais."><i class="fa fa-arrow-circle-down"></i></a></div>
+							<?php
+						}
+					?>
+				</div>
+				<span class="input input-<?= $params['field_type'] ?>">
+					<?= dboUI::field($params['field_type'], 'update', false, $params); ?>
+				</span>
+				<?php
+				return ob_get_clean();
+			}
 		}
 
 		static function smartSetAndUpdate($data_array = array(), $params = array())
@@ -133,7 +145,7 @@ if(!class_exists('dbo_content_block'))
 			global $_system;
 			extract($params);
 
-			//vericicamos se o nome da variavel começa com o idenfiticador
+			//verificamos se o nome da variavel começa com o idenfiticador
 			foreach($data_array as $key => $value)
 			{
 				if(strpos($key, 'dbo_content_block_') === 0)
@@ -145,10 +157,10 @@ if(!class_exists('dbo_content_block'))
 					$key = preg_replace('/^dbo_content_block_/is', '', $key);
 
 					//pegando o field_type
-					$field_type = dbo_content_block::getFieldType($key, array(
+					$field_type = dbo_content_block::getFieldType($key, array_merge($params, array(
 						'modulo' => $modulo,
 						'modulo_id' => $modulo_id,
-					));
+					)));
 					dbo_content_block::set($key, dboUI::fieldSQL($field_type, $value, new Obj(), array(), $data_array), $params);
 				}
 			}
@@ -158,9 +170,17 @@ if(!class_exists('dbo_content_block'))
 		{
 			global $_system;
 			extract($params);
+
 			if($modulo == 'pagina')
 			{
-				return $_system['content_block']['pagina']['slug'][$modulo_id][$key]['field_type'];
+				if(is_array($_system['content_block']['pagina']['slug'][$modulo_id][$key]))
+				{
+					return $_system['content_block']['pagina']['slug'][$modulo_id][$key]['field_type'];
+				}
+				else
+				{
+					return $_system['content_block']['pagina']['tipo'][$pagina_tipo][$key]['field_type'];
+				}
 			}
 			else
 			{

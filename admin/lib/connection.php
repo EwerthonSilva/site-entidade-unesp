@@ -10,6 +10,7 @@ if($dbo_default_link_connection = dboDatabaseConnect(DB_HOST, DB_USER, DB_PASS, 
 	dboQuery("SET character_set_connection=utf8mb4");
 	dboQuery("SET character_set_client=utf8mb4");
 	dboQuery("SET character_set_results=utf8mb4");
+	dboQuery('SET sql_mode=""');
 }
 else
 {

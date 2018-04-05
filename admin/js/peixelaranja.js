@@ -34,6 +34,10 @@ var wrapper_peixe_message;
 var peixe_fade_html_timer = 200;
 var peixe_current_url = document.URL;
 
+function closeParentModal() {
+	parent.$.colorbox.close();
+}
+
 function showPeixeMessage() {
 	clearTimeout(peixe_message_timer);
 	wrapper_peixe_message = $('div.wrapper-message');
@@ -218,6 +222,16 @@ function setPeixeMessage(message) {
 	$('div.wrapper-message').html(message);
 }
 
+function peixeReloadSelectors(string) {
+	var selectors = string.split(',');
+	peixeGet(peixe_current_url, function(d){
+		d = $.parseHTML(d);
+		selectors.forEach(function(v){
+			peixeReload(v, d);
+		})
+	})
+}
+
 function peixeReload(item, html, callback){
 	content = $(html).find(item).html();
 	if(typeof content === 'undefined'){
@@ -238,6 +252,7 @@ function peixeReload(item, html, callback){
 function showPeixeLoader() {
 	$('.peixe-ajax-loader').fadeIn('fast');
 	$('.peixe-screen-freezer').show();
+	$('body').addClass('peixe-ajax-loading').trigger('peixeAjaxStart', {});
 }
 
 (function($) {
@@ -354,6 +369,7 @@ function showPeixeLoader() {
 function hidePeixeLoader() {
 	$('.peixe-ajax-loader').delay(200).fadeOut('fast');
 	$('.peixe-screen-freezer').hide();
+	$('body').delay(200).removeClass('peixe-ajax-loading').trigger('peixeAjaxDone', {});
 }
 
 //funciona igual ao .post() de jQuery, mas com loader
@@ -706,8 +722,8 @@ $(document).ready(function(){
 	});
 
 	//tratando modais
-	/* modals */
-	$(document).on('click', '[rel="modal"]', function(e){
+	/* modais */
+	$(document).on('click', '[rel="modal"], [data-dbo-modal]', function(e){
 		e.preventDefault();
 		e.stopPropagation();
 		var c = $(this);
@@ -728,6 +744,13 @@ $(document).ready(function(){
 			openColorBoxModal(url, width, height, params);
 		}
 	});
+
+	//generico para galerias
+	if($.fn.colorbox){
+		$('[rel="gallery"]').colorbox({
+			maxHeight: '100%'
+		});
+	}
 
 	//botao de submit que só funciona com javascript, e impede dupla submissão
 	$(document).on('click', 'form .submitter', function(e){
@@ -800,7 +823,7 @@ $(document).ready(function(){
 			peixeJSON(
 				form.attr('action'), 
 				form.serialize(), 
-				'', 
+				(typeof form.attr('peixe-callback') != 'undefined' ? form.attr('peixe-callback') : false), 
 				(typeof form.attr('peixe-log') != 'undefined' ? true : false), 
 				'post', 
 				(typeof form.data('json_error_message') != 'undefined' ? form.data('json_error_message').replace(/\\n/g, '\n') : false),
@@ -826,7 +849,7 @@ $(document).ready(function(){
 			peixeJSON(
 				(clicado.data('url') ? clicado.data('url') : clicado.attr('href')),
 				'', 
-				(typeof clicado.data('callback') != 'undefined' ? clicado.data('callback') : ''), 
+				(typeof clicado.attr('peixe-callback') != 'undefined' ? clicado.attr('peixe-callback') : (typeof clicado.data('callback') != 'undefined' ? clicado.data('callback') : '')), 
 				(typeof clicado.attr('peixe-log') != 'undefined' ? true : false), 
 				'get', 
 				(typeof clicado.data('json_error_message') != 'undefined' ? clicado.data('json_error_message').replace(/\\n/g, '\n') : false),

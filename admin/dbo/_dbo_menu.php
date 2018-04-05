@@ -1,7 +1,7 @@
 <?
 
 /* ================================================================================================================== */
-/* DBO DEFINITION FILE FOR MODULE 'menu' ======================================== AUTO-CREATED ON 01/04/2016 15:49:50 */
+/* DBO DEFINITION FILE FOR MODULE 'menu' ======================================== AUTO-CREATED ON 26/12/2017 19:05:44 */
 /* ================================================================================================================== */
 
 
@@ -28,8 +28,7 @@ $module->permissoes_custom = '
 $module->bibliotecas_js = '
 	nestable
 ';
-$module->order_by = '1050';
-$module->dbo_maker_read_only = true;
+$module->order_by = '5';
 $module->table_engine = 'InnoDB';
 
 /* FIELDS =========================================================================================================== */
@@ -84,6 +83,7 @@ $field->view = false;
 $field->lista = false;
 $field->filter = false;
 $field->order = false;
+$field->multi_lang = true;
 $field->type = 'VARCHAR(255)';
 $field->interaction = '';
 $field->tipo = 'text';
@@ -122,6 +122,7 @@ $field->view = false;
 $field->lista = false;
 $field->filter = false;
 $field->order = false;
+$field->multi_lang = true;
 $field->type = 'TEXT';
 $field->interaction = '';
 $field->tipo = 'textarea';
@@ -142,6 +143,25 @@ $field->lista = false;
 $field->filter = false;
 $field->order = false;
 $field->type = 'VARCHAR(10)';
+$field->interaction = '';
+$field->tipo = 'text';
+$module->campo[$field->coluna] = $field;
+
+/*==========================================*/
+
+$field = new Obj();
+$field->titulo = 'Multi-idiomas';
+$field->coluna = 'dbo_translations';
+$field->pk = false;
+$field->isnull = false;
+$field->add = false;
+$field->valida = false;
+$field->edit = false;
+$field->view = false;
+$field->lista = false;
+$field->filter = false;
+$field->order = false;
+$field->type = 'TEXT';
 $field->interaction = '';
 $field->tipo = 'text';
 $module->campo[$field->coluna] = $field;

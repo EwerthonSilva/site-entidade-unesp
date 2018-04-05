@@ -1,4 +1,5 @@
-<? require_once("header.php"); ?>
+<?php require_once("header.php"); ?>
+<?php require_once(DBO_PATH.'/core/classes/DboMediaManager.php'); ?>
 <script src="<?= DBO_URL ?>/plugins/jcrop_dbo/js/jquery.Jcrop.min.js"></script>
 <link rel="stylesheet" href="<?= DBO_URL ?>/plugins/jcrop_dbo/css/jquery.Jcrop.css" type="text/css" />
 <style>
@@ -35,6 +36,9 @@ else
 	$selected_file = ((file_exists($media_folder_path.$_GET['file']))?($_GET['file']):(false));
 	$default_size = $_GET['default_size'] ? $_GET['default_size'] : 'medium';
 
+	//marcando a pasta atual, deixar isso melhor.
+	$dmm = new DboMediaManager();
+
 	if(!is_writable($media_folder_path))
 	{
 		?>
@@ -70,6 +74,14 @@ else
 						</div>
 					</div>
 				</div>
+				<div class="row full">
+					<div class="small-12 large-12 columns">
+						<ul class="breadcrumbs">
+							<li class="current"><a href="#">Raiz</a></li>
+						</ul>
+						<a href="#" style="margin-top: -45px; margin-right: 13px;" class="font-12 right trigger-nova-pasta" data-action="<?= secureUrl('ajax-dbo-media-manager.php?action=create-new-folder&current_folder='.dboEncode($dmm->getCurrentFolder()).'&'.CSRFVar()); ?>"><i class="fa fa-plus"></i> <span class="underline">Nova pasta</span></a>
+					</div>
+				</div>
 				<div id="block-media-list">
 					<?
 					$pag = new pagina();
@@ -88,6 +100,19 @@ else
 						?>
 						<ul class="large-block-grid-8">
 							<?
+							//mostra primeiro as pastas
+							// TODO 
+							/*foreach($dmm->getChildren() as $folder)
+							{
+								?>
+								<li class="wrapper-media-item text-center">
+									<div class="folder-item relative pointer no-select">
+										<i class="fa fa-folder-o color light" style="font-size: calc(11.3vw - 40px)"></i>
+										<div class="font-12" style="position: absolute; bottom: 0; width: 100%;"><?= $folder ?></span>
+									</div>
+								</li>
+								<?php
+							}*/
 							do {
 								?>
 								<li class="wrapper-media-item <?= (($selected_file == $pag->imagem_destaque)?('active'):('')) ?>">
@@ -480,7 +505,13 @@ function inserirMidiaAtiva(destiny) {
 		wrapper = $('#'+wrapper_id, parent.document);
 		wrapper.css('background-image', 'url("dbo/upload/dbo-media-manager/' + $('#size-selector').val() + file_name+'?='+Math.random()+'")');
 		input = $('#'+input_id, parent.document);
-		input.val('dbo/upload/dbo-media-manager/'+$('#size-selector').val() + file_name);
+
+		//a linha abaixo é o que estava antes de fazer os fields compactos. Zé 26/03/2018
+		//input.val('dbo/upload/dbo-media-manager/'+$('#size-selector').val() + file_name);
+
+		//eu troquei por essa
+		input.val(file_name);
+
 		/*wrapper.find('.media-controls-insert').hide();
 		wrapper.find('.media-controls-update').show();
 		wrapper.find('img').attr('src', 'dbo/upload/dbo-media-manager/thumbs/medium-'+file_name+'?='+Math.random());
@@ -642,6 +673,18 @@ $(document).ready(function(){
 		timer_update_media = setTimeout(function(){
 			updateMediaData();
 		}, 1200);
+	});
+
+	//criando uma nova pasta
+	$(document).on('click', '.trigger-nova-pasta', function(e){
+		e.preventDefault();
+		var c = $(this);
+		var ans = prompt("Digite o nome da nova pasta a ser criada");
+		if (ans!=null)
+		{
+			peixeJSON(c.data('action'), { folder: ans }, null, true);
+			return false;
+		}
 	});
 
 }) //doc.ready

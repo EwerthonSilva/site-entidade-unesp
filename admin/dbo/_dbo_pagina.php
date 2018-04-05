@@ -1,7 +1,7 @@
 <?
 
 /* ================================================================================================================== */
-/* DBO DEFINITION FILE FOR MODULE 'pagina' ====================================== AUTO-CREATED ON 07/06/2016 16:10:32 */
+/* DBO DEFINITION FILE FOR MODULE 'pagina' ====================================== AUTO-CREATED ON 29/03/2018 15:10:22 */
 /* ================================================================================================================== */
 
 
@@ -63,6 +63,7 @@ $field->view = false;
 $field->lista = false;
 $field->filter = false;
 $field->order = false;
+$field->multi_lang = true;
 $field->type = 'VARCHAR(255)';
 $field->interaction = '';
 $field->tipo = 'text';
@@ -82,6 +83,7 @@ $field->view = false;
 $field->lista = false;
 $field->filter = false;
 $field->order = false;
+$field->multi_lang = true;
 $field->type = 'TEXT';
 $field->interaction = '';
 $field->tipo = 'textarea';
@@ -164,6 +166,7 @@ $field->view = false;
 $field->lista = false;
 $field->filter = false;
 $field->order = false;
+$field->multi_lang = true;
 $field->type = 'TEXT';
 $field->interaction = '';
 $field->tipo = 'textarea';
@@ -184,6 +187,7 @@ $field->view = false;
 $field->lista = false;
 $field->filter = false;
 $field->order = false;
+$field->multi_lang = true;
 $field->type = 'TEXT';
 $field->interaction = '';
 $field->classes = 'tinymce';
@@ -219,6 +223,7 @@ $field->tipo = 'join';
 	$join->tamanho_minimo = '2';
 	$join->tipo = 'select';
 	$join->order_by = 'nome';
+	$join->control_fks = true;
 $field->join = $join;
 $module->campo[$field->coluna] = $field;
 
@@ -245,6 +250,7 @@ $field->tipo = 'join';
 	$join->valor = 'nome';
 	$join->tipo = 'select';
 	$join->order_by = 'nome';
+	$join->control_fks = true;
 $field->join = $join;
 $module->campo[$field->coluna] = $field;
 
@@ -290,6 +296,7 @@ $field->tipo = 'join';
 	$join->valor = 'nome';
 	$join->tipo = 'select';
 	$join->order_by = 'nome';
+	$join->control_fks = true;
 $field->join = $join;
 $module->campo[$field->coluna] = $field;
 
@@ -335,6 +342,7 @@ $field->tipo = 'join';
 	$join->valor = 'nome';
 	$join->tipo = 'select';
 	$join->order_by = 'nome';
+	$join->control_fks = true;
 $field->join = $join;
 $module->campo[$field->coluna] = $field;
 
@@ -467,6 +475,7 @@ $field->tipo = 'join';
 	$join->valor = 'titulo';
 	$join->tipo = 'select';
 	$join->order_by = 'titulo';
+	$join->control_fks = true;
 $field->join = $join;
 $module->campo[$field->coluna] = $field;
 
@@ -496,6 +505,7 @@ $field->tipo = 'joinNN';
 	$join->chave2 = 'categoria';
 	$join->tipo = 'checkbox';
 	$join->order_by = 'nome';
+	$join->control_fks = true;
 $field->join = $join;
 $module->campo[$field->coluna] = $field;
 
@@ -563,6 +573,44 @@ $module->campo[$field->coluna] = $field;
 /*==========================================*/
 
 $field = new Obj();
+$field->titulo = 'Seções';
+$field->coluna = 'dbo_section';
+$field->pk = false;
+$field->isnull = true;
+$field->add = true;
+$field->valida = false;
+$field->edit = true;
+$field->view = true;
+$field->lista = false;
+$field->filter = false;
+$field->order = false;
+$field->type = 'INT(11)';
+$field->interaction = '';
+$field->tipo = 'joinNN';
+	$join = new Obj();
+	$join->modulo = 'dbo_section';
+	$join->chave = 'id';
+	$join->valor = 'id';
+	$join->on_update = 'CASCADE';
+	$join->on_delete = 'SET NULL';
+	$join->tabela_ligacao = 'dbo_section_pagina';
+	$join->chave1 = 'pagina';
+	$join->chave2 = 'dbo_section';
+	$join->chave1_pk = 'id';
+	$join->chave2_pk = 'id';
+	$join->chave1_on_update = 'CASCADE';
+	$join->chave1_on_delete = 'CASCADE';
+	$join->chave2_on_update = 'CASCADE';
+	$join->chave2_on_delete = 'CASCADE';
+	$join->tipo = 'select';
+	$join->order_by = 'id';
+	$join->control_fks = false;
+$field->join = $join;
+$module->campo[$field->coluna] = $field;
+
+/*==========================================*/
+
+$field = new Obj();
 $field->titulo = 'Inativo';
 $field->coluna = 'inativo';
 $field->pk = false;
@@ -575,6 +623,25 @@ $field->lista = false;
 $field->filter = false;
 $field->order = false;
 $field->type = 'INT(11)';
+$field->interaction = '';
+$field->tipo = 'text';
+$module->campo[$field->coluna] = $field;
+
+/*==========================================*/
+
+$field = new Obj();
+$field->titulo = 'Multi-idiomas';
+$field->coluna = 'dbo_translations';
+$field->pk = false;
+$field->isnull = false;
+$field->add = false;
+$field->valida = false;
+$field->edit = false;
+$field->view = false;
+$field->lista = false;
+$field->filter = false;
+$field->order = false;
+$field->type = 'TEXT';
 $field->interaction = '';
 $field->tipo = 'text';
 $module->campo[$field->coluna] = $field;

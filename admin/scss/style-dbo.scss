@@ -15,13 +15,15 @@
 body { overflow-y: scroll; overflow-x: hidden; 
 	&.ct-editing {
 		.input-content-tools {
-			> *:not([data-editable]) { cursor: not-allowed; }
-			[data-editable] { cursor: default; outline: 1px dashed #ddd; outline-offset: 4px; transition: all .15s ease;
+			> *:not([data-editable]), > *:not([data-fixture]) { cursor: not-allowed; }
+			[data-editable], [data-fixture] { cursor: default; outline: 1px dashed #ddd; outline-offset: 4px; transition: all .15s ease; margin-bottom: 15px;
 				&:hover { outline: 1px dashed rgba($primary-color, .6); }
 			}
 		}
 	}
 } 
+
+input, select, textarea { font-weight: $body-font-weight; }
 
 /* jquery auto-complete */
 .ui-autocomplete { border: 1px solid #CCC; background: #FFF; max-width: 100%; padding: 10px; z-index: 9999; 
@@ -164,6 +166,17 @@ body {
 			.button-new { display: none !important; }
 		}
 	}
+	&.dbo.hide-header { 
+		padding: 1em; overflow-y: auto;
+		#main-header { display: none; }
+		#main-footer { display: none; }
+		#wrapper-dbo-top-dock { display: none !important; }
+		.wrapper-dbo-auto-admin { padding-bottom: 0; }
+		.wrapper-dbo-auto-admin .wrapper-module-id  { display: none; }
+		&.no-fixos {
+			.wrapper-dbo-auto-admin .wrapper-module-fixos { display: none; }
+		}
+	}
 }
 
 /* classes custom para a listagem */
@@ -288,7 +301,7 @@ i[class^=fa-].big-icon { font-size: 25px; }
 .settings-box { background: #333; margin-bottom: 16px; margin-top: -16px; box-shadow: inset 0px 3px 10px rgba(1,1,1,.75); color: #eee; overflow: hidden; display: none; padding-bottom: 10px; @extend .no-select; position: relative;
 	&.open { display: block; }
 	h1, h2, h3, h4, h5, h6, label { color: #eee !important; }
-	input[type="checkbox"] { display: none;
+	input[type="checkbox"] { position: absolute; width: 1px; height: 1px; opacity: 0.01;
 		&:checked+label { color: #eee !important;
 			&:before { content: '\f046'; } 
 		}
@@ -296,7 +309,7 @@ i[class^=fa-].big-icon { font-size: 25px; }
 			&:before { content: '\f096'; font-family: 'FontAwesome'; font-size: 14px; width: 20px; display: inline-block; margin-bottom: 7px; }
 		}
 	}
-	input[type="radio"] { display: none;
+	input[type="radio"] { position: absolute; width: 1px; height: 1px; opacity: 0.01;
 		&:checked+label { color: #eee !important;
 			&:before { content: '\f192'; } 
 		}
@@ -609,8 +622,8 @@ table.list .thumb-lista { margin-bottom: 0px !important; }
 	}
 }
 .input-content-tools { height: auto !important; min-height: 63px; @include form-element;
-	> *:not([data-editable]) { cursor: pointer; }
-	[data-editable] { cursor: pointer; }
+	> *:not([data-editable]), > *:not([data-fixture]) { cursor: pointer; }
+	[data-editable], [data-fixture] { cursor: pointer; }
 	ul, ol { padding-left: 1.7em; }
 }
 
@@ -1073,9 +1086,78 @@ ul.accordion { list-style: none; border: 1px solid #ddd; border-bottom: none;
 	.dbo-placeholder-label { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 21px; font-weight: 100; color: #aaa; text-transform: uppercase; text-align: center; line-height: 1.5; }
 }
 
+.admin-dark {
+	.dbo-placeholder { background: #000;
+		.dbo-placeholder-label { color: #555; text-shadow: none; }
+	}
+}
+
 .media-object {
 	.media-object-section { display: table-cell; padding-left: 1em; vertical-align: top;
 		&:first-child { padding-left: 0; }
 		&:nth-child(2) { width: 100%; }
 	} 
 }
+
+/* hack para colocar os xy grid no foundation 4 */
+
+.grid-x { margin: 0 -20px;
+	&:after { content: ""; display: table; clear: both; }
+	.cell { float: left;
+		&.medium-12 { width: 100%; padding: 0 20px; }
+		&.medium-11 { width: 91.67%; padding: 0 20px }
+		&.medium-10 { width: 83.33%; padding: 0 20px; }
+		&.medium-9 { width: 75%; padding: 0 20px; }
+		&.medium-8 { width: 66.67%; padding: 0 20px; }
+		&.medium-7 { width: 58.33%; padding: 0 20px; }
+		&.medium-6 { width: 50%; padding: 0 20px; }
+		&.medium-5 { width: 41.67%; padding: 0 20px; }
+		&.medium-4 { width: 33.33%; padding: 0 20px; }
+		&.medium-3 { width: 25%; padding: 0 20px; }
+		&.medium-2 { width: 16.67%; padding: 0 20px; }
+		&.medium-1 { width: 8.33%; padding: 0 20px; }
+	}
+}
+
+.admin-helper-box { outline: 2px solid #222; padding: 10px; margin-bottom: 20px;
+	> *:last-child { margin-bottom: 0; }
+}
+
+.auto-block { text-align: center; 
+	> * { display: inline-block;
+		* { text-align: left; }
+	}
+}
+
+.admin-pt-50 { padding-top: 50px; }
+.admin-pt-100 { padding-top: 100px; }
+.admin-pt-150 { padding-top: 150px; }
+
+.admin-pb-50 { padding-bottom: 50px; }
+.admin-pb-100 { padding-bottom: 100px; }
+.admin-pb-150 { padding-bottom: 150px; }
+
+.admin-mt-50 { margin-top: 50px; }
+.admin-mt-100 { margin-top: 100px; }
+.admin-mt-150 { margin-top: 150px; }
+
+.admin-mb-50 { margin-bottom: 50px !important; }
+.admin-mb-100 { margin-bottom: 100px !important; }
+.admin-mb-150 { margin-bottom: 150px !important; }
+
+.admin-mh-100 { min-height: 100px; }
+.admin-mh-200 { min-height: 200px; }
+.admin-mh-300 { min-height: 300px; }
+.admin-mh-400 { min-height: 400px; }
+.admin-mh-500 { min-height: 500px; }
+
+.admin-dark { background-color: #222; color: #fff; text-shadow: 1px 1px 1px rgba(1,1,1,.3);
+	h1, h2, h3, h4, h5, h6 { color: #fff; text-shadow: 1px 1px 1px rgba(1,1,1,.3); }
+}
+
+.button {
+	&.expanded { display: block; }
+}
+
+//barra de ferramentas flutuante para edição no corpo do layout
+.floating-toolbar { position: absolute; top: 5px; right: 5px; }

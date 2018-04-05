@@ -12,6 +12,7 @@ if(!class_exists('pagina'))
 	{
 
 		var $client_object_key = '__client_key';
+		var $_relations = array();
 
 		/* smart constructor: will perform load() upon numeric argument and loadAll() upon string argument */
 		function __construct($foo = '', $params = array())
@@ -174,8 +175,17 @@ if(!class_exists('pagina'))
 			//query parts
 			if(!$show_all)
 			{
-				$part_where[] = "status = 'publicado'";
-				$part_where[] = "data <= '".dboNow()."'";
+				//verifica se não é para mostrar o rascunho
+				if(isset($_GET['preview_draft']))
+				{
+					$part_where[] = "status IN ('publicado','rascunho')";
+				}
+				//se não for um preview de rascunho, adiciona restrição de status e data.
+				else
+				{
+					$part_where[] = "status = 'publicado'";
+					$part_where[] = "data <= '".dboNow()."'";
+				}
 				$part_where[] = "inativo = 0";
 			}
 
@@ -256,13 +266,15 @@ if(!class_exists('pagina'))
 			}
 		}
 
-		function permalink()
+		function permalink($params = array())
 		{
 			global $_system;
+			extract($params);
+
 			$function_name = 'pagina_'.$this->tipo.'_permalink';
 			if(!function_exists($function_name))
-				return SITE_URL.($this->slugPrefix() ? '/'.$this->slugPrefix() : '').'/'.($_system['pagina_tipo'][$this->tipo]['slug_date'] === true ? date('Y/m/', strtotime($this->data)) : '').$this->slug(); 
-			return $function_name($this);
+				return SITE_URL.($language ? '/'.$language : ($_system['dbo_active_language'] ? '/'.$_system['dbo_active_language'] : '')).($this->slugPrefix() ? '/'.$this->slugPrefix() : '').'/'.($_system['pagina_tipo'][$this->tipo]['slug_date'] === true ? date('Y/m/', strtotime($this->data)) : '').$this->slug(); 
+			return $function_name($this, $params);
 		}
 
 		function slugPrefix()
@@ -330,6 +342,12 @@ if(!class_exists('pagina'))
 					if(file_exists($_pagina->tipo.'-'.$_pagina->slug.'.php'))
 					{
 						include($_pagina->tipo.'-'.$_pagina->slug.'.php');
+						exit();
+					}
+					//depois checa se existe um layout selecionado
+					elseif(strlen(trim($_pagina->getDetail('layout'))) && file_exists($_pagina->getDetail('layout').'.php'))
+					{
+						include($_pagina->getDetail('layout').'.php');
 						exit();
 					}
 					//fallback para a pagina padrão do tipo especificado
@@ -919,6 +937,11 @@ if(!class_exists('pagina'))
 			//primeiro verifica a permissão específica do usuário
 			$pref = meta::getPreference('hide_'.$field, 'form_pagina_'.$this->tipo.'_prefs');
 
+			//verificar o resumo no tipo página 
+			if($pref === null && $field == 'resumo' && $this->tipo == 'pagina') {
+				$pref = true;
+			}
+
 			//se não foi setado pelo usuário, tenta ver no array de settings da slug especifica
 			if($pref === null) {
 				$pref = in_array($field, (array)$_system['settings']['pagina']['slug'][$this->slug]['hidden_fields']);
@@ -928,6 +951,8 @@ if(!class_exists('pagina'))
 			if($pref === false) {
 				$pref = in_array($field, (array)$_system['pagina_tipo'][$this->tipo]['hidden_fields']);
 			}
+
+
 			return $pref;
 		}
 
@@ -952,6 +977,7 @@ if(!class_exists('pagina'))
 		{
 			$params['modulo'] = $params['modulo'] ? $params['modulo'] : 'pagina';
 			$params['modulo_id'] = $params['modulo_id'] ? $params['modulo_id'] : $this->slug;
+			$params['pagina_tipo'] = $params['pagina_tipo'] ? $params['pagina_tipo'] : $this->tipo;
 			return dbo_content_block::get($name, $params);
 		}
 
@@ -1028,8 +1054,192 @@ if(!class_exists('pagina'))
 			}
 		}
 
+		function renderContentBlockField($block_name, $params = array())
+		{
+			global $_system;
+
+			extract($params);
+			
+			//faz merge de todos os blocos para ver se o especificado existe
+			$content_blocks = array_merge((array)$_system['content_block']['pagina']['tipo'][$this->tipo], (array)$_system['content_block']['pagina']['slug'][$this->slug]);
+			
+			if($content_blocks[$block_name])
+			{
+				//marca este bloco como renderizado, para não ser renderizado novamente abaixo do formulário.
+				$_system['rendered_content_blocks']['pagina']['slug'][$this->slug][] = $block_name;
+
+				$block = $content_blocks[$block_name];
+				$block['modulo'] = 'pagina';
+				$block['modulo_id'] = $this->slug;
+				$block['name'] = $block_name;
+
+				$block = array_merge($params, $block);
+
+				return dbo_content_block::renderField($block);
+			}
+		}
+
+		function relation($relation_slug)
+		{
+			if(!$this->_relations[$relation_slug])
+			{
+				$this->_relations[$relation_slug] = new pagina_relation($relation_slug, $this);
+			}
+			return $this->_relations[$relation_slug];
+		}
+
+		/* Função que localiza e substitui todas as regiões de seção em um página */
+		function activatePageSections($content, $params = array())
+		{
+			/*preg_match_all('/<-- dbo-section-area ([\w-]+) -->/is', $string, $matches);
+			
+			//============= DEBUG ================
+			echo "<PRE>";
+			print_r($matches);
+			echo "</PRE>";
+			//============= DEBUG ================
+			
+			if(is_array($matches))
+			{
+				foreach($matches[0] as $key => $value)
+				{
+					//$foo = do_somehting_with($matches[1][$key]);
+					$string = str_replace($value, $foo, $string);
+				}
+			}*/
+
+			return $content;
+		}
+
 	} //class declaration
 } //if ! class exists
+
+class pagina_relation
+{
+	var $_pagina_obj = null;
+	var $_data_obj = null;
+	var $_rf = array(); //relation definition
+
+	function __get($attr)
+	{
+		return isset($this->{$attr}) ? $this->{$attr} : $this->_data_obj->{$attr};
+	}
+
+	//function __call($method, $args)
+	//{
+		//return $this->_data_obj->$method($args);
+	//}
+
+	function __construct($relation_slug, &$obj, $params = array())
+	{
+		global $_system;
+		extract($params);
+
+		if(!$this->_pagina_obj)
+		{
+			$this->_pagina_obj = $obj;
+			$this->_rf = $_system['settings']['pagina']['slug'][$this->_pagina_obj->slug]['relations'][$relation_slug];
+			$module_name = $this->_rf['module'];
+			$this->_data_obj = new $module_name();
+		}
+		return $this;
+	}
+
+	function data()
+	{
+		return $this->_data_obj;
+	}
+
+	function renderInsertButton($params = array())
+	{
+		extract($params);
+
+		/* Params:
+		   - modal_width -> largura do modal de inserção
+		   - reload -> lista de seletores a serem recarregados após a inserção
+		*/
+
+		$modal_width = $modal_width ? $modal_width : '100%';
+
+		$url_insert = makeAdminUrl(array(
+			'module' => $this->_rf['module'],
+			'new' => true,
+			'modal' => true,
+			'fks' => array('pagina' => $this->_pagina_obj->id),
+			'post_code' => "
+				closeParentModal();
+				parent.setPeixeMessage('<div class=\"success\">".ucfirst($this->_rf['name'])." inserid".$this->_rf['genre']." com <strong>sucesso</strong>!</div>');
+				parent.showPeixeMessage();
+				parent.peixeReloadSelectors('".$reload."');
+			",
+		));
+
+		ob_start();
+		?>
+		<a href="<?= $url_insert ?>" data-modal-width="<?= $modal_width ?>" class="helper round pointer" rel="modal" title="Cadastrar nov<?= $this->_rf['genre'] ?> <?= $this->_rf['name'] ?>"><i class="fa fa-plus"></i>&nbsp; Nov<?= $this->_rf['genre'] ?></a>
+		<?php
+		return ob_get_clean();
+	}
+
+	function renderListButton($params = array())
+	{
+		extract($params);
+
+		/* Params:
+		   - modal_width -> largura do modal de inserção
+		   - reload -> lista de seletores a serem recarregados após a inserção
+		*/
+
+		$modal_width = $modal_width ? $modal_width : '100%';
+
+		$url_list = makeAdminUrl(array(
+			'module' => $this->_rf['module'],
+			'modal' => true,
+			'fks' => array('pagina' => $this->_pagina_obj->id),
+			'post_code' => "
+				parent.peixeReloadSelectors('".$reload."');
+			",
+		));
+
+		ob_start();
+		?>
+		<a href="<?= $url_list ?>" data-modal-width="<?= $modal_width ?>" class="helper round pointer" rel="modal" title="Editar <?= $this->_rf['name_plural'] ?> cadastrad<?= $this->_rf['genre'] ?>s"><i class="fa fa-pencil"></i>&nbsp; Editar <?= $this->_rf['name_plural'] ?></a>
+		<?php
+		return ob_get_clean();
+	
+	}
+
+	function renderAdmin($params = array())
+	{
+		extract($params);
+
+		//se a cardinalidade for diferente de 1, mostra o botão de inserção.
+		if($this->_rf['cardinality'] != 1)
+		{
+			$return .= $this->renderListButton($params);
+			$return .= $this->renderInsertButton($params);
+		}
+
+		return $return;
+	}
+
+	function load($sql = "")
+	{
+		$this->_data_obj->{$this->_rf['fk']} = $this->_pagina_obj->id;
+		$this->_data_obj->loadAll($sql);
+	}
+
+	function size()
+	{
+		return $this->_data_obj->size();
+	}
+
+	function fetch()
+	{
+		return $this->_data_obj->fetch();
+	}
+
+}
 
 //definindo o nome padrão para o arquivo de processamento de página
 define(PAGINA_ENGINE_FILE, 'pagina.php');
@@ -1105,10 +1315,10 @@ function paginaTexto()
 	return $_pagina->texto();
 }
 
-function paginaPermalink()
+function paginaPermalink($params = array())
 {
 	global $_pagina;
-	return $_pagina->permalink();
+	return $_pagina->permalink($params);
 }
 
 function paginaImagem($params = array())
@@ -1303,7 +1513,7 @@ function siteHead($params = array())
 		{
 			$og['og:type'] = 'website';
 			$og['og:title'] = siteTitulo();
-			$og['og:description'] = siteDescricao();
+			$og['og:description'] = htmlSpecialChars(siteDescricao());
 			$og['og:url'] = SITE_URL;
 			$og['og:image'] = SITE_URL.'/images/og.png';
 		}
@@ -1311,9 +1521,9 @@ function siteHead($params = array())
 		{
 			$og['og:type'] = 'article';
 			$og['og:title'] = siteTitulo();
-			$og['og:description'] = paginaResumo();
+			$og['og:description'] = htmlSpecialChars(paginaResumo());
 			$og['og:url'] = paginaPermalink();
-			$og['og:image'] = paginaImagemUrl(array('size' => 'medium'));
+			$og['og:image'] = paginaImagemUrl(array('size' => 'small'));
 		}
 	}
 
@@ -1326,6 +1536,11 @@ function siteHead($params = array())
 		<?php
 	}
 
+	echo dboImportJs(array(
+		'colorbox',
+		'scrollto',
+	));
+	
 	$hooks->do_action('site_head');
 
 	return ob_get_clean();
@@ -1346,6 +1561,7 @@ $aux = array(
 	'cockpit_order_by' => -100,
 	'templates' => array(
 		'pagina-blank' => 'Página padrão',
+		'pagina-largura-100' => 'Página expandida (largura 100%)',
 	),
 );
 

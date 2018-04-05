@@ -70,7 +70,7 @@ if(!class_exists('menu'))
 			}
 			elseif($item['tipo'] == 'link')
 			{
-				?><li class="<?= ((is_array($item['children']))?($foundation_6 !== false ? 'has-submenu' : 'has-dropdown'):(''))." ".$item['classes'] ?>"><a href="<?= $item['url'] ?>"><?= $item['prepend'] ?><span><?= $item['titulo'] ?></span><?= $item['append'] ?></a><?
+				?><li class="<?= ((is_array($item['children']))?($foundation_6 !== false ? 'has-submenu' : 'has-dropdown'):(''))." ".$item['classes'] ?>"><a <?= strlen(trim($item['target'])) ? 'target="'.$item['target'].'"' : '' ?> href="<?= $item['url'] ?>"><?= $item['prepend'] ?><span><?= $item['titulo'] ?></span><?= $item['append'] ?></a><?
 				if(is_array($item['children']))
 				{
 					echo '<ul class="'.($foundation_6 !== false ? 'submenu menu vertical' : 'dropdown').'" data-submenu>';
@@ -143,10 +143,17 @@ if(!class_exists('menu'))
 						if($tipo == 'link')
 						{
 							?>
-							<div class="row">
-								<div class="large-12 columns">
+							<div class="row collapse">
+								<div class="small-12 large-9 columns">
 									<label for="">URL do link</label>
 									<input type="text" name="url" value="<?= htmlSpecialChars($url) ?>"/>
+								</div>
+								<div class="small-12 large-3 columns">
+									<label for="">Abrir em</label>
+									<select name="target">
+										<option value="">Mesma aba</option>
+										<option value="_blank" <?= $target == '_blank' ? 'selected' : '' ?>>Nova aba</option>
+									</select>
 								</div>
 							</div>
 							<?
@@ -475,7 +482,7 @@ function auto_admin_menu()
 			});
 
 			//atualizando os data-attributes no change
-			$(document).on('change', '.dd-item input', function(){
+			$(document).on('change', '.dd-item input, .dd-item select', function(){
 				mudado = $(this);
 				dd_item = mudado.closest('.dd-item');
 				dd_item.data(mudado.attr('name'), mudado.val());
@@ -541,7 +548,9 @@ function auto_admin_menu()
 
 			//salvando o menu ativo
 			$(document).on('click', '#button-salvar-menu', function(){
-				peixeJSON('dbo/core/dbo-menu-ajax.php?action=salvar-menu&menu_id='+$('#nav-menus-disponiveis dd.active').data('menu_id'), { menu_data: $('.dd').nestable('serialize') }, '', false);
+				peixeJSON('dbo/core/dbo-menu-ajax.php?action=salvar-menu&menu_id='+$('#nav-menus-disponiveis dd.active').data('menu_id'), { 
+					menu_data: $('.dd').nestable('serialize') 
+				}, '', true);
 			});
 
 			//selecionando um menu

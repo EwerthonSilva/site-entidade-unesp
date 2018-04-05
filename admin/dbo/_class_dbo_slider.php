@@ -93,15 +93,18 @@ if(!class_exists('dbo_slider'))
 						$('.dbo-slider-<?= $slider_id ?> .dbo-slide').flowtype({ fontRatio: 100 });
 
 						$('.dbo-slider-<?= $slider_id ?> .dbo-slider-canvas').on('afterChange', function(event, slick, currentSlide){
-							var current_slide = slick.$slides.removeClass('show').filter('.slick-current');
-							current_slide.addClass('show').find('.dbo-slide-layer[data-peixe-animation]').peixeAnimate();
+							console.log('changed do slide: '+currentSlide+' on DBO Slider ID: <?= $slider_id ?>');
+							var current_slide = slick.$slides.removeClass('show-slide-animation').filter('.slick-current');
+							current_slide.addClass('show-slide-animation').find('.dbo-slide-layer[data-peixe-animation]').peixeAnimate();
 							dboSlidePlayVideos(current_slide);
 						});
 						
 						$('.dbo-slider-<?= $slider_id ?> .dbo-slider-canvas').on('init', function(event, slick){
 							setTimeout(function(){
+								console.log('init DBO Slider ID: <?= $slider_id ?>');
 								var current_slide = slick.$slides.filter('.slick-current');
-								current_slide.addClass('show').find('.dbo-slide-layer[data-peixe-animation]').peixeAnimate();
+								console.log(current_slide);
+								current_slide.addClass('show-slide-animation').find('.dbo-slide-layer[data-peixe-animation]').peixeAnimate();
 								dboSlidePlayVideos(current_slide);
 							}, 1000);
 						});
@@ -125,7 +128,7 @@ if(!class_exists('dbo_slider'))
 				</script>
 				<style>
 					.dbo-slider [data-peixe-animation] { visibility: hidden; }
-					.dbo-slider .dbo-slide.show [data-peixe-animation] { visibility: visible; }
+					.dbo-slider .show-slide-animation [data-peixe-animation] { visibility: visible; }
 					.dbo-slider-canvas { margin-left: auto; margin-right: auto; }
 				</style>
 				<div class="dbo-slider dbo-slider-<?= $slider->id ?>">

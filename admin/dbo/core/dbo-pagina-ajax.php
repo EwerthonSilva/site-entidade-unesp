@@ -128,6 +128,7 @@
 			dbo_content_block::smartSetAndUpdate($_POST, array(
 				'modulo' => 'pagina',
 				'modulo_id' => $pag->slug(),
+				'pagina_tipo' => $pag->tipo,
 			));
 
 			//tratando as categorias

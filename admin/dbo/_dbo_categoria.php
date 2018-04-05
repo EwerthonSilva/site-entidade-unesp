@@ -1,7 +1,7 @@
 <?
 
 /* ================================================================================================================== */
-/* DBO DEFINITION FILE FOR MODULE 'categoria' =================================== AUTO-CREATED ON 01/04/2016 15:49:50 */
+/* DBO DEFINITION FILE FOR MODULE 'categoria' =================================== AUTO-CREATED ON 30/06/2017 15:45:52 */
 /* ================================================================================================================== */
 
 
@@ -79,6 +79,7 @@ $field->view = false;
 $field->lista = false;
 $field->filter = false;
 $field->order = false;
+$field->multi_lang = true;
 $field->type = 'VARCHAR(255)';
 $field->interaction = '';
 $field->tipo = 'text';
@@ -117,6 +118,7 @@ $field->view = false;
 $field->lista = false;
 $field->filter = false;
 $field->order = false;
+$field->multi_lang = true;
 $field->type = 'TEXT';
 $field->interaction = '';
 $field->tipo = 'textarea';
@@ -220,6 +222,25 @@ $field->lista = false;
 $field->filter = false;
 $field->order = false;
 $field->type = 'INT(11)';
+$field->interaction = '';
+$field->tipo = 'text';
+$module->campo[$field->coluna] = $field;
+
+/*==========================================*/
+
+$field = new Obj();
+$field->titulo = 'Multi-idiomas';
+$field->coluna = 'dbo_translations';
+$field->pk = false;
+$field->isnull = false;
+$field->add = false;
+$field->valida = false;
+$field->edit = false;
+$field->view = false;
+$field->lista = false;
+$field->filter = false;
+$field->order = false;
+$field->type = 'TEXT';
 $field->interaction = '';
 $field->tipo = 'text';
 $module->campo[$field->coluna] = $field;

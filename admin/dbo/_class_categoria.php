@@ -497,7 +497,8 @@ function categoriaImagemURL($params = array())
 function categoriaPermalink($params = array())
 {
 	global $_categoria;
-	return $_categoria->full_slug ? $_categoria->full_slug : $_categoria->slug;
+	global $_system;
+	return ($_system['dbo_active_language'] ? $_system['dbo_active_language'].'/' : '').$_categoria->full_slug ? $_categoria->full_slug : $_categoria->slug;
 }
 
 function haCategorias()

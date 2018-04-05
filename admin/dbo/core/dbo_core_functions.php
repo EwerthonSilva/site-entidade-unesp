@@ -95,6 +95,21 @@
 
 	// ----------------------------------------------------------------------------------------------------------------
 
+	function dboReadingTime($content, $params = array())
+	{
+		extract($params);
+
+		$words_per_minute = $words_per_minute ?: 200;
+
+		$word = str_word_count(strip_tags($content));
+		$m = floor($word / $words_per_minute);
+		//$s = floor($word % 200 / (200 / 60));
+		$m = $m == 0 ? 1 : $m;
+		return $m;
+	}
+	
+	// ----------------------------------------------------------------------------------------------------------------
+
 	function dboRename($oldfile,$newfile) {
 		if (!@rename($oldfile,$newfile)) {
 			if (copy ($oldfile,$newfile)) {
@@ -648,6 +663,12 @@
 			$return .= "<script src=\"".$js_url."/jquery.scrollto.js\"></script>\n";
 			$_system['dbo_imported_js'][] = "scrollto";
 		}
+		if(!in_array("simple-scrollbar", $_system['dbo_imported_js']) && (in_array("simple-scrollbar", $libs) || $import_all))
+		{
+			$return .= "<link rel=\"stylesheet\" href=\"".$js_url."/simple-scrollbar/simple-scrollbar.css\">\n";
+			$return .= "<script src=\"".$js_url."/simple-scrollbar/simple-scrollbar.min.js\"></script>\n";
+			$_system['dbo_imported_js'][] = "simple-scrollbar";
+		}
 		if(!in_array("starsrating", $_system['dbo_imported_js']) && (in_array("starsrating", $libs) || $import_all))
 		{
 			$return .= "<script src=\"".$js_url."/jquery.starsrating.js\"></script>\n";
@@ -841,7 +862,7 @@
 
 		if($image)
 		{
-			return '<div style="background-size: '.($background_size ? $background_size : ($contain ? 'contain' : 'cover')).'; background-repeat: no-repeat; background-position: center center; background-image: url('.$image.'); padding-top: '.$height.'; max-width: '.$max_width.';'.$styles.'" class="'.$classes.'"><img src="'.$image.'" style="display: none;" alt=""></div>';
+			return '<div id="'.$id.'" style="background-size: '.($background_size ? $background_size : ($contain ? 'contain' : 'cover')).'; background-repeat: no-repeat; background-position: center center; background-image: url('.$image.'); padding-top: '.$height.'; max-width: '.$max_width.';'.$styles.'" class="'.$classes.'"><img src="'.$image.'" style="display: none;" alt=""></div>';
 		}
 	}
 
@@ -963,7 +984,7 @@
 	{
 		extract($params);
 		parse_str(parse_url($url, PHP_URL_QUERY), $array);
-		return 'http://img.youtube.com/vi/'.$array['v'].'/0.jpg';
+		return 'http://img.youtube.com/vi/'.$array['v'].'/maxresdefault.jpg';
 	}
 
 	// ----------------------------------------------------------------------------------------------------------------
@@ -1124,11 +1145,18 @@
 		$__template__ = $template === null ? 'content-tools-blank' : $template;
 
 		$__json__ = json_decode($__json__, true);
+
 		@extract($__json__);
 
 		ob_start();
 		include(dboTemplate($__template__));
 		$json = ob_get_clean();
+
+		//se setado como clean, remove os atributod so content tools
+		if($clean)
+		{
+			$json = cleanContentToolsAttrs($json);
+		}
 
 		//retira o filter de autop
 		$hooks->remove_filter('dbo_content', 'dboAutop', 0);
@@ -1138,6 +1166,16 @@
 		return $json;
 	}
 
+	// ----------------------------------------------------------------------------------------------------------------
+
+	function cleanContentToolsAttrs($string)
+	{
+		return str_replace(array(
+			'data-editable',
+			'data-fixture',
+		), '', $string);
+	}
+	
 	// ----------------------------------------------------------------------------------------------------------------
 
 	function dboContent($content)
@@ -1285,9 +1323,19 @@
 
 	// ----------------------------------------------------------------------------------------------------------------
 
-	function dboLang()
+	function dboLanguage()
 	{
-		return 'pt-BR';
+		global $_system;
+		return $_system['dbo_active_language'];
+	}
+
+	// ----------------------------------------------------------------------------------------------------------------
+
+	function dboTranslatedText($text = array())
+	{
+		if(isset($text[dboLanguage()]))
+			return $text[dboLanguage()];
+		return 'No translation set for "'.dboLanguage().'"';
 	}
 
 	// ----------------------------------------------------------------------------------------------------------------
@@ -3934,6 +3982,60 @@
 			$caminho_arquivo = $file_path.'thumbs/'.$slug."-".preg_replace('/-_-dbomediamanagertempkey-_-[0-9]+$/is', '', $file_name);
 			$image->save($caminho_arquivo, $data['quality']); //salvando o arquivo no server
 		}
+	}
+
+	//um helper que só eh renderizado no admin, muito util em templates.
+
+	function dboAdminHelper($texto = 'digite alguma coisa!', $params = array())
+	{
+		extract($params);
+		ob_start();
+		if(isDboAdminContext())
+		{
+			?>
+			<div class="text-left">
+				<p class="helper arrow-bottom" style="margin-bottom: 10px;"><?= $texto ?></p>		
+			</div>
+			<?php
+		}
+		return ob_get_clean();
+	}
+	
+	//funcao para auxiliar a criar uma url de administração
+	function makeAdminUrl($params = array())
+	{
+		extract($params);
+		global $_system;
+		global $dbo;
+
+		//setando o módulo
+		if($module) { $admin_url_get_vars['dbo_mod'] = $module; }
+		//se for update
+		if($update) { $admin_url_get_vars['dbo_update'] = $update; }
+		//se for update
+		if($new) { $admin_url_get_vars['dbo_new'] = 1; }
+		//se tiver variaveis fixas (Fk e outras)
+		if(sizeof((array)$fks))
+		{
+			foreach((array)$fks as $key => $value)
+			{
+				$fks_parts[] = $key.'='.$value;
+			}
+			$admin_url_get_vars['dbo_fixo'] = $dbo->encodeFixos(implode('&', $fks_parts));
+		}
+		//post code JS
+		if($post_code)
+		{
+			$admin_url_get_vars['dbo_admin_post_code'] = dboEncode('javascript: '.singleLine($post_code));
+		}
+		//modal
+		if($modal)
+		{
+			$admin_url_get_vars['dbo_modal'] = 1;
+			$admin_url_get_vars['body_class'] = 'hide-breadcrumb';
+		}
+
+		return ADMIN_URL.'/dbo_admin.php?'.http_build_query($admin_url_get_vars);
 	}
 
 ?>

@@ -930,6 +930,7 @@ function showFieldControls ($mod, $field)
 					<? showFieldControl($mod, $field, 'lista') ?>
 					<? showFieldControl($mod, $field, 'order') ?>
 					<? showFieldControl($mod, $field, 'filter') ?>
+					<? showFieldControl($mod, $field, 'multi_lang') ?>
 				</ul>
 			</span>
 		</a>
@@ -954,6 +955,8 @@ function showFieldControl ($mod, $field, $attr)
 		?><li rel='filter' title='Pode ser Filtrado? (<?= ($campo->filter)?('sim'):('não') ?>)' class='filter <?= ($campo->filter)?('active'):('') ?>'></li><?
 	} elseif($attr == 'order') {
 		?><li rel='order' title='Pode ser Ordenado? (<?= ($campo->order)?('sim'):('não') ?>)' class='order <?= ($campo->order)?('active'):('') ?>'></li><?
+	} elseif($attr == 'multi_lang') {
+		?><li rel='multi_lang' title='Usuário pode digitar em vários idiomas? (<?= ($campo->multi_lang)?('sim'):('não') ?>)' class='multi-lang <?= ($campo->multi_lang)?('active'):('') ?>'></li><?
 	}
 }
 
@@ -985,6 +988,7 @@ function toggleFieldControl ($mod, $field, $attr)
 		<? showFieldControl($mod, $field, 'lista') ?>
 		<? showFieldControl($mod, $field, 'order') ?>
 		<? showFieldControl($mod, $field, 'filter') ?>
+		<? showFieldControl($mod, $field, 'multi_lang') ?>
 	<?
 }
 
@@ -1041,6 +1045,7 @@ function getFieldForm ($mod,$field)
 									<? showFieldControl($mod, $field, 'lista') ?>
 									<? showFieldControl($mod, $field, 'order') ?>
 									<? showFieldControl($mod, $field, 'filter') ?>
+									<? showFieldControl($mod, $field, 'multi_lang') ?>
 								</ul>
 							</span>
 						</div>
@@ -1411,6 +1416,11 @@ function getFieldTypeDetail ($type = '', $mod = '',$field = '')
 		?>
 					<div class='row wide'>
 						<div class='item'>
+							<p style="padding: 10px; border: 1px solid #ccc; border-radius: 7px; background-color: #eee;">
+								Atenção: campos multi-idiomas devem ter o seguinte formato:<br /><br />
+
+								m => en-us:male ||| pt-br:masculino ||| fr:malê ...
+							</p>
 							<label title="1 por linha. Se desejar índices não numericos, utilize a forma 'indice => Valor'">Valores</label>
 							<div class='input'>
 								<div class='wrapper-field-type-detail'>
@@ -1639,6 +1649,13 @@ function getFieldTypeDetail ($type = '', $mod = '',$field = '')
 										{
 											?>
 											<div class='row'>
+												<div class='item item-33'>
+													<label class="help" title="Define se o DBO Maker deve controlar as chaves estrangeiras para esta relação. Vale para Joins 1xN e NxN">Controlar FKs</label>
+													<select name='join[control_fks]' class='join-modulo'>
+														<option value="1" <?= $campo->join->control_fks !== false ? 'selected' : '' ?>>Sim -----------></option>
+														<option value="0" <?= $campo->join->control_fks === false ? 'selected' : '' ?>>Não -----------X</option>
+													</select>
+												</div><!-- item -->
 												<div class='item item-33'>
 													<label>On update</label>
 													<?= renderSelectFkActions('join[on_update]', $campo->join->on_update, 'update') ?>
@@ -2033,6 +2050,7 @@ function getNewFieldForm($mod)
 				<li><input type='radio' name='tipo' id="tipo-order_by" value='order_by'/><label for="tipo-order_by">Auto Ordenação (order_by)</label></li>
 				<li><input type='radio' name='tipo' id="tipo-inativo" value='inativo'/><label for="tipo-inativo">Inativo</label></li>
 				<li><input type='radio' name='tipo' id="tipo-permalink" value='permalink'/><label for="tipo-permalink">Permalink (permalink)</label></li>
+				<li><input type='radio' name='tipo' id="tipo-dbo_translations" value='dbo_translations'/><label for="tipo-dbo_translations">Multi-idiomas</label></li>
 			</ul>
 
 			<input type='hidden' name='mod' value='<?= $mod ?>'/>
@@ -2368,6 +2386,16 @@ function runUpdateField($post_data)
 			unset($join->select2);
 		}
 
+		//verificando se o modulo controla as chaves estrangeiras no join
+		if($post_data['join']['control_fks'] == 1)
+		{
+			$join->control_fks = true;
+		}
+		else
+		{
+			$join->control_fks = false;
+		}
+
 		list($tipo_join, $tipo_campo) = explode('-', $post_data['join'][tipo]);
 
 		$join->tipo = $tipo_campo;
@@ -2495,7 +2523,8 @@ function runNewField($post_data)
 		$post_data['tipo'] == 'deleted_because' ||
 		$post_data['tipo'] == 'order_by' ||
 		$post_data['tipo'] == 'inativo' ||
-		$post_data['tipo'] == 'permalink'
+		$post_data['tipo'] == 'permalink' ||
+		$post_data['tipo'] == 'dbo_translations'
 	)
 	{
 		foreach($_SESSION['dbomaker_modulos'][$mod]->campo as $value)
@@ -2848,6 +2877,17 @@ function runNewField($post_data)
 		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->titulo = "Permalink";
 		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->coluna = "permalink";
 		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->type = "VARCHAR(190)";
+		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->tipo = 'text';
+		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->add = false;
+		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->edit = false;
+		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->view = false;
+	}
+	//Multi-idiomas
+	elseif($post_data['tipo'] == 'dbo_translations')
+	{
+		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->titulo = "Multi-idiomas";
+		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->coluna = "dbo_translations";
+		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->type = "TEXT";
 		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->tipo = 'text';
 		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->add = false;
 		$_SESSION['dbomaker_modulos'][$mod]->campo['temporary_field_key_5658']->edit = false;
@@ -3408,6 +3448,7 @@ function writeModuleFile($mod)
 			fwrite($fh, "\$module->force_order_by = '".singleScape($module->force_order_by)."';\n");
 		}
 		fwrite($fh, "\$module->order_by = '".($module->force_order_by ? $module->force_order_by : $module->order_by)."';\n");
+		fwrite($fh, "//\$module->dbo_maker_read_only = true;\n");
 		if(strlen($module->table_engine))
 		{
 			fwrite($fh, "\$module->table_engine = '".singleScape($module->table_engine)."';\n");
@@ -3461,6 +3502,10 @@ function writeModuleFile($mod)
 					fwrite($fh, "\$field->lista = ".(($field->lista === true)?('true'):('false')).";\n");
 					fwrite($fh, "\$field->filter = ".(($field->filter === true)?('true'):('false')).";\n");
 					fwrite($fh, "\$field->order = ".(($field->order === true)?('true'):('false')).";\n");
+					if($field->multi_lang)
+					{
+						fwrite($fh, "\$field->multi_lang = true;\n");
+					}
 					fwrite($fh, "\$field->type = '".(($field->tipo == 'pk')?('INT NOT NULL auto_increment'):($field->type))."';\n");
 					fwrite($fh, "\$field->interaction = '".$field->interaction."';\n");
 					if(strlen($field->list_function))
@@ -3681,6 +3726,8 @@ function writeModuleFile($mod)
 						}
 						fwrite($fh, "\t\$join->tipo = '".$field->join->tipo."';\n");
 						fwrite($fh, "\t\$join->order_by = '".$field->join->order_by."';\n");
+						//checando se o modulo controla as chaves estrangeiras
+						fwrite($fh, "\t\$join->control_fks = ".($field->join->control_fks === false ? 'false' : 'true').";\n");
 						fwrite($fh, "\$field->join = \$join;\n");
 					}
 					//plugin

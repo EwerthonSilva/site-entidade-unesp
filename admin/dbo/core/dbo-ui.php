@@ -5,6 +5,7 @@ class dboUI
 	static function field($field_type, $operation, $obj = false, $params = array())
 	{
 		global $dbo;
+		global $_system;
 		//normalização das variaveis
 		$params['name'] = $params['name'] ? $params['name'] : $params['coluna'];
 		extract($params);
@@ -126,7 +127,9 @@ class dboUI
 					ob_start();
 					include(dboTemplate($params['template']));
 					$string = ob_get_clean();
-					//subsituindo os nomes pelo nome com o campo concatenado
+
+					//subsituindo os nomes pelo nome com o campo concatenado (areas)
+					$matches = array();
 					preg_match_all('/data-editable\s+data-name="([\w]+)"/im', $string, $matches);
 					if(is_array($matches))
 					{
@@ -136,6 +139,19 @@ class dboUI
 							$string = str_replace($value, $foo, $string);
 						}
 					}
+
+					//subsituindo os nomes pelo nome com o campo concatenado (fixtures)
+					$matches = array();
+					preg_match_all('/data-fixture\s+data-name="([\w]+)"/im', $string, $matches);
+					if(is_array($matches))
+					{
+						foreach($matches[0] as $key => $value)
+						{
+							$foo = 'data-fixture data-name="'.$aux_name.'___'.$matches[1][$key].'"';
+							$string = str_replace($value, $foo, $string);
+						}
+					}
+
 					echo $string;
 				}
 			?>
@@ -156,6 +172,10 @@ class dboUI
 				<?
 					foreach($valores as $chave2 => $valor2)
 					{
+						if($multi_lang)
+						{
+							$valor2 = dbo::getTranslatedValue($valor2, $_system['dbo_active_language']);
+						}
 						?>
 						<span style="white-space: nowrap;">
 							<input type="radio" name="<?= $name ?>" id="radio-<?= $name."-".makeSlug($chave2) ?>" value="<?= $chave2 ?>" data-name="<?= $titulo ?>" class="<?= (($required)?('required'):(''))." ".$classes ?>" <?= (($required)?('required'):('')) ?> <?= ((strlen($value) && $value == $chave2)?('checked'):('')) ?>/><label for="radio-<?= $name."-".makeSlug($chave2) ?>"><?= $valor2 ?></label>
@@ -240,6 +260,10 @@ class dboUI
 					echo $allow_empty !== false ? '<option value="">...</option>' : '';
 					foreach($valores as $chave2 => $valor2)
 					{
+						if($multi_lang)
+						{
+							$valor2 = dbo::getTranslatedValue($valor2, $_system['dbo_active_language']);
+						}
 						?>
 						<option value="<?= $chave2 ?>" <?= ((strlen(trim($value)) && $value == $chave2)?('selected'):('')) ?>><?= (($edit_function)?($edit_function($valor2)):($valor2)) ?></option>
 						<?
@@ -645,22 +669,38 @@ class dboUI
 		elseif($field_type == 'media')
 		{
 			$value = is_object($value) ? $value->value : $value;
-			?>
-			<div class="row">
-				<div class="large-12 columns" id="wrapper-midia-<?= $name ?>">
-					<input type="hidden" name="<?= $name ?>" id="" value="<?= $value ?>"/>
-					<div class="wrapper-field-media">
-						<img src="<?= $value ? DBO_URL.'/upload/dbo-media-manager/thumbs/'.($size ? $size : 'medium').'-'.$value : DBO_IMAGE_PLACEHOLDER ?>" style="max-height: <?= $max_height ? $max_height : '220px' ?>; max-width: <?= $max_width ? $max_width : '550px' ?>; margin-bottom: 7px; <?= $styles ?>" class="th">
-					</div>
-					<div class="media-controls-insert margin-bottom" style="<?= $value ? 'display: none;' : '' ?>">
-						<span class="button small secondary trigger-colorbox-modal radius" data-width="100%" data-height="100%" data-url="dbo-media-manager.php?dbo_modal=1&modulo=<?= $modulo ?>&modulo_id=<?= $pag->id ?>&destiny=field&wrapper_id=wrapper-midia-<?= $name ?>" data-transition="none" data-fadeout="1" style="margin-bottom: 5px;"><i class="fa fa-fw fa-image top-1"></i> Adicionar mídia</span>
-					</div>
-					<div class="media-controls-update margin-bottom" style="<?= $value ? '' : 'display: none;' ?>">
-						<span class="button small secondary trigger-colorbox-modal radius button-media-update" data-width="100%" data-height="100%" data-url="dbo-media-manager.php?dbo_modal=1&modulo=<?= $modulo ?>&modulo_id=<?= $pag->id ?>&destiny=field&wrapper_id=wrapper-midia-<?= $name ?>&file=<?= $value ?>" data-transition="none" data-fadeout="1" style="margin-bottom: 5px;"><i class="fa fa-fw fa-image top-1"></i> Alterar mídia</span> &nbsp; <a href="#" class="underline font-12 trigger-remover-midia">remover mídia</a>
+
+			//campo compacto para ser usado normalmente com backgrounds.
+			if($field_layout == 'compact')
+			{
+				$input_id = 'media-field-'.$name;
+				$default_size = $size ? $size : 'medium';
+				?>
+				<span id="wrapper-midia-<?= $name ?>">
+					<input type="hidden" name="<?= $name ?>" id="<?= $input_id ?>" value="<?= $value ?>"/>
+					<span class="helper pointer small round secondary trigger-colorbox-modal" data-width="100%" data-height="100%" data-url="<?= ADMIN_URL ?>/dbo-media-manager.php?dbo_modal=1&modulo=<?= $modulo ?>&modulo_id=<?= $pag->id ?>&destiny=background&wrapper_id=<?= $target_id ?>&input_id=<?= $input_id ?>&default_size=<?= $size ?>" data-transition="none" data-fadeout="1" title="Alterar imagem" style="position: relative; z-index: 50;"><i class="fa fa-fw fa-image top-1"></i></span>
+				</span>
+				<?php
+			}
+			else
+			{
+				?>
+				<div class="row">
+					<div class="large-12 columns" id="wrapper-midia-<?= $name ?>">
+						<input type="hidden" name="<?= $name ?>" id="" value="<?= $value ?>"/>
+						<div class="wrapper-field-media">
+							<img src="<?= $value ? DBO_URL.'/upload/dbo-media-manager/thumbs/'.($size ? $size : 'medium').'-'.$value : DBO_IMAGE_PLACEHOLDER ?>" style="max-height: <?= $max_height ? $max_height : '220px' ?>; max-width: <?= $max_width ? $max_width : '550px' ?>; margin-bottom: 7px; <?= $styles ?>" class="th">
+						</div>
+						<div class="media-controls-insert margin-bottom" style="<?= $value ? 'display: none;' : '' ?>">
+							<span class="button small secondary trigger-colorbox-modal radius" data-width="100%" data-height="100%" data-url="dbo-media-manager.php?dbo_modal=1&modulo=<?= $modulo ?>&modulo_id=<?= $pag->id ?>&destiny=field&wrapper_id=wrapper-midia-<?= $name ?>" data-transition="none" data-fadeout="1" style="margin-bottom: 5px;"><i class="fa fa-fw fa-image top-1"></i> Adicionar mídia</span>
+						</div>
+						<div class="media-controls-update margin-bottom" style="<?= $value ? '' : 'display: none;' ?>">
+							<span class="button small secondary trigger-colorbox-modal radius button-media-update" data-width="100%" data-height="100%" data-url="dbo-media-manager.php?dbo_modal=1&modulo=<?= $modulo ?>&modulo_id=<?= $pag->id ?>&destiny=field&wrapper_id=wrapper-midia-<?= $name ?>&file=<?= $value ?>" data-transition="none" data-fadeout="1" style="margin-bottom: 5px;"><i class="fa fa-fw fa-image top-1"></i> Alterar mídia</span> &nbsp; <a href="#" class="underline font-12 trigger-remover-midia">remover mídia</a>
+						</div>
 					</div>
 				</div>
-			</div>
-			<?
+				<?php
+			}
 			dboUI::fieldJS('media', $params);
 		}
 		return ob_get_clean();
@@ -846,7 +886,7 @@ class dboUI
 				ContentTools.Tools.Heading.tagName = 'h2';
 				ContentTools.Tools.Subheading.tagName = 'h3';
 
-				editor.init('*[data-editable]', 'data-name');
+				editor.init('*[data-editable], *[data-fixture]', 'data-name');
 
 				editor.addEventListener('start', function() {
 					document.body.classList.add('ct-editing');
@@ -857,8 +897,15 @@ class dboUI
 				});
 
 				editor.addEventListener('saved', function (ev) {
-					var regions = ev.detail().regions;
-					updateContentToolsInputs(regions);
+					//var regions = ev.detail().regions;
+					//updateContentToolsInputs(regions);
+
+					//solução para fixtures?
+					var payload = {}, regions;
+					Object.keys(regions = editor.regions()).forEach(name => {
+						payload[name] = (regions[name].type() == 'Fixture') ? regions[name].domElement().innerHTML : regions[name].html()
+					})
+					updateContentToolsInputs(payload);
 				});
 
 				function updateContentToolsInputs(regions) {

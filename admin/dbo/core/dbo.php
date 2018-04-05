@@ -60,9 +60,17 @@ class DboFieldType {
 
 	function value($params = array())
 	{
+		global $_system;
+
 		//para selects e radios
 		if($this->data->tipo == 'select' || $this->data->tipo == 'radio')
 		{
+			//verificando se o campo é multiidiomas
+			if($this->data->multi_lang)
+			{
+				$active_lang = $_system['dbo_active_language'] ? $_system['dbo_active_language'] : 'pt-br';
+				return dbo::getTranslatedValue($this->data->valores[$this->value], $active_lang);
+			}
 			return $this->data->valores[$this->value];
 		}
 	}
@@ -210,6 +218,7 @@ class DboFieldType {
 class Dbo extends Obj
 {
 
+	var $__loaded = false;
 	var $__ipp_start = '0';
 	var $__pag = '1';
 	var $__data = array();
@@ -224,7 +233,6 @@ class Dbo extends Obj
 	var $__size;
 	var $__res;
 	var $__module_scheme;
-	var $__ok;
 	var $__class;
 	var $__fixos;
 	var $__grid;
@@ -243,6 +251,10 @@ class Dbo extends Obj
 	var $__dbo_ui_flag = array();
 	var $__host_object;
 	var $__client_objects = array();
+	var $__single_lang_fields = array(
+		'select',
+		'radio',
+	);
 
 	//construtor -------------------------------------------------------------------------------------------------------------------------------
 
@@ -266,7 +278,6 @@ class Dbo extends Obj
 		$this->__black_list[] = '__size';
 		$this->__black_list[] = '__res';
 		$this->__black_list[] = '__module_scheme';
-		$this->__black_list[] = '__ok';
 		$this->__black_list[] = '__class';
 		$this->__black_list[] = '__fixos';
 		$this->__black_list[] = '__iterator';
@@ -325,8 +336,6 @@ class Dbo extends Obj
 				}				
 			}
 		}
-
-		$this->__ok = true;
 	} // __construct()
 
 	//pega uma lista de atributos multivalorados -----------------------------------------------------------------------------------------------------------
@@ -363,6 +372,8 @@ class Dbo extends Obj
 
 	public function __get ($name)
 	{
+		global $_system;
+
 		if(!$this->isDbo())
 		{
 			if($name == 'id')
@@ -426,6 +437,17 @@ class Dbo extends Obj
 			}
 			elseif($this->hasField($name))
 			{
+				/* aqui vamos verificar se o sistema tem varios idiomas ou não */
+				/* primeiro verificamos se tem mesmo idiomas neste modulo */
+				if($this->hasField('dbo_translations') && ($_system['dbo_default_language'] != $_system['dbo_active_language']))
+				{
+					/* neste caso, tentamos pegar a tradução com a linguagem ativa */
+					$json = json_decode($this->dbo_translations, true);
+					if(strlen(trim($json[$_system['dbo_active_language']][$name])))
+					{
+						return $json[$_system['dbo_active_language']][$name];
+					}
+				}
 				return $this->__data[$name];
 			}
 			else
@@ -440,6 +462,8 @@ class Dbo extends Obj
 
     public function __set($name, $attr)
 	{
+		global $_system;
+
 		if(!$this->isDbo())
 		{
 			if($name == 'id')
@@ -450,7 +474,30 @@ class Dbo extends Obj
 			{	
 				if($this->hasField($name))
 				{
-					$this->__data[$name] = $attr;
+					/* aqui vamos verificar se o sistema tem varios idiomas ou não */
+					/*
+						verificamos se o modulo possui campo de tradução, 
+						se o idioma atual é diferente do idimoa padrão e
+						se o campo em questão não é um campo sem tradução, como selects e radios,
+						onde a tradução fica no arquivo de definiçao do módulo.
+					*/
+					if(
+						$this->hasField('dbo_translations') && //modulo possui campo de traduções
+						($_system['dbo_default_language'] != $_system['dbo_active_language']) && //idioma ativo é diferente do idioma padrão
+						!in_array($this->getFieldTipo($name), $this->__single_lang_fields) && //não é um campo multivalorado
+						$this->getDetails($name)->multi_lang && //o campo está setado como multi-linguagens
+						$this->__loaded //dados estão carregados
+					)
+					{
+						/* neste caso, salvamos as informações no array json que contem todas as traduções na linguagem ativa. */
+						$json = json_decode($this->__data['dbo_translations'], true);
+						$json[$_system['dbo_active_language']][$name] = $attr;
+						$this->__data['dbo_translations'] = json_encode($json);
+					}
+					else
+					{
+						$this->__data[$name] = $attr;
+					}
 				}
 				else
 				{
@@ -577,7 +624,26 @@ class Dbo extends Obj
 	{
 		return hash('sha512', $string);
 	}
-	
+
+	//pega o valor traduzido de um campo multivalorado ----------------------------------------------------------------------------------------------
+
+	public static function getTranslatedValue($string, $active_lang = 'pt-br')
+	{
+		$todo = explode('|||', $string);
+
+		foreach($todo as $part)
+		{
+			$parts = explode(':', $part);
+			$lang = array_shift($parts);
+			$lang = trim($lang);
+			if($lang == $active_lang)
+			{
+				return trim(implode(':', $parts));
+			}
+		}
+		return $string;
+	}
+
 	//cria o grid para exibicao dos campos do formulario --------------------------------------------------------------------------------------------
 
 	function makeGrid($var)
@@ -849,6 +915,7 @@ class Dbo extends Obj
 			{
 				$this->syncClientObjects();
 			}
+			$this->__loaded = true;
 		}
 	}
 
@@ -1040,6 +1107,7 @@ class Dbo extends Obj
 			{
 				$this->syncClientObjects();
 			}
+			$this->__loaded = true;
 		}
 		else
 		{
@@ -1176,6 +1244,7 @@ class Dbo extends Obj
 			{
 				$this->syncClientObjects();
 			}
+			$this->__loaded = true;
 		}
 		$this->clearArrays();
 	}
@@ -1192,6 +1261,13 @@ class Dbo extends Obj
 	function getFieldName($field)
 	{
 		return $this->__module_scheme->campo[$field]->titulo;
+	}
+	
+	//retorna o tipo do campo como definido no scheme -------------------------------------------------------------------------------------
+
+	function getFieldTipo($field)
+	{
+		return $this->__module_scheme->campo[$field]->tipo;
 	}
 	
 	//pega o campo que é a chave primária do modulo ---------------------------------------------------------------------------------------
@@ -1228,6 +1304,7 @@ class Dbo extends Obj
 
 	function fetch ()
 	{
+		$this->__loaded = false;
 		if($lin = dboFetchAssoc($this->__res)) {
 			$this->__iterator++;
 			foreach($lin as $chave => $valor)
@@ -1240,6 +1317,7 @@ class Dbo extends Obj
 				$this->syncClientObjects();
 			}
 			$this->clearJoins();
+			$this->__loaded = true;
 			return true;
 		}
 		return false;
@@ -2178,17 +2256,6 @@ class Dbo extends Obj
 		return $this->__size;
 	}
 
-	//habilita o uso de recursos diversos do modulo seguindo seus pre-requisitos de funcionamento -----------------------------------------
-
-	function ok()
-	{
-		if($this->__ok === true)
-		{
-			return true;
-		}
-		return false;
-	}
-
 	//mascara o id do objeto  -------------------------------------------------------------------------------------------------------------
 
 	function maskId($id = false)
@@ -2586,331 +2653,336 @@ class Dbo extends Obj
 	*/
 	function getList ($restricoes = '')
 	{
+		global $_system;
 
-		if($this->ok())
+		$this->__module_scheme->paginacao ? $this->__ipp = $this->__module_scheme->paginacao : '';//setando o número para paginação
+
+		/* setando permissões genéricas */
+
+		/* view */
+		$dbo_permission_view = hasPermission('view', $_GET['dbo_mod']);
+
+		/* update */
+		$dbo_permission_update = hasPermission('update', $_GET['dbo_mod']);
+
+		/* delete */
+		$dbo_permission_delete = hasPermission('delete', $_GET['dbo_mod']);
+		
+		// Fazendo um "SELECT *" na tabela
+		$classe = ($this->__class);
+		$obj = $this->newSelf();
+		$sql_list = $this->getModuleRestriction().$this->getSQLfixos().$this->getSQLFilters().$this->getSQLInativo().$this->getSQLDeletionEngine().$this->getSQLOrder().$this->getSQLipp();
+		$obj->loadAll($sql_list);
+		$modulo = $obj;
+		if($obj->size())
 		{
-			$this->__module_scheme->paginacao ? $this->__ipp = $this->__module_scheme->paginacao : '';//setando o número para paginação
+			$return = "<span class='dbo-element'><div class='fieldset'><div class='content'><table class='responsive list ".(($this->isAutoOrdered())?('auto-order'):(''))."'><thead><tr>";
 
-			/* setando permissões genéricas */
-
-			/* view */
-			$dbo_permission_view = hasPermission('view', $_GET['dbo_mod']);
-
-			/* update */
-			$dbo_permission_update = hasPermission('update', $_GET['dbo_mod']);
-
-			/* delete */
-			$dbo_permission_delete = hasPermission('delete', $_GET['dbo_mod']);
-			
-			// Fazendo um "SELECT *" na tabela
-			$classe = ($this->__class);
-			$obj = $this->newSelf();
-			$sql_list = $this->getModuleRestriction().$this->getSQLfixos().$this->getSQLFilters().$this->getSQLInativo().$this->getSQLDeletionEngine().$this->getSQLOrder().$this->getSQLipp();
-			$obj->loadAll($sql_list);
-			$modulo = $obj;
-			if($obj->size())
+			// Colocando os THs na tabela.
+			foreach($this->__module_scheme->campo as $chave => $valor)
 			{
-				$return = "<span class='dbo-element'><div class='fieldset'><div class='content'><table class='responsive list ".(($this->isAutoOrdered())?('auto-order'):(''))."'><thead><tr>";
+				if($valor->lista === true && !$this->isFixo($valor->coluna))
+				{
+					$return .= "<th>".$this->getOrderLink($valor)."</th>";
+				}
+			}
 
-				// Colocando os THs na tabela.
+			//coluna para as acoes
+			$return .= '<th colspan="10" style="width: 1%;" class="text-right"></th>';
+			$return .= "</tr></thead><tbody>";
+
+			/* buttons */
+			if(is_array($this->__module_scheme->button))
+			{
+				foreach($this->__module_scheme->button as $chave => $botao)
+				{
+					$dbo_permission_button[$botao->value] = hasPermission($botao->value, $_GET['dbo_mod']);
+				}
+			}
+
+			do {
+
+				$id = $obj->id;
+
+				$function_name = $obj->getModule().'_has_permission';
+				if(function_exists($function_name))
+				{
+					$dbo_permission_update = $function_name('update', $obj);
+					$dbo_permission_delete = $function_name('delete', $obj);
+				}
+				
+				// Imprimindo as linhas
+				$return .= "<tr id='row-".$id."' rel='".$this->keepUrl('dbo_view='.$id)."' ".(($_GET['dbo_view'] == $id)?("class='active'"):(''))." ".((!$dbo_permission_view && $dbo_permission_update)?("data-update-url='".$this->keepUrl(array("dbo_update=".$id, '!dbo_new&!dbo_delete&!dbo_view'))."'"):(''))." >";
+
 				foreach($this->__module_scheme->campo as $chave => $valor)
 				{
+
+					//checa se existe função de exibição de dados
+					$list_function = ((strlen($valor->list_function))?($valor->list_function):(false));
+
+					// Tratando todos os possiveis tipos de campo
 					if($valor->lista === true && !$this->isFixo($valor->coluna))
 					{
-						$return .= "<th>".$this->getOrderLink($valor)."</th>";
-					}
-				}
+						
+						$return .= "<td class='".((!DBO_PERMISSIONS || $dbo_permission_view)?("view-handle"):(''))." ".$chave."' data-title='".((strlen(trim($valor->titulo_listagem)))?($valor->titulo_listagem):($valor->titulo))."'>";
 
-				//coluna para as acoes
-				$return .= '<th colspan="10" style="width: 1%;" class="text-right"></th>';
-				$return .= "</tr></thead><tbody>";
+						//creates an array with the ids of the listed elements. This array can be used by the pos_list function of the module.
+						$this->__listed_elements[$id] = $id;
 
-				/* buttons */
-				if(is_array($this->__module_scheme->button))
-				{
-					foreach($this->__module_scheme->button as $chave => $botao)
-					{
-						$dbo_permission_button[$botao->value] = hasPermission($botao->value, $_GET['dbo_mod']);
-					}
-				}
+						$val = $obj->$chave;
 
-				do {
-
-					$id = $obj->id;
-
-					$function_name = $obj->getModule().'_has_permission';
-					if(function_exists($function_name))
-					{
-						$dbo_permission_update = $function_name('update', $obj);
-						$dbo_permission_delete = $function_name('delete', $obj);
-					}
-					
-					// Imprimindo as linhas
-					$return .= "<tr id='row-".$id."' rel='".$this->keepUrl('dbo_view='.$id)."' ".(($_GET['dbo_view'] == $id)?("class='active'"):(''))." ".((!$dbo_permission_view && $dbo_permission_update)?("data-update-url='".$this->keepUrl(array("dbo_update=".$id, '!dbo_new&!dbo_delete&!dbo_view'))."'"):(''))." >";
-
-					foreach($this->__module_scheme->campo as $chave => $valor)
-					{
-
-						//checa se existe função de exibição de dados
-						$list_function = ((strlen($valor->list_function))?($valor->list_function):(false));
-
-						// Tratando todos os possiveis tipos de campo
-						if($valor->lista === true && !$this->isFixo($valor->coluna))
+						// PK =========================================================================================
+						if($valor->tipo == 'pk')
 						{
-							
-							$return .= "<td class='".((!DBO_PERMISSIONS || $dbo_permission_view)?("view-handle"):(''))." ".$chave."' data-title='".((strlen(trim($valor->titulo_listagem)))?($valor->titulo_listagem):($valor->titulo))."'>";
-
-							//creates an array with the ids of the listed elements. This array can be used by the pos_list function of the module.
-							$this->__listed_elements[$id] = $id;
-
-							$val = $obj->$chave;
-
-							// PK =========================================================================================
-							if($valor->tipo == 'pk')
-							{
-								if($list_function) { $return .= $list_function($obj, $valor->coluna); }
-								else {
-									$return .= htmlspecialchars($val);
+							if($list_function) { $return .= $list_function($obj, $valor->coluna); }
+							else {
+								$return .= htmlspecialchars($val);
+							}
+						}
+						// TEXT =======================================================================================
+						if($valor->tipo == 'text' || $valor->tipo == 'textarea')
+						{
+							if($list_function) { $return .= $list_function($obj, $valor->coluna); }
+							else {
+								$return .= htmlspecialchars($val);
+							}
+						}
+						// PASSWORD =======================================================================================
+						if($valor->tipo == 'password')
+						{
+							$return .= "********";
+						}
+						// TEXT =======================================================================================
+						if($valor->tipo == 'price')
+						{
+							if($list_function) { $return .= $list_function($obj, $valor->coluna); }
+							else {
+								$valor_price = $val;
+								if($valor_price == null)
+								{
+									$valor_price = '';
 								}
-							}
-							// TEXT =======================================================================================
-							if($valor->tipo == 'text' || $valor->tipo == 'textarea')
-							{
-								if($list_function) { $return .= $list_function($obj, $valor->coluna); }
-								else {
-									$return .= htmlspecialchars($val);
-								}
-							}
-							// PASSWORD =======================================================================================
-							if($valor->tipo == 'password')
-							{
-								$return .= "********";
-							}
-							// TEXT =======================================================================================
-							if($valor->tipo == 'price')
-							{
-								if($list_function) { $return .= $list_function($obj, $valor->coluna); }
-								else {
-									$valor_price = $val;
-									if($valor_price == null)
+								else
+								{
+									if($valor->formato == 'real')
 									{
-										$valor_price = '';
+										$valor_price = 'R$ '.number_format($valor_price, 2, ',', '.');
+									}
+									elseif($valor->formato == 'generico')
+									{
+										$valor_price = '$ '.number_format($valor_price, 2, ',', '.');
 									}
 									else
 									{
-										if($valor->formato == 'real')
-										{
-											$valor_price = 'R$ '.number_format($valor_price, 2, ',', '.');
-										}
-										elseif($valor->formato == 'generico')
-										{
-											$valor_price = '$ '.number_format($valor_price, 2, ',', '.');
-										}
-										else
-										{
-											$valor_price = 'US$ '.number_format($valor_price, 2, '.', ',');
-										}
+										$valor_price = 'US$ '.number_format($valor_price, 2, '.', ',');
 									}
-									$return .= htmlspecialchars($valor_price);
-									unset($valor_price);
 								}
+								$return .= htmlspecialchars($valor_price);
+								unset($valor_price);
 							}
-							// SELECT / RADIO =============================================================================
-							elseif ($valor->tipo == 'radio' || $valor->tipo == 'select')
+						}
+						// SELECT / RADIO =============================================================================
+						elseif ($valor->tipo == 'radio' || $valor->tipo == 'select')
+						{
+							if($valor->multi_lang)
+							{
+								$return .= dbo::getTranslatedValue($valor->valores[$val], $_system['dbo_active_language']);
+							}
+							else
 							{
 								if($list_function) { $return .= $list_function($obj, $valor->coluna); }
 								else {
 									$return .= $valor->valores[$val];
 								}
 							}
-							// CHECKBOX =============================================================================
-							elseif ($valor->tipo == 'checkbox')
-							{
-								if($list_function) { $return .= $list_function($obj, $valor->coluna); }
-								else {
-									$return .= str_replace("\n", ", ", $obj->{$valor->coluna});
-								}
-							}
-							// CAMPO DE DATA ==============================================================================
-							elseif ($valor->tipo == 'date')
-							{
-								if($list_function) { $return .= $list_function($obj, $valor->coluna); }
-								else {
-									$val = explode("-", $val);
-									$val = implode("/", array_reverse($val));
-									$return .= htmlspecialchars($val != '00/00/0000' ? $val : '');
-								}
-							}
-							// CAMPO DE DATA E HORA ==============================================================================
-							elseif ($valor->tipo == 'datetime')
-							{
-								if($list_function) { $return .= $list_function($obj, $valor->coluna); }
-								else {
-									if(strlen(trim($val)))
-									{
-										$return .= dateTimeNormal($val);
-									}
-								}
-							}
-							// SINGLE JOIN ================================================================================
-							elseif ($valor->tipo == 'join') {
-								$join = $valor->join;
-								$jobj = new Dbo($join->modulo);
-								$jobj->id = $val;
-								$jobj->load();
-								if($list_function) { $return .= $list_function($obj, $valor->coluna); }
-								else {
-									$return .= $jobj->{$join->valor};
-								}
-							}
-							// PLUGINS ==========================================================================
-							elseif($valor->tipo == 'plugin')
-							{
-								$plugin = $valor->plugin;
-								$plugin_path = DBO_PATH."/plugins/".$plugin->name."/".$plugin->name.".php";
-								$plugin_class = "dbo_".$plugin->name;
-								//checa se o plugin existe, antes de mais nada.
-								if(file_exists($plugin_path))
-								{
-									include_once($plugin_path); //inclui a classe
-									$plug = new $plugin_class($plugin->params); //instancia com os parametros
-									$plug->setData($val);
-									$return .= $plug->getList(); //pega os campos de inserção
-								}
-								else { //senão, avisa que não está instalado.
-									$return .= "O Plugin <b>'".$plugin->name."'</b> não está instalado";
-								}
-							} //plugins
-							// IMAGE ================================================================================
-							elseif ($valor->tipo == 'image') {
-								if($val)
-								{
-									if($list_function) { $return .= $list_function($obj, $valor->coluna); }
-									else {
-										$return .= "<img src='".DBO_IMAGE_HTML_PATH."/".$val."' class='thumb-lista' />";
-									}
-								}
-								else
-								{
-									$return .= "<img src='".DBO_IMAGE_PLACEHOLDER."' class='thumb-lista' />";
-								}
-							} //image
-							elseif ($valor->tipo == 'media') {
-								if($val)
-								{
-									if($list_function) { $return .= $list_function($obj, $valor->coluna); }
-									else {
-										$return .= "<img src='".$obj->{'_'.$valor->coluna}->url(array('size' => 'small'))."' class='thumb-lista' />";
-									}
-								}
-								else
-								{
-									$return .= "<img src='".DBO_IMAGE_PLACEHOLDER."' class='thumb-lista' />";
-								}
-							} //image
-							// QUERY ================================================================================
-							elseif ($valor->tipo == 'query') {
-								$query = '';
-								eval($valor->query);
-								$res_query = dboQuery($query);
-								if(dboAffectedRows())
-								{
-									$lin_query = dboFetchObject($res_query);
-									$val = $lin_query->val;
-								}
-								if($val !== false)
-								{
-									if($list_function) { $return .= $list_function($obj, $valor->coluna); }
-									else {
-										$return .= $val;
-									}
-								}
-							}
-
-							$return .= "</td>";
-						} // if lista true
-					} //foreach
-
-					//checa se exitem botoes customizados no modulo
-					if(is_array($this->__module_scheme->button))
-					{
-						foreach($this->__module_scheme->button as $chave => $botao)
+						}
+						// CHECKBOX =============================================================================
+						elseif ($valor->tipo == 'checkbox')
 						{
-							$function_name = $obj->getModule().'_has_permission_button';
-							if(function_exists($function_name))
-							{
-								$dbo_permission_button[$botao->value] = $function_name($botao->value, $obj);
+							if($list_function) { $return .= $list_function($obj, $valor->coluna); }
+							else {
+								$return .= str_replace("\n", ", ", $obj->{$valor->coluna});
 							}
-							if(!DBO_PERMISSIONS || $dbo_permission_button[$botao->value])
-							{
-								if($botao->custom === TRUE) //botoes customizados. o codigo bem do arquivo de definição do modulo.
+						}
+						// CAMPO DE DATA ==============================================================================
+						elseif ($valor->tipo == 'date')
+						{
+							if($list_function) { $return .= $list_function($obj, $valor->coluna); }
+							else {
+								$val = explode("-", $val);
+								$val = implode("/", array_reverse($val));
+								$return .= htmlspecialchars($val != '00/00/0000' ? $val : '');
+							}
+						}
+						// CAMPO DE DATA E HORA ==============================================================================
+						elseif ($valor->tipo == 'datetime')
+						{
+							if($list_function) { $return .= $list_function($obj, $valor->coluna); }
+							else {
+								if(strlen(trim($val)))
 								{
-									eval(str_replace("[VALUE]", $botao->value, $botao->code));
-									$return .= "<td>".$code."</td>";
-								} else {
-									if($botao->show !== false)
-									{
-										$return .= "<td><a class='button tiny radius large-no-wrap no-margin' href='".$this->keepUrl(array("dbo_mod=".$botao->modulo."&dbo_fixo=".$this->encodeFixos($botao->modulo_fk."=".$obj->{$botao->key}), "!pag&!dbo_insert&!dbo_update&!dbo_delete&!dbo_view"))."'>".$botao->value."</a></td>";
-									}
+									$return .= dateTimeNormal($val);
+								}
+							}
+						}
+						// SINGLE JOIN ================================================================================
+						elseif ($valor->tipo == 'join') {
+							$join = $valor->join;
+							$jobj = new Dbo($join->modulo);
+							$jobj->id = $val;
+							$jobj->load();
+							if($list_function) { $return .= $list_function($obj, $valor->coluna); }
+							else {
+								$return .= $jobj->{$join->valor};
+							}
+						}
+						// PLUGINS ==========================================================================
+						elseif($valor->tipo == 'plugin')
+						{
+							$plugin = $valor->plugin;
+							$plugin_path = DBO_PATH."/plugins/".$plugin->name."/".$plugin->name.".php";
+							$plugin_class = "dbo_".$plugin->name;
+							//checa se o plugin existe, antes de mais nada.
+							if(file_exists($plugin_path))
+							{
+								include_once($plugin_path); //inclui a classe
+								$plug = new $plugin_class($plugin->params); //instancia com os parametros
+								$plug->setData($val);
+								$return .= $plug->getList(); //pega os campos de inserção
+							}
+							else { //senão, avisa que não está instalado.
+								$return .= "O Plugin <b>'".$plugin->name."'</b> não está instalado";
+							}
+						} //plugins
+						// IMAGE ================================================================================
+						elseif ($valor->tipo == 'image') {
+							if($val)
+							{
+								if($list_function) { $return .= $list_function($obj, $valor->coluna); }
+								else {
+									$return .= "<img src='".DBO_IMAGE_HTML_PATH."/".$val."' class='thumb-lista' />";
 								}
 							}
 							else
 							{
-								$return .= '<td></td>';
+								$return .= "<img src='".DBO_IMAGE_PLACEHOLDER."' class='thumb-lista' />";
 							}
-						}//foreach
-					}//if
-
-					$return .= "<td class=\"control-icons\" id='controls-row-".$id."' style='white-space: nowrap'>";
-
-					$return .= ((method_exists($obj, 'getControlIcons'))?($obj->getControlIcons()):(''));
-
-					//checa se o modulo permite edição e exclusão dos dados
-					if ($this->__module_scheme->update === true) {
-						if(!DBO_PERMISSIONS || $dbo_permission_update)
-						{
-							//mostrar a chave de inativo/ativo se houver
-							if($this->hasInativo())
+						} //image
+						elseif ($valor->tipo == 'media') {
+							if($val)
 							{
-								$return .= (($obj->inativo == 0)?("<span class='wrapper-lock'><a title='Desativar' class='trigger-dbo-auto-admin-toggle-active-inactive' href='".$this->keepUrl(array("dbo_toggle_inactive=".$id."&token=".md5($id.SALT_DBO_AUTO_ADMIN_TOGGLE_ACTIVE)."&".CSRFVar(), '!dbo_toggle_active'))."'><i class=\"fa fa-unlock-alt\"></i></a></span>"):("<span class='wrapper-lock'><a title='".$this->__module_scheme->titulo." inativo. Clique para ativar' class='trigger-dbo-auto-admin-toggle-active-inactive alert' href='".$this->keepUrl(array("dbo_toggle_active=".$id."&token=".md5($id.SALT_DBO_AUTO_ADMIN_TOGGLE_ACTIVE)."&".CSRFVar(), '!dbo_toggle_inactive'))."'><i class=\"fa fa-lock\"></i></a></span>"));
+								if($list_function) { $return .= $list_function($obj, $valor->coluna); }
+								else {
+									$return .= "<img src='".$obj->{'_'.$valor->coluna}->url(array('size' => 'small'))."' class='thumb-lista' />";
+								}
 							}
-							$return .= " <a title='Alterar' href='".$this->keepUrl(array("dbo_update=".$id, '!dbo_new&!dbo_delete&!dbo_view'))."'><i class=\"fa fa-pencil\"></i></a>";
+							else
+							{
+								$return .= "<img src='".DBO_IMAGE_PLACEHOLDER."' class='thumb-lista' />";
+							}
+						} //image
+						// QUERY ================================================================================
+						elseif ($valor->tipo == 'query') {
+							$query = '';
+							eval($valor->query);
+							$res_query = dboQuery($query);
+							if(dboAffectedRows())
+							{
+								$lin_query = dboFetchObject($res_query);
+								$val = $lin_query->val;
+							}
+							if($val !== false)
+							{
+								if($list_function) { $return .= $list_function($obj, $valor->coluna); }
+								else {
+									$return .= $val;
+								}
+							}
 						}
-					}
-					if ($this->__module_scheme->delete === true) {
-						if(!DBO_PERMISSIONS || $dbo_permission_delete)
+
+						$return .= "</td>";
+					} // if lista true
+				} //foreach
+
+				//checa se exitem botoes customizados no modulo
+				if(is_array($this->__module_scheme->button))
+				{
+					foreach($this->__module_scheme->button as $chave => $botao)
+					{
+						$function_name = $obj->getModule().'_has_permission_button';
+						if(function_exists($function_name))
 						{
-							$return .= " <a title='Excluir' class=\"trigger-dbo-auto-admin-delete\" data-id=\"".$id."\" href=\"".$this->keepUrl(array("dbo_delete=".$id."&".CSRFVar(), '!dbo_new&!dbo_update&!dbo_view'))."\"><i class=\"fa fa-times\"></i></a>";
+							$dbo_permission_button[$botao->value] = $function_name($botao->value, $obj);
 						}
+						if(!DBO_PERMISSIONS || $dbo_permission_button[$botao->value])
+						{
+							if($botao->custom === TRUE) //botoes customizados. o codigo bem do arquivo de definição do modulo.
+							{
+								eval(str_replace("[VALUE]", $botao->value, $botao->code));
+								$return .= "<td>".$code."</td>";
+							} else {
+								if($botao->show !== false)
+								{
+									$return .= "<td><a class='button tiny radius large-no-wrap no-margin' href='".$this->keepUrl(array("dbo_mod=".$botao->modulo."&dbo_fixo=".$this->encodeFixos($botao->modulo_fk."=".$obj->{$botao->key}), "!pag&!dbo_insert&!dbo_update&!dbo_delete&!dbo_view"))."'>".$botao->value."</a></td>";
+								}
+							}
+						}
+						else
+						{
+							$return .= '<td></td>';
+						}
+					}//foreach
+				}//if
+
+				$return .= "<td class=\"control-icons\" id='controls-row-".$id."' style='white-space: nowrap'>";
+
+				$return .= ((method_exists($obj, 'getControlIcons'))?($obj->getControlIcons()):(''));
+
+				//checa se o modulo permite edição e exclusão dos dados
+				if ($this->__module_scheme->update === true) {
+					if(!DBO_PERMISSIONS || $dbo_permission_update)
+					{
+						//mostrar a chave de inativo/ativo se houver
+						if($this->hasInativo())
+						{
+							$return .= (($obj->inativo == 0)?("<span class='wrapper-lock'><a title='Desativar' class='trigger-dbo-auto-admin-toggle-active-inactive' href='".$this->keepUrl(array("dbo_toggle_inactive=".$id."&token=".md5($id.SALT_DBO_AUTO_ADMIN_TOGGLE_ACTIVE)."&".CSRFVar(), '!dbo_toggle_active'))."'><i class=\"fa fa-unlock-alt\"></i></a></span>"):("<span class='wrapper-lock'><a title='".$this->__module_scheme->titulo." inativo. Clique para ativar' class='trigger-dbo-auto-admin-toggle-active-inactive alert' href='".$this->keepUrl(array("dbo_toggle_active=".$id."&token=".md5($id.SALT_DBO_AUTO_ADMIN_TOGGLE_ACTIVE)."&".CSRFVar(), '!dbo_toggle_inactive'))."'><i class=\"fa fa-lock\"></i></a></span>"));
+						}
+						$return .= " <a title='Alterar' href='".$this->keepUrl(array("dbo_update=".$id, '!dbo_new&!dbo_delete&!dbo_view'))."'><i class=\"fa fa-pencil\"></i></a>";
 					}
+				}
+				if ($this->__module_scheme->delete === true) {
+					if(!DBO_PERMISSIONS || $dbo_permission_delete)
+					{
+						$return .= " <a title='Excluir' class=\"trigger-dbo-auto-admin-delete\" data-id=\"".$id."\" href=\"".$this->keepUrl(array("dbo_delete=".$id."&".CSRFVar(), '!dbo_new&!dbo_update&!dbo_view'))."\"><i class=\"fa fa-times\"></i></a>";
+					}
+				}
 
-					$return .= "</td>";
+				$return .= "</td>";
 
-					$return .= "</tr>";
-				} while($obj->fetch());
-				$return .= "</tbody></table></div></div>";
-			}
-			else
-			{
-				$return .= '<div class="row"><div class="large-12 columns"><h2 class="text-center"><br />- não há '.dboStrToLower($this->__module_scheme->titulo_plural).' cadastrad'.$this->__module_scheme->genero.'s -</h2></div></div><style> .filter-button { display: none; } </style>';
-			}
+				$return .= "</tr>";
+			} while($obj->fetch());
+			$return .= "</tbody></table></div></div>";
+		}
+		else
+		{
+			$return .= '<div class="row"><div class="large-12 columns"><h2 class="text-center"><br />- não há '.dboStrToLower($this->__module_scheme->titulo_plural).' cadastrad'.$this->__module_scheme->genero.'s -</h2></div></div><style> .filter-button { display: none; } </style>';
+		}
 
-			echo $return;
+		echo $return;
 
-			//shows only if the current module is not autoOrdered
-			if(!$this->isAutoOrdered())
-			{
-				echo $this->splitter($this->getModuleRestriction().$this->getSQLfixos().$this->getSQLFilters().$this->getSQLInativo().$this->getSQLOrder());
-			}
-			elseif($obj->size())
-			{
-				?>
-				<div class="helper arrow-top hide-for-small">Clique e arraste os itens para reordenar</div>
-				<?
-			}
+		//shows only if the current module is not autoOrdered
+		if(!$this->isAutoOrdered())
+		{
+			echo $this->splitter($this->getModuleRestriction().$this->getSQLfixos().$this->getSQLFilters().$this->getSQLInativo().$this->getSQLOrder());
+		}
+		elseif($obj->size())
+		{
+			?>
+			<div class="helper arrow-top hide-for-small">Clique e arraste os itens para reordenar</div>
+			<?
+		}
 
-			echo "</span>"; //.dbo-element
-		} //ok()
+		echo "</span>"; //.dbo-element
 	} //getList()
 
 	/*
@@ -2920,183 +2992,200 @@ class Dbo extends Obj
 	*/
 	function getInsertForm($params = array())
 	{
+		global $_system;
+
 		extract($params);
 
 		$id_formulario = $id_formulario ? $id_formulario : "form-".uniqid();
 
-		if($this->ok())
+		//campos a serem usados no eval();
+		$scheme = $this->__module_scheme;
+		$fixos = $this->__fixos;
+
+		//inicializando mapeamento de validação
+		$validation_meta = array();
+
+		if(!is_object($this->__module_scheme))
 		{
-			//campos a serem usados no eval();
-			$scheme = $this->__module_scheme;
-			$fixos = $this->__fixos;
-
-			//inicializando mapeamento de validação
-			$validation_meta = array();
-
-			if(!is_object($this->__module_scheme))
-			{
-				echo "<h1 style='font-size: 21px; color: #C00;'>ERRO: A classe '".get_class($this)."' não possui esquema de módulo definido.</h1>";
-			}
-			else
-			{
-				//setando um id para o formulario, usado na validacao e mascaras.
-
-				//checando se há algo a se colocar depois do formulario (campos por exemplo)
-				$function_name = 'form_'.$this->__module_scheme->modulo."_before";
-				if(function_exists($function_name))
-				{
-					$return .= $function_name('insert', $this);
-				}
-				
-				$return = '';
-
-				if(!$fields_only)
-				{
-					$return .= "<span class='dbo-element'><div class='fieldset' style='clear: both;'><div class='content'>";
-					$return .= "<form method='POST' enctype='multipart/form-data' action='".$this->keepUrl('!dbo_delete&!dbo_update&!dbo_new')."' id='".$id_formulario."' class=\"form-insert\">";
-				}
-
-				//checando se há grid de exibição de dados customizado... e setando variaveis para seu uso.
-				if($this->hasGrid('insert')) { $gc = 0; $hasgrid = true; $grid = $this->hasGrid('insert'); }
-
-				//checando se há algo a se colocar antes do formulario (campos por exemplo)
-				$function_name = 'form_'.$this->__module_scheme->modulo."_prepend";
-				if(function_exists($function_name))
-				{
-					$return .= $function_name('insert', $this);
-				}
-
-				// Criando o form de inserçao.
-				foreach($this->__module_scheme->campo as $chave => $valor)
-				{
-
-					/* checando para ver se existe uma função custom para determinado campo */
-					$custom_field = false;
-					$function_name = 'field_'.$scheme->modulo."_".$valor->coluna;
-					if(function_exists($function_name))
-					{
-						$custom_field = $function_name('insert', $this);
-					}
-
-
-					if($hasgrid)
-					{
-						if($grid[$gc] == '|-')
-						{
-							$return .= "<div class='row clearfix'>\n"; $gc++;
-							//inserts the section separator, if exists.
-							if(intval($grid[$gc]) == 0 && $grid[$gc] != '|-' && $grid[$gc] != '-|' )
-							{
-								$grid_cell = $this->parseGridCell($grid[$gc]);
-								$return .= "<div class='large-12 columns ".$this->getGridCellPart($grid_cell, 'item-classes')."'><div class='section subheader'><span>".$this->getGridCellPart($grid_cell, 'item-size')."</span></div></div>\n"; $gc++;
-								$return .= "</div> <!-- row -->\n\n<hr style=\"margin-bottom: 2em;\" class=\"".$this->getGridCellPart($grid_cell, 'item-classes')."\">\n"; $gc++;
-								$return .= "<div class='row'>\n"; $gc++;
-							}
-						}
-						if($grid[$gc] == '-|') { $return .= "</div> <!-- row -->\n\n"; /*row*/ $gc++; }
-					}
-					if($valor->add === true)
-					{
-						if(
-							$this->perfilTemAcessoCampo($valor->perfil) && 
-							(
-								(is_array($field_whitelist) && in_array($valor->coluna, $field_whitelist)) ||
-								(is_array($field_blacklist) && !in_array($valor->coluna, $field_blacklist)) ||
-								(!is_array($field_whitelist) && !is_array($field_blacklist))
-							)
-						)
-						{
-							$grid_cell = $this->parseGridCell($grid[$gc++]);
-
-							if (!$hasgrid) { $return .= "<div class='row clearfix'>"; }
-							$return .= "<div class='item columns ".(($hasgrid)?('large-'.$this->getGridCellPart($grid_cell, 'item-size')):(''))." ".(($hasgrid)?($this->getGridCellPart($grid_cell, 'item-classes')):(''))."' id='item-".$valor->coluna."'>\n";
-
-							//checando se existe uma subgrid para exibicao do elemento filho
-							$return .= $this->getGridCellPart($grid_cell, 'field-start');
-
-							$return .= "<label style=\"".($this->isFixo($valor->coluna) || $valor->label_display == 'hidden' ? 'display: none; ' : ($valor->label_display == 'transparent' ? 'visibility: hidden; ' : ''))."\">".htmlSpecialChars($valor->titulo).(($valor->valida)?(" <span class='required'></span>"):('')).(($valor->dica)?(" <span data-tooltip class='has-tip tip-top' title='".htmlSpecialChars($valor->dica)."'><i class=\"fa fa-question-circle\"></i></span>"):(''))."</label>";
-							$return .= "<span class='input input-".$valor->tipo."'>";
-
-							//checando se existe uma subgrid para exibicao do elemento filho
-							$return .= $this->getGridCellPart($grid_cell, 'field-middle');
-
-							if($custom_field)
-							{
-								$return .= $custom_field;
-							}
-							else
-							{
-								//inserção do elemento proveninente do dboUI
-								$return .= $this->getFormElement('insert', $valor->coluna);
-							} //if custom_field
-
-							//checando se existe uma subgrid para exibicao do elemento filho
-							$return .= $this->getGridCellPart($grid_cell, 'field-end');
-
-							$return .= "</span>"; //input
-							$return .= "\n</div>\n"; //item
-							if (!$hasgrid) { $return .= "</div> <!-- row -->\n\n"; /*row*/ }
-						} //if se o perfil tem acesso a esse campo!
-						else
-						{
-							if($hasgrid) { $gc++; }
-						}
-					} //if add === true
-					if($hasgrid)
-					{
-						if($grid[$gc] == '|-')
-						{
-							$return .= "<div class='row'>\n"; $gc++;
-							//inserts the section separator, if exists.
-							if(intval($grid[$gc]) == 0 && $grid[$gc] != '|-' && $grid[$gc] != '-|' )
-							{
-								$return .= "<h3 class='section'>".$grid[$gc]."</h3>\n"; $gc++;
-								$return .= "</div> <!-- row -->\n\n"; $gc++;
-								$return .= "<div class='row clearfix'>\n"; $gc++;
-							}
-						}
-						if($grid[$gc] == '-|') { $return .= "</div> <!-- row -->\n\n"; /*row*/ $gc++; }
-					}
-
-					//tratando as mascaras de campo
-					if($valor->mask)
-					{
-						$return .= "\t<script type='text/javascript' charset='utf-8'> \$('#".$id_formulario." #item-".$valor->coluna." input').mask('".$valor->mask."') </script>\n\n";
-					}
-				} //foreach
-
-				//checando se há algo a se colocar depois do formulario (campos por exemplo)
-				$function_name = 'form_'.$this->__module_scheme->modulo."_append";
-				if(function_exists($function_name))
-				{
-					$return .= $function_name('insert', $this);
-				}
-
-			}
-			if(!$fields_only)
-			{
-				$return .= '<div class="row"><div class="item large-12 columns text-right"><div class="input"><button class="button radius peixe-save" id="main-submit" accesskey="s">'.((!$this->__module_scheme->insert_button_text)?('Inserir '.dboStrToLower($this->__module_scheme->titulo)):($this->__module_scheme->insert_button_text)).'</button></div></div></div>';
-				$return .= "<input type='hidden' name='__dbo_insert_flag' value='1'>";
-				$return .= CSRFInput();
-				$return .= submitToken();
-				$return .= "</form></div></div></span>"; //.dbo-element
-			}
+			echo "<h1 style='font-size: 21px; color: #C00;'>ERRO: A classe '".get_class($this)."' não possui esquema de módulo definido.</h1>";
+		}
+		else
+		{
+			//setando um id para o formulario, usado na validacao e mascaras.
 
 			//checando se há algo a se colocar depois do formulario (campos por exemplo)
-			$function_name = 'form_'.$this->__module_scheme->modulo."_after";
+			$function_name = 'form_'.$this->__module_scheme->modulo."_before";
+			if(function_exists($function_name))
+			{
+				$return .= $function_name('insert', $this);
+			}
+			
+			$return = '';
+
+			/* Se o módulo é multi-idiomas, um registro só pode ser inserido primeiramente em seu idioma original. */
+			if($this->hasField('dbo_translations') && ($_system['dbo_default_language'] != $_system['dbo_active_language']))
+			{
+				?>
+				<div class="row">
+					<div class="small-12 large-12 columns">
+						<div class="panel text-center">
+							<br />
+							<p><strong>Atenção:</strong> todas as informações devem ser inicialmente inseridas no idioma padrão do sistema:</p>
+							<p class="font-30"><strong><?= $_system['dbo_languages'][$_system['dbo_default_language']] ?></strong></p>
+						</div>
+					</div>
+				</div>
+				<?php
+				return;
+			}
+
+
+			if(!$fields_only)
+			{
+				$return .= "<span class='dbo-element'><div class='fieldset' style='clear: both;'><div class='content'>";
+				$return .= "<form method='POST' enctype='multipart/form-data' action='".$this->keepUrl('!dbo_delete&!dbo_update&!dbo_new')."' id='".$id_formulario."' class=\"form-insert\">";
+			}
+
+			//checando se há grid de exibição de dados customizado... e setando variaveis para seu uso.
+			if($this->hasGrid('insert')) { $gc = 0; $hasgrid = true; $grid = $this->hasGrid('insert'); }
+
+			//checando se há algo a se colocar antes do formulario (campos por exemplo)
+			$function_name = 'form_'.$this->__module_scheme->modulo."_prepend";
 			if(function_exists($function_name))
 			{
 				$return .= $function_name('insert', $this);
 			}
 
-			echo $return;
-
-			//validacao do formulario, se houver.
-			if(!$fields_only)
+			// Criando o form de inserçao.
+			foreach($this->__module_scheme->campo as $chave => $valor)
 			{
-				$this->getValidationEngine($id_formulario);
+
+				/* checando para ver se existe uma função custom para determinado campo */
+				$custom_field = false;
+				$function_name = 'field_'.$scheme->modulo."_".$valor->coluna;
+				if(function_exists($function_name))
+				{
+					$custom_field = $function_name('insert', $this);
+				}
+
+
+				if($hasgrid)
+				{
+					if($grid[$gc] == '|-')
+					{
+						$return .= "<div class='row clearfix'>\n"; $gc++;
+						//inserts the section separator, if exists.
+						if(intval($grid[$gc]) == 0 && $grid[$gc] != '|-' && $grid[$gc] != '-|' )
+						{
+							$grid_cell = $this->parseGridCell($grid[$gc]);
+							$return .= "<div class='large-12 columns ".$this->getGridCellPart($grid_cell, 'item-classes')."'><div class='section subheader'><span>".$this->getGridCellPart($grid_cell, 'item-size')."</span></div></div>\n"; $gc++;
+							$return .= "</div> <!-- row -->\n\n<hr style=\"margin-bottom: 2em;\" class=\"".$this->getGridCellPart($grid_cell, 'item-classes')."\">\n"; $gc++;
+							$return .= "<div class='row'>\n"; $gc++;
+						}
+					}
+					if($grid[$gc] == '-|') { $return .= "</div> <!-- row -->\n\n"; /*row*/ $gc++; }
+				}
+				if($valor->add === true)
+				{
+					if(
+						$this->perfilTemAcessoCampo($valor->perfil) && 
+						(
+							(is_array($field_whitelist) && in_array($valor->coluna, $field_whitelist)) ||
+							(is_array($field_blacklist) && !in_array($valor->coluna, $field_blacklist)) ||
+							(!is_array($field_whitelist) && !is_array($field_blacklist))
+						)
+					)
+					{
+						$grid_cell = $this->parseGridCell($grid[$gc++]);
+
+						if (!$hasgrid) { $return .= "<div class='row clearfix'>"; }
+						$return .= "<div class='item columns ".(($hasgrid)?('large-'.$this->getGridCellPart($grid_cell, 'item-size')):(''))." ".(($hasgrid)?($this->getGridCellPart($grid_cell, 'item-classes')):(''))."' id='item-".$valor->coluna."'>\n";
+
+						//checando se existe uma subgrid para exibicao do elemento filho
+						$return .= $this->getGridCellPart($grid_cell, 'field-start');
+
+						$return .= "<label style=\"".($this->isFixo($valor->coluna) || $valor->label_display == 'hidden' ? 'display: none; ' : ($valor->label_display == 'transparent' ? 'visibility: hidden; ' : ''))."\">".htmlSpecialChars($valor->titulo).(($valor->valida)?(" <span class='required'></span>"):('')).(($valor->dica)?(" <span data-tooltip class='has-tip tip-top' title='".htmlSpecialChars($valor->dica)."'><i class=\"fa fa-question-circle\"></i></span>"):(''))."</label>";
+						$return .= "<span class='input input-".$valor->tipo."'>";
+
+						//checando se existe uma subgrid para exibicao do elemento filho
+						$return .= $this->getGridCellPart($grid_cell, 'field-middle');
+
+						if($custom_field)
+						{
+							$return .= $custom_field;
+						}
+						else
+						{
+							//inserção do elemento proveninente do dboUI
+							$return .= $this->getFormElement('insert', $valor->coluna);
+						} //if custom_field
+
+						//checando se existe uma subgrid para exibicao do elemento filho
+						$return .= $this->getGridCellPart($grid_cell, 'field-end');
+
+						$return .= "</span>"; //input
+						$return .= "\n</div>\n"; //item
+						if (!$hasgrid) { $return .= "</div> <!-- row -->\n\n"; /*row*/ }
+					} //if se o perfil tem acesso a esse campo!
+					else
+					{
+						if($hasgrid) { $gc++; }
+					}
+				} //if add === true
+				if($hasgrid)
+				{
+					if($grid[$gc] == '|-')
+					{
+						$return .= "<div class='row'>\n"; $gc++;
+						//inserts the section separator, if exists.
+						if(intval($grid[$gc]) == 0 && $grid[$gc] != '|-' && $grid[$gc] != '-|' )
+						{
+							$return .= "<h3 class='section'>".$grid[$gc]."</h3>\n"; $gc++;
+							$return .= "</div> <!-- row -->\n\n"; $gc++;
+							$return .= "<div class='row clearfix'>\n"; $gc++;
+						}
+					}
+					if($grid[$gc] == '-|') { $return .= "</div> <!-- row -->\n\n"; /*row*/ $gc++; }
+				}
+
+				//tratando as mascaras de campo
+				if($valor->mask)
+				{
+					$return .= "\t<script type='text/javascript' charset='utf-8'> \$('#".$id_formulario." #item-".$valor->coluna." input').mask('".$valor->mask."') </script>\n\n";
+				}
+			} //foreach
+
+			//checando se há algo a se colocar depois do formulario (campos por exemplo)
+			$function_name = 'form_'.$this->__module_scheme->modulo."_append";
+			if(function_exists($function_name))
+			{
+				$return .= $function_name('insert', $this);
 			}
-		} //ok()
+
+		}
+		if(!$fields_only)
+		{
+			$return .= '<div class="row"><div class="item large-12 columns text-right"><div class="input"><button class="button radius peixe-save" id="main-submit" accesskey="s">'.((!$this->__module_scheme->insert_button_text)?('Inserir '.dboStrToLower($this->__module_scheme->titulo)):($this->__module_scheme->insert_button_text)).'</button></div></div></div>';
+			$return .= "<input type='hidden' name='__dbo_insert_flag' value='1'>";
+			$return .= CSRFInput();
+			$return .= submitToken();
+			$return .= "</form></div></div></span>"; //.dbo-element
+		}
+
+		//checando se há algo a se colocar depois do formulario (campos por exemplo)
+		$function_name = 'form_'.$this->__module_scheme->modulo."_after";
+		if(function_exists($function_name))
+		{
+			$return .= $function_name('insert', $this);
+		}
+
+		echo $return;
+
+		//validacao do formulario, se houver.
+		if(!$fields_only)
+		{
+			$this->getValidationEngine($id_formulario);
+		}
 	} //getInsertForm
 
 	/*
@@ -3111,253 +3200,250 @@ class Dbo extends Obj
 		$load_autoadmin_data = $load_autoadmin_data === false ? false : true;
 		$id_formulario = $id_formulario ? $id_formulario : "form-".uniqid();
 		
-		if($this->ok())
+		//campos a serem usados no eval
+		$scheme = $this->__module_scheme;
+		$fixos = $this->__fixos;
+
+		if($load_autoadmin_data && !$this->id)
 		{
-			//campos a serem usados no eval
-			$scheme = $this->__module_scheme;
-			$fixos = $this->__fixos;
+			$update = dboescape($_GET['dbo_update']);
+			$this->id = $update;
+			$this->load();
+		}
+		//$modulo = $this;
+		/*$modulo = $this->newSelf();
+		$modulo->id = $update;
+		$modulo->load();*/
 
-			if($load_autoadmin_data && !$this->id)
+		//inicializando mapeamento de validação
+		$validation_meta = array();
+
+		if(!is_object($this->__module_scheme))
+		{
+			echo "<h1 style='font-size: 21px; color: #C00;'>ERRO: A classe '".get_class($this)."' não possui esquema de módulo definido.</h1>";
+		}
+		else
+		{
+
+			//checando se há algo a se colocar depois do formulario (campos por exemplo)
+			$function_name = 'form_'.$this->__module_scheme->modulo."_before";
+			if(function_exists($function_name))
 			{
-				$update = dboescape($_GET['dbo_update']);
-				$this->id = $update;
-				$this->load();
+				$return .= $function_name('update', $this);
 			}
-			//$modulo = $this;
-			/*$modulo = $this->newSelf();
-			$modulo->id = $update;
-			$modulo->load();*/
-
-			//inicializando mapeamento de validação
-			$validation_meta = array();
-
-			if(!is_object($this->__module_scheme))
-			{
-				echo "<h1 style='font-size: 21px; color: #C00;'>ERRO: A classe '".get_class($this)."' não possui esquema de módulo definido.</h1>";
-			}
-			else
-			{
-
-				//checando se há algo a se colocar depois do formulario (campos por exemplo)
-				$function_name = 'form_'.$this->__module_scheme->modulo."_before";
-				if(function_exists($function_name))
-				{
-					$return .= $function_name('update', $this);
-				}
-				
-				$return = '';
-
-				if(!$fields_only)
-				{
-					$return .= "<span class='dbo-element'><div class='fieldset' style='clear: both;'><div class='content'>\n";
-					$return .= "<form method='POST' enctype='multipart/form-data' id='".$id_formulario."' class=\"form-update no-margin\">\n\n";
-				}
-
-				//checando se há grid de exibição de dados customizado... e setando variaveis para seu uso.
-				if($this->hasGrid('update')) { $gc = 0; $hasgrid = true; $grid = $this->hasGrid('update'); }
-
-				//checando se há algo a se colocar antes do formulario (campos por exemplo)
-				$function_name = 'form_'.$this->__module_scheme->modulo."_prepend";
-				if(function_exists($function_name))
-				{
-					$return .= $function_name('update', $this);
-				}
-
-				// Criando o formulário de update
-				foreach($this->__module_scheme->campo as $chave => $valor)
-				{
-
-					/* checando para ver se existe uma função custom para determinado campo */
-					$custom_field = false;
-					$function_name = 'field_'.$scheme->modulo."_".$valor->coluna;
-					if(function_exists($function_name))
-					{
-						$custom_field = $function_name('update', $this);
-					}
-					
-					if($hasgrid)
-					{
-						if($grid[$gc] == '|-')
-						{
-							$return .= "<div class='row clearfix'>\n"; $gc++;
-							//inserts the section separator, if exists.
-							if(intval($grid[$gc]) == 0 && $grid[$gc] != '|-' && $grid[$gc] != '-|' )
-							{
-								$grid_cell = $this->parseGridCell($grid[$gc]);
-								$return .= "<div class='large-12 columns ".$this->getGridCellPart($grid_cell, 'item-classes')."'><div class='section subheader'><span>".htmlSpecialChars($this->getGridCellPart($grid_cell, 'item-size'))."</span></div></div>\n"; $gc++;
-								$return .= "</div> <!-- row -->\n\n<hr class=\"hr-subheader active ".$this->getGridCellPart($grid_cell, 'item-classes')."\">\n"; $gc++;
-								$return .= "<div class='row'>\n"; $gc++;
-							}
-						}
-						if($grid[$gc] == '-|') { $return .= "</div> <!-- row -->\n\n"; /*row*/ $gc++; }
-					}
-					if($valor->edit === true)
-					{
-						if(
-							$this->perfilTemAcessoCampo($valor->perfil) && 
-							(
-								(is_array($field_whitelist) && in_array($valor->coluna, $field_whitelist)) ||
-								(is_array($field_blacklist) && !in_array($valor->coluna, $field_blacklist)) ||
-								(!is_array($field_whitelist) && !is_array($field_blacklist))
-							)
-						)
-						{
-
-							$grid_cell = $this->parseGridCell($grid[$gc++]);
-
-							//checa se existe função de exibição de dados
-							$edit_function = ((strlen($valor->edit_function))?($valor->edit_function):(false));
-
-							if (!$hasgrid) { $return .= "<div class='row clearfix'>"; }
-							$return .= "\t<div class='item columns ".(($hasgrid)?('large-'.$this->getGridCellPart($grid_cell, 'item-size')):(''))." ".(($hasgrid)?($this->getGridCellPart($grid_cell, 'item-classes')):(''))."' id='item-".$valor->coluna."'>\n";
-
-							$return .= $this->getGridCellPart($grid_cell, 'field-start');
-
-							$return .= "\t\t<label style=\"".($this->isFixo($valor->coluna) || $valor->label_display == 'hidden' ? 'display: none; ' : ($valor->label_display == 'transparent' ? 'visibility: hidden; ' : ''))."\">".htmlSpecialChars($valor->titulo).(($valor->valida)?(" <span class='required'></span>"):('')).(($valor->dica)?(" <span data-tooltip class='has-tip tip-top' title='".htmlSpecialChars($valor->dica)."'><i class=\"fa fa-question-circle\"></i></span>"):(''))."</label>\n";
-							$return .= "\t\t<span class='input input-".$valor->tipo."'>\n";
-
-							$return .= $this->getGridCellPart($grid_cell, 'field-middle');
-							
-							if($custom_field)
-							{
-								$return .= $custom_field;
-							}
-							else
-							{
-								//inserção do elemento proveniente do dboUI
-								$return .= $this->getFormElement('update', $valor->coluna);
-							} //if custom field
-
-							//checando se existe uma subgrid para exibicao do elemento filho
-							$return .= $this->getGridCellPart($grid_cell, 'field-end');
-							
-							$return .= "\t\t</span>\n"; //input
-							$return .= "\t</div> <!-- item -->\n"; //item
-							if (!$hasgrid) { $return .= "</div> <!-- row -->\n\n"; /*row*/ }
-						} //if se o perfil tem acesso a esse campo!
-						else
-						{
-							if($hasgrid) { $gc++; }
-						}
-					} //if edit === true
-					if($hasgrid)
-					{
-						if($grid[$gc] == '|-')
-						{
-							$return .= "<div class='row clearfix'>\n"; $gc++;
-							//inserts the section separator, if exists.
-							if(intval($grid[$gc]) == 0 && $grid[$gc] != '|-' && $grid[$gc] != '-|' )
-							{
-								$return .= "<h3 class='section'>".$grid[$gc]."</h3>\n"; $gc++;
-								$return .= "</div> <!-- row -->\n\n"; $gc++;
-								$return .= "<div class='row clearfix'>\n"; $gc++;
-							}
-						}
-						if($grid[$gc] == '-|') { $return .= "</div> <!-- row -->\n\n"; /*row*/ $gc++; }
-					}
-
-					//tratando as mascaras de campo
-					if($valor->mask)
-					{
-						$return .= "\t<script type='text/javascript' charset='utf-8'> \$('#".$id_formulario." #item-".$valor->coluna." input').mask('".$valor->mask."') </script>\n\n";
-					}
-				} //foreach
-
-				//checando se há algo a se colocar depois do formulario (campos por exemplo)
-				$function_name = 'form_'.$this->__module_scheme->modulo."_append";
-				if(function_exists($function_name))
-				{
-					$return .= $function_name('update', $this);
-				}
-			}
+			
+			$return = '';
 
 			if(!$fields_only)
 			{
-				$return .= "<div class='row'><div class='item large-12 columns text-right'><div class='input'><button class='button radius peixe-save' id=\"main-submit\" accesskey='s'>Salvar alterações n".$this->__module_scheme->genero." ".dboStrToLower($this->__module_scheme->titulo)."</button></div></div></div>";
-				$return .= "<input type='hidden' name='__dbo_update_flag' value='".$this->id."'>\n\n";
-				$return .= CSRFInput();
-				$return .= submitToken();
-				$return .= "</form></div></div></span>"; //.dbo-element
+				$return .= "<span class='dbo-element'><div class='fieldset' style='clear: both;'><div class='content'>\n";
+				$return .= "<form method='POST' enctype='multipart/form-data' id='".$id_formulario."' class=\"form-update no-margin\">\n\n";
 			}
 
-			//aqui inserimos as subsections
+			//checando se há grid de exibição de dados customizado... e setando variaveis para seu uso.
+			if($this->hasGrid('update')) { $gc = 0; $hasgrid = true; $grid = $this->hasGrid('update'); }
 
-			//checa se exitem botoes customizados no modulo
-			if(is_array($this->__module_scheme->button))
-			{
-
-				ob_start();
-				?>
-					$(document).on('click', '.trigger-load-subsection-iframe', function(){
-						clicado = $(this);
-						var wrapper = clicado.closest('.wrapper-dbo-auto-admin-subsection');
-						wrapper.find('iframe').attr('src', clicado.data('url'));
-						wrapper.find('.subsection-helper').fadeOut('fast');
-						wrapper.find('.hr-subheader').addClass('active');
-						clicado.removeClass('pointer trigger-load-subsection-iframe');
-						icon = clicado.find('i');
-						icon.removeClass('fa-chevron-up').addClass('fa-spinner fa-spin');
-						setTimeout(function(){
-							icon.removeClass('fa-spinner fa-spin').addClass('fa-chevron-down');
-						}, 1500);
-					});
-				<?php
-				$js_code = singleLine(ob_get_clean());
-				dboRegisterDocReady($js_code, true, 'trigger-dbo-subsections');
-
-				//pegando as permissoes
-				foreach($this->__module_scheme->button as $chave => $botao)
-				{
-					$dbo_permission_button[$botao->value] = hasPermission($botao->value, $this->getModule());
-				}
-
-				//pegando os botoes
-				foreach($this->__module_scheme->button as $chave => $botao)
-				{
-					if(!DBO_PERMISSIONS || $dbo_permission_button[$botao->value])
-					{
-						if($botao->subsection)
-						{
-							$section_id = uniqid();
-							$url = 'dbo_admin.php?dbo_mod='.$botao->modulo.'&body_class=section hide-breadcrumb&dbo_subsection='.$this->getModule().'-'.$botao->modulo.'&dbo_fixo='.$this->encodeFixos($botao->modulo_fk.'='.$this->{$botao->key}).'&section_id='.$section_id;
-							ob_start();
-							?>
-							<div class="wrapper-dbo-auto-admin-subsection" id="<?= $section_id ?>">
-								<div class="row">
-									<div class="large-12 columns">
-										<div class="section subheader big">
-											<span class="<?= ((!$botao->autoload)?('trigger-load-subsection-iframe pointer'):('')) ?>" data-url="<?= ((!$botao->autoload)?($url):('')) ?>"><?= htmlSpecialChars($botao->value) ?> <i class="fa fa-<?= (($botao->autoload)?('chevron-down'):('chevron-up')) ?>"></i></span>
-											<div class="helper arrow-left subsection-helper">Clique para visualizar</div>
-										</div>
-									</div>
-								</div>
-								<hr class="hr-subheader big">
-								<iframe id="<?= $this->getModule() ?>-<?= $botao->modulo ?>-iframe" src="<?= (($botao->autoload)?($url):('about:blank')) ?>" frameborder="0" style="width: 100%; overflow: hidden !important; height: 0;" scrolling='no'></iframe><!-- row -->
-							</div>
-							<?
-							$return .= ob_get_clean();
-						}
-					}
-				}//foreach
-			}
-
-			//checando se há algo a se colocar depois do formulario (campos por exemplo)
-			$function_name = 'form_'.$this->__module_scheme->modulo."_after";
+			//checando se há algo a se colocar antes do formulario (campos por exemplo)
+			$function_name = 'form_'.$this->__module_scheme->modulo."_prepend";
 			if(function_exists($function_name))
 			{
 				$return .= $function_name('update', $this);
 			}
 
-			echo $return;
-			
-			if(!$fields_only)
+			// Criando o formulário de update
+			foreach($this->__module_scheme->campo as $chave => $valor)
 			{
-				echo $this->pushBreadcrumbModuleButtons($this->getButtonScheme($this));
 
-				//validacao do formulario, se houver.
-				$this->getValidationEngine($id_formulario, $this);
+				/* checando para ver se existe uma função custom para determinado campo */
+				$custom_field = false;
+				$function_name = 'field_'.$scheme->modulo."_".$valor->coluna;
+				if(function_exists($function_name))
+				{
+					$custom_field = $function_name('update', $this);
+				}
+				
+				if($hasgrid)
+				{
+					if($grid[$gc] == '|-')
+					{
+						$return .= "<div class='row clearfix'>\n"; $gc++;
+						//inserts the section separator, if exists.
+						if(intval($grid[$gc]) == 0 && $grid[$gc] != '|-' && $grid[$gc] != '-|' )
+						{
+							$grid_cell = $this->parseGridCell($grid[$gc]);
+							$return .= "<div class='large-12 columns ".$this->getGridCellPart($grid_cell, 'item-classes')."'><div class='section subheader'><span>".htmlSpecialChars($this->getGridCellPart($grid_cell, 'item-size'))."</span></div></div>\n"; $gc++;
+							$return .= "</div> <!-- row -->\n\n<hr class=\"hr-subheader active ".$this->getGridCellPart($grid_cell, 'item-classes')."\">\n"; $gc++;
+							$return .= "<div class='row'>\n"; $gc++;
+						}
+					}
+					if($grid[$gc] == '-|') { $return .= "</div> <!-- row -->\n\n"; /*row*/ $gc++; }
+				}
+				if($valor->edit === true)
+				{
+					if(
+						$this->perfilTemAcessoCampo($valor->perfil) && 
+						(
+							(is_array($field_whitelist) && in_array($valor->coluna, $field_whitelist)) ||
+							(is_array($field_blacklist) && !in_array($valor->coluna, $field_blacklist)) ||
+							(!is_array($field_whitelist) && !is_array($field_blacklist))
+						)
+					)
+					{
+
+						$grid_cell = $this->parseGridCell($grid[$gc++]);
+
+						//checa se existe função de exibição de dados
+						$edit_function = ((strlen($valor->edit_function))?($valor->edit_function):(false));
+
+						if (!$hasgrid) { $return .= "<div class='row clearfix'>"; }
+						$return .= "\t<div class='item columns ".(($hasgrid)?('large-'.$this->getGridCellPart($grid_cell, 'item-size')):(''))." ".(($hasgrid)?($this->getGridCellPart($grid_cell, 'item-classes')):(''))."' id='item-".$valor->coluna."'>\n";
+
+						$return .= $this->getGridCellPart($grid_cell, 'field-start');
+
+						$return .= "\t\t<label style=\"".($this->isFixo($valor->coluna) || $valor->label_display == 'hidden' ? 'display: none; ' : ($valor->label_display == 'transparent' ? 'visibility: hidden; ' : ''))."\">".htmlSpecialChars($valor->titulo).(($valor->valida)?(" <span class='required'></span>"):('')).(($valor->dica)?(" <span data-tooltip class='has-tip tip-top' title='".htmlSpecialChars($valor->dica)."'><i class=\"fa fa-question-circle\"></i></span>"):(''))."</label>\n";
+						$return .= "\t\t<span class='input input-".$valor->tipo."'>\n";
+
+						$return .= $this->getGridCellPart($grid_cell, 'field-middle');
+						
+						if($custom_field)
+						{
+							$return .= $custom_field;
+						}
+						else
+						{
+							//inserção do elemento proveniente do dboUI
+							$return .= $this->getFormElement('update', $valor->coluna);
+						} //if custom field
+
+						//checando se existe uma subgrid para exibicao do elemento filho
+						$return .= $this->getGridCellPart($grid_cell, 'field-end');
+						
+						$return .= "\t\t</span>\n"; //input
+						$return .= "\t</div> <!-- item -->\n"; //item
+						if (!$hasgrid) { $return .= "</div> <!-- row -->\n\n"; /*row*/ }
+					} //if se o perfil tem acesso a esse campo!
+					else
+					{
+						if($hasgrid) { $gc++; }
+					}
+				} //if edit === true
+				if($hasgrid)
+				{
+					if($grid[$gc] == '|-')
+					{
+						$return .= "<div class='row clearfix'>\n"; $gc++;
+						//inserts the section separator, if exists.
+						if(intval($grid[$gc]) == 0 && $grid[$gc] != '|-' && $grid[$gc] != '-|' )
+						{
+							$return .= "<h3 class='section'>".$grid[$gc]."</h3>\n"; $gc++;
+							$return .= "</div> <!-- row -->\n\n"; $gc++;
+							$return .= "<div class='row clearfix'>\n"; $gc++;
+						}
+					}
+					if($grid[$gc] == '-|') { $return .= "</div> <!-- row -->\n\n"; /*row*/ $gc++; }
+				}
+
+				//tratando as mascaras de campo
+				if($valor->mask)
+				{
+					$return .= "\t<script type='text/javascript' charset='utf-8'> \$('#".$id_formulario." #item-".$valor->coluna." input').mask('".$valor->mask."') </script>\n\n";
+				}
+			} //foreach
+
+			//checando se há algo a se colocar depois do formulario (campos por exemplo)
+			$function_name = 'form_'.$this->__module_scheme->modulo."_append";
+			if(function_exists($function_name))
+			{
+				$return .= $function_name('update', $this);
 			}
-		} //ok()
+		}
+
+		if(!$fields_only)
+		{
+			$return .= "<div class='row'><div class='item large-12 columns text-right'><div class='input'><button class='button radius peixe-save' id=\"main-submit\" accesskey='s'>Salvar alterações n".$this->__module_scheme->genero." ".dboStrToLower($this->__module_scheme->titulo)."</button></div></div></div>";
+			$return .= "<input type='hidden' name='__dbo_update_flag' value='".$this->id."'>\n\n";
+			$return .= CSRFInput();
+			$return .= submitToken();
+			$return .= "</form></div></div></span>"; //.dbo-element
+		}
+
+		//aqui inserimos as subsections
+
+		//checa se exitem botoes customizados no modulo
+		if(is_array($this->__module_scheme->button))
+		{
+
+			ob_start();
+			?>
+				$(document).on('click', '.trigger-load-subsection-iframe', function(){
+					clicado = $(this);
+					var wrapper = clicado.closest('.wrapper-dbo-auto-admin-subsection');
+					wrapper.find('iframe').attr('src', clicado.data('url'));
+					wrapper.find('.subsection-helper').fadeOut('fast');
+					wrapper.find('.hr-subheader').addClass('active');
+					clicado.removeClass('pointer trigger-load-subsection-iframe');
+					icon = clicado.find('i');
+					icon.removeClass('fa-chevron-up').addClass('fa-spinner fa-spin');
+					setTimeout(function(){
+						icon.removeClass('fa-spinner fa-spin').addClass('fa-chevron-down');
+					}, 1500);
+				});
+			<?php
+			$js_code = singleLine(ob_get_clean());
+			dboRegisterDocReady($js_code, true, 'trigger-dbo-subsections');
+
+			//pegando as permissoes
+			foreach($this->__module_scheme->button as $chave => $botao)
+			{
+				$dbo_permission_button[$botao->value] = hasPermission($botao->value, $this->getModule());
+			}
+
+			//pegando os botoes
+			foreach($this->__module_scheme->button as $chave => $botao)
+			{
+				if(!DBO_PERMISSIONS || $dbo_permission_button[$botao->value])
+				{
+					if($botao->subsection)
+					{
+						$section_id = uniqid();
+						$url = 'dbo_admin.php?dbo_mod='.$botao->modulo.'&body_class=section hide-breadcrumb&dbo_subsection='.$this->getModule().'-'.$botao->modulo.'&dbo_fixo='.$this->encodeFixos($botao->modulo_fk.'='.$this->{$botao->key}).'&section_id='.$section_id;
+						ob_start();
+						?>
+						<div class="wrapper-dbo-auto-admin-subsection" id="<?= $section_id ?>">
+							<div class="row">
+								<div class="large-12 columns">
+									<div class="section subheader big">
+										<span class="<?= ((!$botao->autoload)?('trigger-load-subsection-iframe pointer'):('')) ?>" data-url="<?= ((!$botao->autoload)?($url):('')) ?>"><?= htmlSpecialChars($botao->value) ?> <i class="fa fa-<?= (($botao->autoload)?('chevron-down'):('chevron-up')) ?>"></i></span>
+										<div class="helper arrow-left subsection-helper">Clique para visualizar</div>
+									</div>
+								</div>
+							</div>
+							<hr class="hr-subheader big">
+							<iframe id="<?= $this->getModule() ?>-<?= $botao->modulo ?>-iframe" src="<?= (($botao->autoload)?($url):('about:blank')) ?>" frameborder="0" style="width: 100%; overflow: hidden !important; height: 0;" scrolling='no'></iframe><!-- row -->
+						</div>
+						<?
+						$return .= ob_get_clean();
+					}
+				}
+			}//foreach
+		}
+
+		//checando se há algo a se colocar depois do formulario (campos por exemplo)
+		$function_name = 'form_'.$this->__module_scheme->modulo."_after";
+		if(function_exists($function_name))
+		{
+			$return .= $function_name('update', $this);
+		}
+
+		echo $return;
+		
+		if(!$fields_only)
+		{
+			echo $this->pushBreadcrumbModuleButtons($this->getButtonScheme($this));
+
+			//validacao do formulario, se houver.
+			$this->getValidationEngine($id_formulario, $this);
+		}
 	} //getUpdateForm
 
 	/*
@@ -3383,522 +3469,518 @@ class Dbo extends Obj
 			}
 		}
 
-		if($this->ok())
+		$dbo_permission_update = hasPermission('update', $_GET['dbo_mod']);
+		$dbo_permission_delete = hasPermission('delete', $_GET['dbo_mod']);
+
+		if(!is_object($this->__module_scheme))
 		{
-
-			$dbo_permission_update = hasPermission('update', $_GET['dbo_mod']);
-			$dbo_permission_delete = hasPermission('delete', $_GET['dbo_mod']);
-
-			if(!is_object($this->__module_scheme))
+			echo "<h1 style='font-size: 21px; color: #C00;'>ERRO: A classe '".get_class($this)."' não possui esquema de módulo definido.</h1>";
+		}
+		elseif(function_exists('auto_admin_'.$this->getModule()))
+		{
+			$function_name = 'auto_admin_'.$this->getModule();
+			echo $function_name($params);
+		}
+		else
+		{
+			//controle criando MID para o modulo atual
+			if(!$this->getMid())
 			{
-				echo "<h1 style='font-size: 21px; color: #C00;'>ERRO: A classe '".get_class($this)."' não possui esquema de módulo definido.</h1>";
+				$mid = $this->setMid($this->makeMid());
+				header('Location: '.$this->keepUrl(array('mid='.$mid)));
+				exit();
 			}
-			elseif(function_exists('auto_admin_'.$this->getModule()))
+
+			//checking if there is auto_order for ajax.
+			if($_GET['dbo_auto_order_ajax'])
 			{
-				$function_name = 'auto_admin_'.$this->getModule();
-				echo $function_name($params);
+				$this->autoOrderAjax($_GET);
 			}
-			else
+
+			//se houver um fixo, verifica se o MID atual é o do pai ou o meu proprio. se nao houver pai para mim, quer dizer que esse mid é do meu pai, entao preciso criar um pra mim  e setar o atual como meu pai.
+			if($_GET['dbo_fixo'])
 			{
-				//controle criando MID para o modulo atual
-				if(!$this->getMid())
+				if(!$this->getModuleParent($this->getMid(), $_GET['dbo_fixo']))
 				{
-					$mid = $this->setMid($this->makeMid());
-					header('Location: '.$this->keepUrl(array('mid='.$mid)));
-					exit();
+					$this->setModuleParent($this->getMid(), $_GET['dbo_fixo']);
 				}
+			}
 
-				//checking if there is auto_order for ajax.
-				if($_GET['dbo_auto_order_ajax'])
-				{
-					$this->autoOrderAjax($_GET);
-				}
+			//checa se o tipo de MID é valido para o modulo atual
+			if(!$this->midTypeCheck($this->getMid(), $this->__class))
+			{
+				header('Location: '.$this->keepUrl(array('!mid')));
+				exit();
+			}
 
-				//se houver um fixo, verifica se o MID atual é o do pai ou o meu proprio. se nao houver pai para mim, quer dizer que esse mid é do meu pai, entao preciso criar um pra mim  e setar o atual como meu pai.
-				if($_GET['dbo_fixo'])
+			//checa para refazer a ordenação
+			if($_GET['dbo_order_by'])
+			{
+				$this->setOrderBy($_GET['dbo_order_by']);
+				header('Location: '.$this->keepUrl('!dbo_order_by'));
+				exit();
+			}
+
+			//salva a definição do modulo em um lugar mais facil
+			$scheme = $this->__module_scheme;
+
+			//tratando os campos fixos de dados
+			$this->makeFixos($_GET['dbo_fixo']);
+
+			//criando o schema de filtros
+			$this->makeFilterScheme();
+
+			if($_POST['__dbo_filter_flag'])
+			{
+				$this->setFilters($_POST);
+				header('Location: '.$this->keepUrl());
+				exit();
+			}
+
+			//delete automatico
+			if($_GET['dbo_delete'])
+			{
+				
+				CSRFCheckRequest();
+
+				//checa se o usuário logado pode deletar deste modulo, senão, tchau!
+				if(DBO_PERMISSIONS)
 				{
-					if(!$this->getModuleParent($this->getMid(), $_GET['dbo_fixo']))
+					if(!$dbo_permission_delete)
 					{
-						$this->setModuleParent($this->getMid(), $_GET['dbo_fixo']);
+						setMessage("<div class='error'>Seu usuário não tem permissão para realizar essa ação.</div>");
+						$this->myHeader("Location: index.php");
 					}
 				}
 
-				//checa se o tipo de MID é valido para o modulo atual
-				if(!$this->midTypeCheck($this->getMid(), $this->__class))
+				$obj = $this->newSelf();
+				$obj->id = dboescape($_GET['dbo_delete']);
+
+				//executando pre_delete
+				$func = $this->getModule()."_pre_delete";
+				if(function_exists($func)) { $func($obj); }
+
+				$obj->delete();
+
+				//executando pos_delete
+				$func = $this->getModule()."_pos_delete";
+				if(function_exists($func)) { $func($obj); }
+
+				if(function_exists("setMessage"))
 				{
-					header('Location: '.$this->keepUrl(array('!mid')));
-					exit();
+					setMessage("<div class='success'>".$this->__module_scheme->titulo." de ".$this->getFieldName($this->getPK())." ".$obj->id." removido com sucesso.</div>");
 				}
+				$this->myHeader("Location: ".$this->keepUrl("!dbo_delete&!deleted_because&!DBO_CSRF_token&!token"));
+				exit();
+			}
 
-				//checa para refazer a ordenação
-				if($_GET['dbo_order_by'])
+			//toggle de ativo/inativo
+			if($_GET['dbo_toggle_active'] || $_GET['dbo_toggle_inactive'])
+			{
+				CSRFCheckRequest();
+				if(DBO_PERMISSIONS && $dbo_permission_update)
 				{
-					$this->setOrderBy($_GET['dbo_order_by']);
-					header('Location: '.$this->keepUrl('!dbo_order_by'));
-					exit();
-				}
-
-				//salva a definição do modulo em um lugar mais facil
-				$scheme = $this->__module_scheme;
-
-				//tratando os campos fixos de dados
-				$this->makeFixos($_GET['dbo_fixo']);
-
-				//criando o schema de filtros
-				$this->makeFilterScheme();
-
-				if($_POST['__dbo_filter_flag'])
-				{
-					$this->setFilters($_POST);
-					header('Location: '.$this->keepUrl());
-					exit();
-				}
-
-				//delete automatico
-				if($_GET['dbo_delete'])
-				{
-					
-					CSRFCheckRequest();
-
-					//checa se o usuário logado pode deletar deste modulo, senão, tchau!
-					if(DBO_PERMISSIONS)
+					$mod_name = $this->__module_scheme->modulo;
+					if($_GET['dbo_toggle_active'])
 					{
-						if(!$dbo_permission_delete)
+						if(md5($_GET['dbo_toggle_active'].SALT_DBO_AUTO_ADMIN_TOGGLE_ACTIVE) == $_GET['token'])
+						{
+							$mod_toggle_obj = new $mod_name(dboescape($_GET['dbo_toggle_active']));
+							$mod_toggle_obj->inativo = 0;
+							$mod_toggle_obj->update();
+						}
+					}
+					elseif($_GET['dbo_toggle_inactive'])
+					{
+						if(md5($_GET['dbo_toggle_inactive'].SALT_DBO_AUTO_ADMIN_TOGGLE_ACTIVE) == $_GET['token'])
+						{
+							$mod_toggle_obj = new $mod_name(dboescape($_GET['dbo_toggle_inactive']));
+							$mod_toggle_obj->inativo = 1;
+							$mod_toggle_obj->update();
+						}
+					}
+					unset($mod_name);
+					unset($mod_toggle_obj);
+				}
+			}
+
+			//insert ou update automatico
+			if($_POST['__dbo_insert_flag'] || $_POST['__dbo_update_flag']) 
+			{
+
+				//checa se o usuário logado pode inserir ou alterar deste modulo, senão, tchau!
+				if(DBO_PERMISSIONS)
+				{
+					if($_POST['__dbo_insert_flag'])
+					{
+						if(!hasPermission('insert', $_GET['dbo_mod'])) //se pode inserir...
+						{
+							setMessage("<div class='error'>Seu usuário não tem permissão para realizar essa ação.</div>");
+							$this->myHeader("Location: index.php");
+						}
+					} else {
+						if(!$dbo_permission_update) //se pode alterar...
 						{
 							setMessage("<div class='error'>Seu usuário não tem permissão para realizar essa ação.</div>");
 							$this->myHeader("Location: index.php");
 						}
 					}
-
-					$obj = $this->newSelf();
-					$obj->id = dboescape($_GET['dbo_delete']);
-
-					//executando pre_delete
-					$func = $this->getModule()."_pre_delete";
-					if(function_exists($func)) { $func($obj); }
-
-					$obj->delete();
-
-					//executando pos_delete
-					$func = $this->getModule()."_pos_delete";
-					if(function_exists($func)) { $func($obj); }
-
-					if(function_exists("setMessage"))
-					{
-						setMessage("<div class='success'>".$this->__module_scheme->titulo." de ".$this->getFieldName($this->getPK())." ".$obj->id." removido com sucesso.</div>");
-					}
-					$this->myHeader("Location: ".$this->keepUrl("!dbo_delete&!deleted_because&!DBO_CSRF_token&!token"));
-					exit();
 				}
 
-				//toggle de ativo/inativo
-				if($_GET['dbo_toggle_active'] || $_GET['dbo_toggle_inactive'])
-				{
-					CSRFCheckRequest();
-					if(DBO_PERMISSIONS && $dbo_permission_update)
-					{
-						$mod_name = $this->__module_scheme->modulo;
-						if($_GET['dbo_toggle_active'])
-						{
-							if(md5($_GET['dbo_toggle_active'].SALT_DBO_AUTO_ADMIN_TOGGLE_ACTIVE) == $_GET['token'])
-							{
-								$mod_toggle_obj = new $mod_name(dboescape($_GET['dbo_toggle_active']));
-								$mod_toggle_obj->inativo = 0;
-								$mod_toggle_obj->update();
-							}
-						}
-						elseif($_GET['dbo_toggle_inactive'])
-						{
-							if(md5($_GET['dbo_toggle_inactive'].SALT_DBO_AUTO_ADMIN_TOGGLE_ACTIVE) == $_GET['token'])
-							{
-								$mod_toggle_obj = new $mod_name(dboescape($_GET['dbo_toggle_inactive']));
-								$mod_toggle_obj->inativo = 1;
-								$mod_toggle_obj->update();
-							}
-						}
-						unset($mod_name);
-						unset($mod_toggle_obj);
-					}
-				}
+				$this->__update_id = dboescape($_POST['__dbo_update_flag']);
+				$this->autoAdminInsertUpdate();
+			}
 
-				//insert ou update automatico
-				if($_POST['__dbo_insert_flag'] || $_POST['__dbo_update_flag']) 
-				{
+			?>
 
-					//checa se o usuário logado pode inserir ou alterar deste modulo, senão, tchau!
-					if(DBO_PERMISSIONS)
-					{
-						if($_POST['__dbo_insert_flag'])
-						{
-							if(!hasPermission('insert', $_GET['dbo_mod'])) //se pode inserir...
-							{
-								setMessage("<div class='error'>Seu usuário não tem permissão para realizar essa ação.</div>");
-								$this->myHeader("Location: index.php");
-							}
-						} else {
-							if(!$dbo_permission_update) //se pode alterar...
-							{
-								setMessage("<div class='error'>Seu usuário não tem permissão para realizar essa ação.</div>");
-								$this->myHeader("Location: index.php");
-							}
-						}
-					}
+			<div class='wrapper-dbo-auto-admin' id='module-<?= $scheme->modulo ?>'>
 
-					$this->__update_id = dboescape($_POST['__dbo_update_flag']);
-					$this->autoAdminInsertUpdate();
-				}
-
-				?>
-
-				<div class='wrapper-dbo-auto-admin' id='module-<?= $scheme->modulo ?>'>
-
-					<div id="auto-admin-header" style="<?= (($_GET['hide_admin_header'])?('display: none;'):('')) ?>">
-						<div class="row">
-							<div class="large-9 columns">
-								<?
-									if($_GET['admin_custom_breadcrumb'])
-									{
-										?>
-										<h3 class="no-margin"><?= htmlSpecialChars(strip_tags($_GET['admin_custom_breadcrumb'])) ?></h3>
-										<?
-									}						
-								?>
-								<div class="breadcrumb" style="<?= (($_GET['hide_admin_header_breadcrumb'])?('display: none;'):('')) ?>">
-									<?
-										if(is_array($this->__fixos))
-										{
-										?>
-											<div class='wrapper-module-fixos'>
-												<? 
-													if(!$this->hideComponent('breadcrumb'))
-													{
-														$stack = $this->getMidBreadcrumbStack($this->getMid(), $_GET['dbo_fixo']);
-														echo dboBreadcrumbs(array(
-															'stack' => $stack,
-														));
-													}
-												?>
-											</div>
-										<?
-										}
-										else
-										{
-											$stack = array();
-											$stack[] = array(
-												'tipo' => 'url',
-												'url' => 'cadastros.php',
-												'label' => DBO_TERM_CADASTROS,
-											);
-											$stack[] = array(
-												'tipo' => 'url',
-												'url' => $this->keepUrl('!dbo_view&!dbo_update&!dbo_delete&!dbo_new'),
-												'label' => (($scheme->titulo_big_button)?($scheme->titulo_big_button):($scheme->titulo_plural)),
-											);
-											if($_GET['dbo_update'])
-											{
-												$obj = $this->newSelf();
-												$obj->id = $_GET['dbo_update'];
-												$obj->load();
-												$stack[] = array(
-													'tipo' => 'url',
-													'url' => $obj->keepUrl(),
-													'label' => $obj->getBreadcrumbIdentifier(),
-												);
-											}
-											echo dboBreadcrumbs(array(
-												'stack' => $stack,
-											));
-										}
+				<div id="auto-admin-header" style="<?= (($_GET['hide_admin_header'] || $this->hideComponent('header'))?('display: none;'):('')) ?>">
+					<div class="row">
+						<div class="large-9 columns">
+							<?
+								if($_GET['admin_custom_breadcrumb'])
+								{
 									?>
-								</div>
-							</div>
-							<div class="large-3 columns text-right">
+									<h3 class="no-margin"><?= htmlSpecialChars(strip_tags($_GET['admin_custom_breadcrumb'])) ?></h3>
+									<?
+								}						
+							?>
+							<div class="breadcrumb" style="<?= (($_GET['hide_admin_header_breadcrumb'])?('display: none;'):('')) ?>">
 								<?
-									if(!$this->hideComponent('insert-button'))
+									if(is_array($this->__fixos))
 									{
-										?>
-										<div class='wrapper-module-button-new'>
-											<?
-												//checa se mostra ou não o botão de inserir
-												if(!DBO_PERMISSIONS || hasPermission('insert', $_GET['dbo_mod']))
+									?>
+										<div class='wrapper-module-fixos'>
+											<? 
+												if(!$this->hideComponent('breadcrumb'))
 												{
-												?>
-													<span class='button-new' rel='<?= $scheme->modulo ?>'>
-														<a style="<?= (($_GET['dbo_update'] || $_GET['dbo_new'])?(''):('display: none;')) ?>" class="button <?= (($_GET['hide_admin_header_separator'])?(''):('no-margin-for-small')) ?> <?= ((!$_GET['dbo_modal'])?('top-less-15'):('')) ?> radius secondary small trigger-dbo-auto-admin-cancelar-insercao-edicao" href='<?= $this->keepUrl(array('!dbo_update&!dbo_delete&!dbo_view&!dbo_new')) ?>'><i class="fa fa-arrow-left"></i> Voltar</a>
-														<a class="button <?= (($_GET['hide_admin_header_separator'])?(''):('no-margin-for-small')) ?> <?= ((!$_GET['dbo_modal'])?('top-less-15'):('')) ?> radius small trigger-dbo-auto-admin-inserir" href='<?= $this->keepUrl(array('dbo_new=1', '!dbo_update&!dbo_delete&!dbo_view')) ?>'  style="<?= (($_GET['dbo_update'] || $_GET['dbo_new'])?('display: none;'):('')) ?>"><i class="fa fa-plus"></i> Cadastrar nov<?= $scheme->genero ?></a>
-														<a style="<?= (($_GET['dbo_update'] || $_GET['dbo_new'])?(''):('display: none;')) ?>" class="button <?= (($_GET['hide_admin_header_separator'])?(''):('no-margin-for-small')) ?> <?= ((!$_GET['dbo_modal'])?('top-less-15'):('')) ?> radius small trigger-dbo-auto-admin-cancelar-insercao-edicao" href='<?= $this->keepUrl(array('!dbo_update&!dbo_delete&!dbo_view', 'dbo_new=1')) ?>' title="Cadastrar nov<?= $scheme->genero ?>"><i class="fa fa-plus"></i></a>
-													</span>
-												<?
+													$stack = $this->getMidBreadcrumbStack($this->getMid(), $_GET['dbo_fixo']);
+													echo dboBreadcrumbs(array(
+														'stack' => $stack,
+													));
 												}
 											?>
 										</div>
-										<?
+									<?
+									}
+									else
+									{
+										$stack = array();
+										$stack[] = array(
+											'tipo' => 'url',
+											'url' => 'cadastros.php',
+											'label' => DBO_TERM_CADASTROS,
+										);
+										$stack[] = array(
+											'tipo' => 'url',
+											'url' => $this->keepUrl('!dbo_view&!dbo_update&!dbo_delete&!dbo_new'),
+											'label' => (($scheme->titulo_big_button)?($scheme->titulo_big_button):($scheme->titulo_plural)),
+										);
+										if($_GET['dbo_update'])
+										{
+											$obj = $this->newSelf();
+											$obj->id = $_GET['dbo_update'];
+											$obj->load();
+											$stack[] = array(
+												'tipo' => 'url',
+												'url' => $obj->keepUrl(),
+												'label' => $obj->getBreadcrumbIdentifier(),
+											);
+										}
+										echo dboBreadcrumbs(array(
+											'stack' => $stack,
+										));
 									}
 								?>
 							</div>
 						</div>
-						<?
-							if(!$this->hideComponent('breadcrumb'))
-							{
-								?><hr class="small"><?
-							}
-						?>
-					</div>
-	
-					<div class='row' style="display: none;">
-						<div class='large-9 columns wrapper-module-id'>
+						<div class="large-3 columns text-right">
 							<?
-								$notification_function = $scheme->modulo."_notifications";
-								if(function_exists($notification_function))
+								if(!$this->hideComponent('insert-button'))
 								{
-									$notf_return = $notification_function('message');
-									$notf_tag_return = $notification_function();
-
-									if($notf_return && $notf_tag_return)
-									{
-										?>
-										<input type='button' name='' value="<?= $notf_tag_return ?> <?= $notf_return ?>" class="button round small <?= $scheme->modulo ?>-notification-action"/>
+									?>
+									<div class='wrapper-module-button-new'>
 										<?
-									}
-								}
-							?>
-						</div><!-- large-9 -->
-					</div><!-- row -->
-
-					<?
-						if(!isset($scheme->preload_insert_form) || $scheme->preload_insert_form == TRUE || $_GET['dbo_new'])
-						{
-						?>
-						<div class='<?= !$_GET['dbo_new'] ? 'hidden' : '' ?>' id='novo-<?= $scheme->modulo ?>'>
-							<?
-								if(!$_GET['dbo_update'])
-								{
-									if(function_exists('form_'.$this->getModule().'_insert'))
-									{
-										$function_name = 'form_'.$this->getModule().'_insert';
-										echo $function_name($this);
-									}
-									else
-									{
+											//checa se mostra ou não o botão de inserir
+											if(!DBO_PERMISSIONS || hasPermission('insert', $_GET['dbo_mod']))
+											{
+											?>
+												<span class='button-new' rel='<?= $scheme->modulo ?>'>
+													<a style="<?= (($_GET['dbo_update'] || $_GET['dbo_new'])?(''):('display: none;')) ?>" class="button <?= (($_GET['hide_admin_header_separator'])?(''):('no-margin-for-small')) ?> <?= ((!$_GET['dbo_modal'])?('top-less-15'):('')) ?> radius secondary small trigger-dbo-auto-admin-cancelar-insercao-edicao" href='<?= $this->keepUrl(array('!dbo_update&!dbo_delete&!dbo_view&!dbo_new')) ?>'><i class="fa fa-arrow-left"></i> Voltar</a>
+													<a class="button <?= (($_GET['hide_admin_header_separator'])?(''):('no-margin-for-small')) ?> <?= ((!$_GET['dbo_modal'])?('top-less-15'):('')) ?> radius small trigger-dbo-auto-admin-inserir" href='<?= $this->keepUrl(array('dbo_new=1', '!dbo_update&!dbo_delete&!dbo_view')) ?>'  style="<?= (($_GET['dbo_update'] || $_GET['dbo_new'])?('display: none;'):('')) ?>"><i class="fa fa-plus"></i> Cadastrar nov<?= $scheme->genero ?></a>
+													<a style="<?= (($_GET['dbo_update'] || $_GET['dbo_new'])?(''):('display: none;')) ?>" class="button <?= (($_GET['hide_admin_header_separator'])?(''):('no-margin-for-small')) ?> <?= ((!$_GET['dbo_modal'])?('top-less-15'):('')) ?> radius small trigger-dbo-auto-admin-cancelar-insercao-edicao" href='<?= $this->keepUrl(array('!dbo_update&!dbo_delete&!dbo_view', 'dbo_new=1')) ?>' title="Cadastrar nov<?= $scheme->genero ?>"><i class="fa fa-plus"></i></a>
+												</span>
+											<?
+											}
 										?>
-										<div class='row'>
-											<?php
-												$function_name = false;
-												if(function_exists('form_'.$this->getModule().'_toolbar'))
-												{
-													$function_name = 'form_'.$this->getModule().'_toolbar';
-												}
-											?>
-											<div class='large-<?= $function_name ? '7' : '12' ?> columns'>
-												<h3>Nov<?= $scheme->genero ?> <?= dboStrToLower($scheme->titulo) ?></h3>
-											</div>
-											<?php
-												if($function_name)
-												{
-													?>
-													<div class="small-12 large-5 columns"><?= $function_name('insert', $this); ?></div>
-													<?php
-												}
-											?>
-										</div><!-- row -->
-										<?php
-										echo $this->getInsertForm(array(
-											'id_formulario' => $id_formulario,
-										));
-									}
+									</div>
+									<?
 								}
 							?>
 						</div>
-						<?
-						}
-					?>
-
-					<div class='wrapper-auto-admin-view general-box'>
-					<?
-						//checa se o usuário pode visualizar o registro
-						if(!DBO_PERMISSIONS || hasPermission('view', $_GET['dbo_mod']))
-						{
-							if($_GET['dbo_view'])
-							{
-								echo "<span id='view-anchor'>";
-								$view_obj = $this->newSelf();
-								$view_obj->id = $_GET['dbo_view'];
-								$view_obj->load();
-								echo $view_obj->autoAdminView();
-								echo "</span>";
-							}
-						}
-					?>
 					</div>
-
-					
 					<?
-						//checa se o usuário pode editar o registro
-						if(!DBO_PERMISSIONS || $dbo_permission_update)
+						if(!$this->hideComponent('breadcrumb'))
 						{
-							if($_GET['dbo_update'])
+							?><hr class="small"><?
+						}
+					?>
+				</div>
+
+				<div class='row' style="display: none;">
+					<div class='large-9 columns wrapper-module-id'>
+						<?
+							$notification_function = $scheme->modulo."_notifications";
+							if(function_exists($notification_function))
 							{
-								//carrega o modulo
-								$this->id = dboescape($_GET['dbo_update']);
-								$this->load();
+								$notf_return = $notification_function('message');
+								$notf_tag_return = $notification_function();
 
-								$function_name = $this->getModule().'_has_permission';
-								if(function_exists($function_name))
+								if($notf_return && $notf_tag_return)
 								{
-									$dbo_permission_update = $function_name('update', $this);
-									$function_name = false;
+									?>
+									<input type='button' name='' value="<?= $notf_tag_return ?> <?= $notf_return ?>" class="button round small <?= $scheme->modulo ?>-notification-action"/>
+									<?
 								}
+							}
+						?>
+					</div><!-- large-9 -->
+				</div><!-- row -->
 
-								echo $dbo_permission_update ? $this->getBarraAcoesUpdate($this->getButtonScheme($this)) : '';
-
-								if(function_exists('form_'.$this->getModule().'_update'))
+				<?
+					if(!isset($scheme->preload_insert_form) || $scheme->preload_insert_form == TRUE || $_GET['dbo_new'])
+					{
+					?>
+					<div class='<?= !$_GET['dbo_new'] ? 'hidden' : '' ?>' id='novo-<?= $scheme->modulo ?>'>
+						<?
+							if(!$_GET['dbo_update'])
+							{
+								if(function_exists('form_'.$this->getModule().'_insert'))
 								{
-									$function_name = 'form_'.$this->getModule().'_update';
-									$class_name = get_class($this);
-									echo $function_name(new $class_name(dboescape($_GET['dbo_update'])));
+									$function_name = 'form_'.$this->getModule().'_insert';
+									echo $function_name($this);
 								}
 								else
 								{
-									$function_name = false;
-									if(function_exists('form_'.$this->getModule().'_toolbar'))
-									{
-										$function_name = 'form_'.$this->getModule().'_toolbar';
-									}
 									?>
 									<div class='row'>
+										<?php
+											$function_name = false;
+											if(function_exists('form_'.$this->getModule().'_toolbar'))
+											{
+												$function_name = 'form_'.$this->getModule().'_toolbar';
+											}
+										?>
 										<div class='large-<?= $function_name ? '7' : '12' ?> columns'>
-											<h3>Alterar <?= dboStrToLower($scheme->titulo) ?></h3>
-										</div><!-- col -->
+											<h3>Nov<?= $scheme->genero ?> <?= dboStrToLower($scheme->titulo) ?></h3>
+										</div>
 										<?php
 											if($function_name)
 											{
 												?>
-												<div class="small-12 large-5 columns"><?= $function_name('update', $this) ?></div>
+												<div class="small-12 large-5 columns"><?= $function_name('insert', $this); ?></div>
 												<?php
 											}
 										?>
 									</div><!-- row -->
 									<?php
-									if($dbo_permission_update)
-									{
-										$this->getUpdateForm(array(
-											'id_formulario' => $id_formulario,
-										));
-									}
-									else
-									{
-										?>
-										<p class="text-center"><br /><br /><br />&#8212; Você não tem permissão para alterar estes dados &#8212;</p>
-										<?php
-									}
+									echo $this->getInsertForm(array(
+										'id_formulario' => $id_formulario,
+									));
+								}
+							}
+						?>
+					</div>
+					<?
+					}
+				?>
+
+				<div class='wrapper-auto-admin-view general-box'>
+				<?
+					//checa se o usuário pode visualizar o registro
+					if(!DBO_PERMISSIONS || hasPermission('view', $_GET['dbo_mod']))
+					{
+						if($_GET['dbo_view'])
+						{
+							echo "<span id='view-anchor'>";
+							$view_obj = $this->newSelf();
+							$view_obj->id = $_GET['dbo_view'];
+							$view_obj->load();
+							echo $view_obj->autoAdminView();
+							echo "</span>";
+						}
+					}
+				?>
+				</div>
+
+				
+				<?
+					//checa se o usuário pode editar o registro
+					if(!DBO_PERMISSIONS || $dbo_permission_update)
+					{
+						if($_GET['dbo_update'])
+						{
+							//carrega o modulo
+							$this->id = dboescape($_GET['dbo_update']);
+							$this->load();
+
+							$function_name = $this->getModule().'_has_permission';
+							if(function_exists($function_name))
+							{
+								$dbo_permission_update = $function_name('update', $this);
+								$function_name = false;
+							}
+
+							echo $dbo_permission_update ? $this->getBarraAcoesUpdate($this->getButtonScheme($this)) : '';
+
+							if(function_exists('form_'.$this->getModule().'_update'))
+							{
+								$function_name = 'form_'.$this->getModule().'_update';
+								$class_name = get_class($this);
+								echo $function_name(new $class_name(dboescape($_GET['dbo_update'])));
+							}
+							else
+							{
+								$function_name = false;
+								if(function_exists('form_'.$this->getModule().'_toolbar'))
+								{
+									$function_name = 'form_'.$this->getModule().'_toolbar';
+								}
+								?>
+								<div class='row'>
+									<div class='large-<?= $function_name ? '7' : '12' ?> columns'>
+										<h3>Alterar <?= dboStrToLower($scheme->titulo) ?></h3>
+									</div><!-- col -->
+									<?php
+										if($function_name)
+										{
+											?>
+											<div class="small-12 large-5 columns"><?= $function_name('update', $this) ?></div>
+											<?php
+										}
+									?>
+								</div><!-- row -->
+								<?php
+								if($dbo_permission_update)
+								{
+									$this->getUpdateForm(array(
+										'id_formulario' => $id_formulario,
+									));
+								}
+								else
+								{
+									?>
+									<p class="text-center"><br /><br /><br />&#8212; Você não tem permissão para alterar estes dados &#8212;</p>
+									<?php
 								}
 							}
 						}
-						//shows the list if you're not in the update or insert form.
-						if(!$_GET['dbo_new'] && !$_GET['dbo_update'])
-						{
-							?>
-							<div id='dbo-list'>
-								<?
-									//se existe uma função de listagem...
-									if(function_exists('list_'.$this->getModule()))
-									{
-										$function_name = 'list_'.$this->getModule();
-										echo $function_name($this);
-									}
-									else
-									{
-										/* executa a funcao append */
-										$function_name = 'list_'.$this->__module_scheme->modulo."_prepend";
-										if(function_exists($function_name))
-										{
-											echo $function_name(clone $this);
-										}
-
-										//cria a caixa de filtros
-										$this->showFilterBox();
-
-										/* verifica se existe uma função pos-list, se sim, clona o obj para poder passar a lista de elementos que serao listados */
-
-										$function_name = 'list_'.$this->__module_scheme->modulo."_append";
-										if(function_exists($function_name))
-										{
-											$append = $function_name(clone $this);
-										}
-										?>
-										<div class='row <?= $scheme->classes_listagem ?>' id='list-<?= $scheme->modulo ?>'>
-											<div class='large-12 columns'>
-												<div class='row'>
-													<div class='large-12 columns text-right'>
-														<?= $this->showFilterButton(); ?>	
-													</div><!-- col -->
-												</div><!-- row -->
-
-												<div class='anchor-get-list'>
-												<?
-													//executes the pre_list function, if exists.
-													$func = $this->getModule()."_pre_list";
-													if(function_exists($func)) { $func(); }
-
-													$this->getList();
-
-													//executes the pos_list function, if exists... recieves the ids of the listed elements as parameter
-													$func = $this->getModule()."_pos_list";
-													if(function_exists($func)) { $func($this->__listed_elements); }
-												?>
-												</div><!-- anchor-get-list -->
-											</div>
-										</div>
-										<?= $append ?>
-										<?
-									}
-								?>
-							</div>
+					}
+					//shows the list if you're not in the update or insert form.
+					if(!$_GET['dbo_new'] && !$_GET['dbo_update'])
+					{
+						?>
+						<div id='dbo-list'>
 							<?
-						}
-						//append geral do modulo
-						$function_name = 'module_'.$this->getModule()."_append";
-						if(function_exists($function_name))
-						{
-							echo $function_name();
-						}
-						//subsection update iframe do parent
-						if($_GET['dbo_subsection'])
-						{
-							?>
-							<style>
-								html, body { padding: 0 !important; }
-							</style>
-							<script>
-								function resizeIframe() {
-									modal = $('.reveal-modal.open')[0];
-									var height = Math.max(document.body.clientHeight, (modal ? modal.getBoundingClientRect().bottom + 50 : 0));
-									$(parent.document).find('#<?= $_GET[dbo_subsection] ?>-iframe:not(:animated)').animate({
-										height: height+'px'
-									}, 300);
+								//se existe uma função de listagem...
+								if(function_exists('list_'.$this->getModule()))
+								{
+									$function_name = 'list_'.$this->getModule();
+									echo $function_name($this);
 								}
-								$(document).ready(function(){
-									resizeIframe();
-									setInterval(function(){ 
-										resizeIframe();
-									}, 500);
-									setTimeout(function(){
-										$(parent).scrollTo('#<?= $_GET['section_id'] ?>', 500);
-									}, 550);
-								}) //doc.ready
-							</script>							
-							<?
-						}
-					?>
-				</div><!-- wrapper-dbo-auto-admin -->
+								else
+								{
+									/* executa a funcao append */
+									$function_name = 'list_'.$this->__module_scheme->modulo."_prepend";
+									if(function_exists($function_name))
+									{
+										echo $function_name(clone $this);
+									}
 
-				<?
-				/* Scripts para o autoadmin */
-				if(!$_GET['noscript']) { $this->localScripts(array(
-					'id_formulario' => $id_formulario,
-				)); }
-			}//modulo
-		} //ok()
+									//cria a caixa de filtros
+									$this->showFilterBox();
+
+									/* verifica se existe uma função pos-list, se sim, clona o obj para poder passar a lista de elementos que serao listados */
+
+									$function_name = 'list_'.$this->__module_scheme->modulo."_append";
+									if(function_exists($function_name))
+									{
+										$append = $function_name(clone $this);
+									}
+									?>
+									<div class='row <?= $scheme->classes_listagem ?>' id='list-<?= $scheme->modulo ?>'>
+										<div class='large-12 columns'>
+											<div class='row'>
+												<div class='large-12 columns text-right'>
+													<?= $this->showFilterButton(); ?>	
+												</div><!-- col -->
+											</div><!-- row -->
+
+											<div class='anchor-get-list'>
+											<?
+												//executes the pre_list function, if exists.
+												$func = $this->getModule()."_pre_list";
+												if(function_exists($func)) { $func(); }
+
+												$this->getList();
+
+												//executes the pos_list function, if exists... recieves the ids of the listed elements as parameter
+												$func = $this->getModule()."_pos_list";
+												if(function_exists($func)) { $func($this->__listed_elements); }
+											?>
+											</div><!-- anchor-get-list -->
+										</div>
+									</div>
+									<?= $append ?>
+									<?
+								}
+							?>
+						</div>
+						<?
+					}
+					//append geral do modulo
+					$function_name = 'module_'.$this->getModule()."_append";
+					if(function_exists($function_name))
+					{
+						echo $function_name();
+					}
+					//subsection update iframe do parent
+					if($_GET['dbo_subsection'])
+					{
+						?>
+						<style>
+							html, body { padding: 0 !important; }
+						</style>
+						<script>
+							function resizeIframe() {
+								modal = $('.reveal-modal.open')[0];
+								var height = Math.max(document.body.clientHeight, (modal ? modal.getBoundingClientRect().bottom + 50 : 0));
+								$(parent.document).find('#<?= $_GET[dbo_subsection] ?>-iframe:not(:animated)').animate({
+									height: height+'px'
+								}, 300);
+							}
+							$(document).ready(function(){
+								resizeIframe();
+								setInterval(function(){ 
+									resizeIframe();
+								}, 500);
+								setTimeout(function(){
+									$(parent).scrollTo('#<?= $_GET['section_id'] ?>', 500);
+								}, 550);
+							}) //doc.ready
+						</script>							
+						<?
+					}
+				?>
+			</div><!-- wrapper-dbo-auto-admin -->
+
+			<?
+			/* Scripts para o autoadmin */
+			if(!$_GET['noscript']) { $this->localScripts(array(
+				'id_formulario' => $id_formulario,
+			)); }
+		}//modulo
 	} // autoAdmin()
 
 	/*
@@ -4494,339 +4576,335 @@ class Dbo extends Obj
 	*/
 	function autoAdminView ()
 	{
-		if($this->ok())
+		$scheme = $this->__module_scheme;
+
+		//tratando os campos fixos de dados
+		$this->makeFixos($_GET['dbo_fixo']);
+
+		$fixos = $this->__fixos;
+
+		$view = $this->id;
+
+		$modulo = $this->newSelf();
+		$modulo->id = $view;
+		$modulo->load();
+
+		//global refferences to be used by functions, external queries, etc.
+		$id = $modulo->id;
+
+		if(!is_object($this->__module_scheme))
 		{
-			$scheme = $this->__module_scheme;
+			echo "<h1 style='font-size: 21px; color: #C00;'>ERRO: A classe '".get_class($this)."' não possui esquema de módulo definido.</h1>";
+		}
+		else
+		{
 
-			//tratando os campos fixos de dados
-			$this->makeFixos($_GET['dbo_fixo']);
+			$return .= "<div class='row'><div class='columns large-12'><span class='dbo-element'><div class='viewset' style='clear: both;'><div class='content'><fieldset>";
 
-			$fixos = $this->__fixos;
+			//checando se há grid de exibição de dados customizado... e setando variaveis para seu uso.
+			if($this->hasGrid('view')) { $gc = 0; $hasgrid = true; $grid = $this->hasGrid('view'); }
 
-			$view = $this->id;
+			// Colocando os THs na tabela.
 
-			$modulo = $this->newSelf();
-			$modulo->id = $view;
-			$modulo->load();
+			$first = FALSE;
 
-			//global refferences to be used by functions, external queries, etc.
-			$id = $modulo->id;
-
-			if(!is_object($this->__module_scheme))
+			foreach($this->__module_scheme->campo as $chave => $valor)
 			{
-				echo "<h1 style='font-size: 21px; color: #C00;'>ERRO: A classe '".get_class($this)."' não possui esquema de módulo definido.</h1>";
-			}
-			else
-			{
-
-				$return .= "<div class='row'><div class='columns large-12'><span class='dbo-element'><div class='viewset' style='clear: both;'><div class='content'><fieldset>";
-
-				//checando se há grid de exibição de dados customizado... e setando variaveis para seu uso.
-				if($this->hasGrid('view')) { $gc = 0; $hasgrid = true; $grid = $this->hasGrid('view'); }
-
-				// Colocando os THs na tabela.
-
-				$first = FALSE;
-
-				foreach($this->__module_scheme->campo as $chave => $valor)
+				if($hasgrid)
 				{
-					if($hasgrid)
+					if($grid[$gc] == '|-')
 					{
-						if($grid[$gc] == '|-')
+						$return .= "<div class='row clearfix'>\n"; $gc++;
+						//inserts the section separator, if exists.
+						if(intval($grid[$gc]) == 0 && $grid[$gc] != '|-' && $grid[$gc] != '-|' )
 						{
+							$return .= "<div class='columns large-12'><div class='section subheader'><span>".$grid[$gc]."</span></div></div>\n"; $gc++;
+							$return .= "</div> <!-- row -->\n\n"; $gc++;
 							$return .= "<div class='row clearfix'>\n"; $gc++;
-							//inserts the section separator, if exists.
-							if(intval($grid[$gc]) == 0 && $grid[$gc] != '|-' && $grid[$gc] != '-|' )
-							{
-								$return .= "<div class='columns large-12'><div class='section subheader'><span>".$grid[$gc]."</span></div></div>\n"; $gc++;
-								$return .= "</div> <!-- row -->\n\n"; $gc++;
-								$return .= "<div class='row clearfix'>\n"; $gc++;
-							}
 						}
-						if($grid[$gc] == '-|') { $return .= "</div> <!-- row -->\n\n"; /*row*/ $gc++; }
 					}
-					if($valor->view === true)
+					if($grid[$gc] == '-|') { $return .= "</div> <!-- row -->\n\n"; /*row*/ $gc++; }
+				}
+				if($valor->view === true)
+				{
+					if (!$hasgrid) { $return .= "<div class='row'>"; }
+					$return .= "<div class='item columns ".(($hasgrid)?('large-'.$grid[$gc++]):(''))."'>\n";
+					//$return .= (($valor->dica)?("<span class='dica'>".$valor->dica."</span>"):(''));
+					$return .= "<label>".htmlSpecialChars($valor->titulo)."</label>\n";
+
+					//dando um destaque para o primeiro elemento, potencialmente o "titulo" do view atual.
+					if($valor->tipo == 'text' && !$first)
 					{
-						if (!$hasgrid) { $return .= "<div class='row'>"; }
-						$return .= "<div class='item columns ".(($hasgrid)?('large-'.$grid[$gc++]):(''))."'>\n";
-						//$return .= (($valor->dica)?("<span class='dica'>".$valor->dica."</span>"):(''));
-						$return .= "<label>".htmlSpecialChars($valor->titulo)."</label>\n";
+						$first_class = 'field-first';
+						$first = TRUE;
+					}
+					$return .= "<div class='field input-".$valor->tipo." ".$first_class."'>\n";
+					$first_class = '';
 
-						//dando um destaque para o primeiro elemento, potencialmente o "titulo" do view atual.
-						if($valor->tipo == 'text' && !$first)
+					// TEXT ======================================================================================
+					if($valor->tipo == 'text')
+					{
+						$return .= $this->clearValue($modulo->{$valor->coluna});
+					}
+					// PASSWORD ===============================================================================
+					if($valor->tipo == 'password')
+					{
+						$return .= "********";
+					}
+					// TEXTAREA ==================================================================================
+					if($valor->tipo == 'textarea')
+					{
+						$return .= nl2br($modulo->{$valor->coluna});
+					}
+					// TEXTAREA-RICH ==================================================================================
+					if($valor->tipo == 'textarea-rich')
+					{
+						$return .= $modulo->{$valor->coluna};
+					}
+					// RADIO =====================================================================================
+					elseif ($valor->tipo == 'radio')
+					{
+						foreach($valor->valores as $chave2 => $valor2)
 						{
-							$first_class = 'field-first';
-							$first = TRUE;
+							$return .= (($modulo->{$valor->coluna} == $chave2)?($valor2):(''));
 						}
-						$return .= "<div class='field input-".$valor->tipo." ".$first_class."'>\n";
-						$first_class = '';
+					}
+					// CHECKBOX ==================================================================================
+					elseif ($valor->tipo == 'checkbox')
+					{
+						$database_checkbox_values = explode("\n", $modulo->{$valor->coluna});
+						foreach($valor->valores as $chave2 => $valor2)
+						{
+							$return .= ((in_array($chave2, $database_checkbox_values))?($valor2."<br />"):(''));
+						}
+					}
+					// PRICE ====================================================================================
+					elseif ($valor->tipo == 'price')
+					{
+						if($valor->formato == 'real')
+						{
+							$return .= "R$ ".number_format($modulo->{$valor->coluna}, 2, ',', '.');
+						}
+						elseif($valor->formato == 'generico')
+						{
+							$return .= number_format($modulo->{$valor->coluna}, 2, ',', '.');
+						}
+						else
+						{
+							$return .= "US$ ".number_format($modulo->{$valor->coluna}, 2, '.', ',');
+						}
+					}
+					// SELECT ====================================================================================
+					elseif ($valor->tipo == 'select')
+					{
+						foreach($valor->valores as $chave2 => $valor2)
+						{
+							if($modulo->{$valor->coluna} == $chave2)
+							{
+								$return .= $valor2;
+							}
+						}
+					}
+					// DATA ======================================================================================
+					elseif($valor->tipo == 'date')
+					{
+						if($this->clearValue($modulo->{$valor->coluna}) != null)
+						{
+							list($ano,$mes,$dia) = explode("-", $this->clearValue($modulo->{$valor->coluna}));
+							if($dia == '00') { $val = ''; }
+							else { $val = $dia."/".$mes."/".$ano; }
+							$return .= $this->clearValue($val);
+						}
+						$return .= '';
+					}
+					// PLUGINS ==========================================================================
+					elseif($valor->tipo == 'plugin')
+					{
+						$plugin = $valor->plugin;
+						$plugin_path = DBO_PATH."/plugins/".$plugin->name."/".$plugin->name.".php";
+						$plugin_class = "dbo_".$plugin->name;
+						//checa se o plugin existe, antes de mais nada.
+						if(file_exists($plugin_path))
+						{
+							include_once($plugin_path); //inclui a classe
+							$plug = new $plugin_class($plugin->params); //instancia com os parametros
+							$plug->setData($this->clearValue($modulo->{$valor->coluna}));
+							$return .= $plug->getView($valor->coluna); //pega os campos na visualização do registro
+						}
+						else { //senão, avisa que não está instalado.
+							$return .= "O Plugin <b>'".$plugin->name."'</b> não está instalado";
+						}
+					} //plugins
+					// SINGLE JOIN ===============================================================================
+					elseif($valor->tipo == 'join')
+					{
+						$join = $valor->join;
 
-						// TEXT ======================================================================================
-						if($valor->tipo == 'text')
-						{
-							$return .= $this->clearValue($modulo->{$valor->coluna});
-						}
-						// PASSWORD ===============================================================================
-						if($valor->tipo == 'password')
-						{
-							$return .= "********";
-						}
-						// TEXTAREA ==================================================================================
-						if($valor->tipo == 'textarea')
-						{
-							$return .= nl2br($modulo->{$valor->coluna});
-						}
-						// TEXTAREA-RICH ==================================================================================
-						if($valor->tipo == 'textarea-rich')
-						{
-							$return .= $modulo->{$valor->coluna};
-						}
-						// RADIO =====================================================================================
-						elseif ($valor->tipo == 'radio')
-						{
-							foreach($valor->valores as $chave2 => $valor2)
-							{
-								$return .= (($modulo->{$valor->coluna} == $chave2)?($valor2):(''));
-							}
-						}
-						// CHECKBOX ==================================================================================
-						elseif ($valor->tipo == 'checkbox')
-						{
-							$database_checkbox_values = explode("\n", $modulo->{$valor->coluna});
-							foreach($valor->valores as $chave2 => $valor2)
-							{
-								$return .= ((in_array($chave2, $database_checkbox_values))?($valor2."<br />"):(''));
-							}
-						}
-						// PRICE ====================================================================================
-						elseif ($valor->tipo == 'price')
-						{
-							if($valor->formato == 'real')
-							{
-								$return .= "R$ ".number_format($modulo->{$valor->coluna}, 2, ',', '.');
-							}
-							elseif($valor->formato == 'generico')
-							{
-								$return .= number_format($modulo->{$valor->coluna}, 2, ',', '.');
-							}
-							else
-							{
-								$return .= "US$ ".number_format($modulo->{$valor->coluna}, 2, '.', ',');
-							}
-						}
-						// SELECT ====================================================================================
-						elseif ($valor->tipo == 'select')
-						{
-							foreach($valor->valores as $chave2 => $valor2)
-							{
-								if($modulo->{$valor->coluna} == $chave2)
-								{
-									$return .= $valor2;
-								}
-							}
-						}
-						// DATA ======================================================================================
-						elseif($valor->tipo == 'date')
-						{
-							if($this->clearValue($modulo->{$valor->coluna}) != null)
-							{
-								list($ano,$mes,$dia) = explode("-", $this->clearValue($modulo->{$valor->coluna}));
-								if($dia == '00') { $val = ''; }
-								else { $val = $dia."/".$mes."/".$ano; }
-								$return .= $this->clearValue($val);
-							}
-							$return .= '';
-						}
-						// PLUGINS ==========================================================================
-						elseif($valor->tipo == 'plugin')
-						{
-							$plugin = $valor->plugin;
-							$plugin_path = DBO_PATH."/plugins/".$plugin->name."/".$plugin->name.".php";
-							$plugin_class = "dbo_".$plugin->name;
-							//checa se o plugin existe, antes de mais nada.
-							if(file_exists($plugin_path))
-							{
-								include_once($plugin_path); //inclui a classe
-								$plug = new $plugin_class($plugin->params); //instancia com os parametros
-								$plug->setData($this->clearValue($modulo->{$valor->coluna}));
-								$return .= $plug->getView($valor->coluna); //pega os campos na visualização do registro
-							}
-							else { //senão, avisa que não está instalado.
-								$return .= "O Plugin <b>'".$plugin->name."'</b> não está instalado";
-							}
-						} //plugins
-						// SINGLE JOIN ===============================================================================
-						elseif($valor->tipo == 'join')
-						{
-							$join = $valor->join;
+						$obj = new Dbo($join->modulo);
+						$obj->{$join->{chave}} = $this->clearValue($modulo->{$valor->coluna});
 
-							$obj = new Dbo($join->modulo);
-							$obj->{$join->{chave}} = $this->clearValue($modulo->{$valor->coluna});
+						//setando restricoes...
+						$rest = '';
+						if($valor->restricao) { eval($valor->restricao); }
+						$rest .= " ORDER BY ".$valor->join->valor." ";
 
-							//setando restricoes...
-							$rest = '';
-							if($valor->restricao) { eval($valor->restricao); }
-							$rest .= " ORDER BY ".$valor->join->valor." ";
-
-							$obj->load($rest);
+						$obj->load($rest);
 /*							if($this->isFixo($valor->coluna))
-							{
-								if($obj->{$join->chave} == $this->isFixo($valor->coluna))
-								{
-									$return .= "<span class='hide-fixo' name='".$valor->coluna."' ".$obj->{$join->valor}."</span>";
-								}
-								$return .= "
-									<script type='text/javascript' charset='utf-8'>
-										$('span[name=".$valor->coluna."]').closest('.row').hide();
-									</script>
-								";
-							}
-							else
-							{
-							} */
-							$return .= $obj->{$join->valor};
-						} //single join
-						// MULTI JOIN ============================================================================
-						elseif($valor->tipo == 'joinNN')
 						{
-							$todoNN = array();
-							$join = $valor->join;
-							$obj = new Dbo($join->modulo);
-							$cadastrados_array = array();
-
-							//setando restricoes...
-							$rest = '';
-							if($valor->restricao) { eval($valor->restricao); }
-							$rest .= " ORDER BY ".$valor->join->valor." ";
-
-							$obj->loadAll($rest);
-
-							$cadastrados = new Dbo($join->tabela_ligacao);
-							$cadastrados->{$join->chave1} = $modulo->id;
-							$cadastrados->loadAll();
-							do {
-								$cadastrados_array[] = $cadastrados->{$join->chave2};
-							}while($cadastrados->fetch());
-							do {
-								if(in_array($obj->{$join->chave}, $cadastrados_array))
-								{
-									$todoNN[] = $obj->{$join->valor};
-								}
-							}while($obj->fetch());
-							$return .= implode("<br>", $todoNN);
+							if($obj->{$join->chave} == $this->isFixo($valor->coluna))
+							{
+								$return .= "<span class='hide-fixo' name='".$valor->coluna."' ".$obj->{$join->valor}."</span>";
+							}
+							$return .= "
+								<script type='text/javascript' charset='utf-8'>
+									$('span[name=".$valor->coluna."]').closest('.row').hide();
+								</script>
+							";
 						}
-						// IMAGE ============================================================================
-						elseif($valor->tipo == 'image')
+						else
 						{
-							if(file_exists(DBO_IMAGE_UPLOAD_PATH."/".$this->clearValue($modulo->{$valor->coluna})) && strlen($modulo->{$valor->coluna}))
-							{
-								$return .= "<a rel='lightbox[album]' href=".DBO_IMAGE_HTML_PATH."/".$this->clearValue($modulo->{$valor->coluna})."><img src='".DBO_IMAGE_HTML_PATH."/".$this->clearValue($modulo->{$valor->coluna})."' class='thumb-lista'></a>";
-							}
-						}
-						// FILE ============================================================================
-						elseif($valor->tipo == 'file')
-						{
-							if(strlen($modulo->{$valor->coluna}))
-							{
-								$return .= $this->getDownloadLink($modulo->{$valor->coluna});
-							}
-						}
-						// QUERY ================================================================================
-						elseif ($valor->tipo == 'query') {
-							$query = '';
-							eval($valor->query);
-							$res_query = dboQuery($query);
-							if(dboAffectedRows())
-							{
-								$lin_query = dboFetchObject($res_query);
-								$val = $lin_query->val;
-							}
-							if($val !== false)
-							{
-								$return .= $val;
-							}
-						}
-						$return .= "</div>\n"; //input
-						$return .= "\n</div>\n"; //item
-						if (!$hasgrid) { $return .= "</div> <!-- row -->\n\n"; /*row*/ }
-					}
-					if($hasgrid)
+						} */
+						$return .= $obj->{$join->valor};
+					} //single join
+					// MULTI JOIN ============================================================================
+					elseif($valor->tipo == 'joinNN')
 					{
-						if($grid[$gc] == '|-')
+						$todoNN = array();
+						$join = $valor->join;
+						$obj = new Dbo($join->modulo);
+						$cadastrados_array = array();
+
+						//setando restricoes...
+						$rest = '';
+						if($valor->restricao) { eval($valor->restricao); }
+						$rest .= " ORDER BY ".$valor->join->valor." ";
+
+						$obj->loadAll($rest);
+
+						$cadastrados = new Dbo($join->tabela_ligacao);
+						$cadastrados->{$join->chave1} = $modulo->id;
+						$cadastrados->loadAll();
+						do {
+							$cadastrados_array[] = $cadastrados->{$join->chave2};
+						}while($cadastrados->fetch());
+						do {
+							if(in_array($obj->{$join->chave}, $cadastrados_array))
+							{
+								$todoNN[] = $obj->{$join->valor};
+							}
+						}while($obj->fetch());
+						$return .= implode("<br>", $todoNN);
+					}
+					// IMAGE ============================================================================
+					elseif($valor->tipo == 'image')
+					{
+						if(file_exists(DBO_IMAGE_UPLOAD_PATH."/".$this->clearValue($modulo->{$valor->coluna})) && strlen($modulo->{$valor->coluna}))
 						{
+							$return .= "<a rel='lightbox[album]' href=".DBO_IMAGE_HTML_PATH."/".$this->clearValue($modulo->{$valor->coluna})."><img src='".DBO_IMAGE_HTML_PATH."/".$this->clearValue($modulo->{$valor->coluna})."' class='thumb-lista'></a>";
+						}
+					}
+					// FILE ============================================================================
+					elseif($valor->tipo == 'file')
+					{
+						if(strlen($modulo->{$valor->coluna}))
+						{
+							$return .= $this->getDownloadLink($modulo->{$valor->coluna});
+						}
+					}
+					// QUERY ================================================================================
+					elseif ($valor->tipo == 'query') {
+						$query = '';
+						eval($valor->query);
+						$res_query = dboQuery($query);
+						if(dboAffectedRows())
+						{
+							$lin_query = dboFetchObject($res_query);
+							$val = $lin_query->val;
+						}
+						if($val !== false)
+						{
+							$return .= $val;
+						}
+					}
+					$return .= "</div>\n"; //input
+					$return .= "\n</div>\n"; //item
+					if (!$hasgrid) { $return .= "</div> <!-- row -->\n\n"; /*row*/ }
+				}
+				if($hasgrid)
+				{
+					if($grid[$gc] == '|-')
+					{
+						$return .= "<div class='row clearfix'>\n"; $gc++;
+						//inserts the section separator, if exists.
+						if(intval($grid[$gc]) == 0 && $grid[$gc] != '|-' && $grid[$gc] != '-|' )
+						{
+							$return .= "<h3 class='section'>".$grid[$gc]."</h3>\n"; $gc++;
+							$return .= "</div> <!-- row -->\n\n"; $gc++;
 							$return .= "<div class='row clearfix'>\n"; $gc++;
-							//inserts the section separator, if exists.
-							if(intval($grid[$gc]) == 0 && $grid[$gc] != '|-' && $grid[$gc] != '-|' )
-							{
-								$return .= "<h3 class='section'>".$grid[$gc]."</h3>\n"; $gc++;
-								$return .= "</div> <!-- row -->\n\n"; $gc++;
-								$return .= "<div class='row clearfix'>\n"; $gc++;
-							}
-						}
-						if($grid[$gc] == '-|') { $return .= "</div> <!-- row -->\n\n"; /*row*/ $gc++; }
-					}
-				} //foreach
-			}
-
-
-			$return .= "<div class='row'><div class='item large-12 columns text-right'> ";
-
-			//checa se exitem botoes customizados no modulo
-			if(is_array($this->__module_scheme->button))
-			{
-				foreach($this->__module_scheme->button as $chave => $botao)
-				{
-					if(!DBO_PERMISSIONS || hasPermission($botao->value, $_GET['dbo_mod']))
-					{
-						if($botao->custom === TRUE) //botoes customizados. o codigo bem do arquivo de definição do modulo.
-						{
-							$id = $modulo->id;
-							eval(str_replace("[VALUE]", $botao->value, $botao->code));
-							$return .= str_replace("tiny", "small", $code)." ";
-						} else {
-							$return .= "<a class='button small radius no-margin' href='".$this->keepUrl(array("dbo_mod=".$botao->modulo."&dbo_fixo=".$this->encodeFixos($botao->modulo_fk."=".$modulo->{$botao->key}), "!pag&!dbo_insert&!dbo_update&!dbo_delete&!dbo_view"))."'>".$botao->value."</a> ";
 						}
 					}
-				}//foreach
-			}//if
+					if($grid[$gc] == '-|') { $return .= "</div> <!-- row -->\n\n"; /*row*/ $gc++; }
+				}
+			} //foreach
+		}
 
-			if(!DBO_PERMISSIONS || hasPermission('update', $_GET['dbo_mod']))
+
+		$return .= "<div class='row'><div class='item large-12 columns text-right'> ";
+
+		//checa se exitem botoes customizados no modulo
+		if(is_array($this->__module_scheme->button))
+		{
+			foreach($this->__module_scheme->button as $chave => $botao)
 			{
-				$return .= "<a class='button small radius no-margin' href='".$this->keepUrl(array('dbo_update='.$modulo->id, '!dbo_view'))."'>Alterar</a>";
-			}
-
-			$return .= " <a href='' class='view-button-close button secondary small radius no-margin'>Fechar</a></div></div>"; //input //item //row (dos botoes customizados)
-
-			//verifica se existem botoes de visualização recursive
-			if(is_array($this->__module_scheme->button))
-			{
-				foreach($this->__module_scheme->button as $chave => $botao)
+				if(!DBO_PERMISSIONS || hasPermission($botao->value, $_GET['dbo_mod']))
 				{
-					if($botao->view === TRUE && !$botao->custom)
+					if($botao->custom === TRUE) //botoes customizados. o codigo bem do arquivo de definição do modulo.
 					{
-						$obj_botao = new dbo($botao->modulo);
-						$obj_botao->{$botao->modulo_fk} = $modulo->id;
-						$obj_botao->loadAll();
-						$obj_botao->setFixo($botao->modulo_fk, $modulo->id);
-						if($obj_botao->size())
-						{
-							$return .= "<div class='row'><div class='item'>";
-							$return .= "<div class='recursive'>";
-							$return .= "<h1>".$botao->value."</h1>";
-							do {
-								$return .= $obj_botao->autoAdminView();
-							}while($obj_botao->fetch());
-							$return .= "</div></div></div>";
-						}
-					} //view == TRUE
-				}//foreach
-			}//if
+						$id = $modulo->id;
+						eval(str_replace("[VALUE]", $botao->value, $botao->code));
+						$return .= str_replace("tiny", "small", $code)." ";
+					} else {
+						$return .= "<a class='button small radius no-margin' href='".$this->keepUrl(array("dbo_mod=".$botao->modulo."&dbo_fixo=".$this->encodeFixos($botao->modulo_fk."=".$modulo->{$botao->key}), "!pag&!dbo_insert&!dbo_update&!dbo_delete&!dbo_view"))."'>".$botao->value."</a> ";
+					}
+				}
+			}//foreach
+		}//if
 
-			$return .= "</div></div></span></fieldset></div></div>"; //content //viewset //dbo-element //fieldset //12-columns //row
+		if(!DBO_PERMISSIONS || hasPermission('update', $_GET['dbo_mod']))
+		{
+			$return .= "<a class='button small radius no-margin' href='".$this->keepUrl(array('dbo_update='.$modulo->id, '!dbo_view'))."'>Alterar</a>";
+		}
 
-			return $return;
+		$return .= " <a href='' class='view-button-close button secondary small radius no-margin'>Fechar</a></div></div>"; //input //item //row (dos botoes customizados)
 
-		} //ok()
+		//verifica se existem botoes de visualização recursive
+		if(is_array($this->__module_scheme->button))
+		{
+			foreach($this->__module_scheme->button as $chave => $botao)
+			{
+				if($botao->view === TRUE && !$botao->custom)
+				{
+					$obj_botao = new dbo($botao->modulo);
+					$obj_botao->{$botao->modulo_fk} = $modulo->id;
+					$obj_botao->loadAll();
+					$obj_botao->setFixo($botao->modulo_fk, $modulo->id);
+					if($obj_botao->size())
+					{
+						$return .= "<div class='row'><div class='item'>";
+						$return .= "<div class='recursive'>";
+						$return .= "<h1>".$botao->value."</h1>";
+						do {
+							$return .= $obj_botao->autoAdminView();
+						}while($obj_botao->fetch());
+						$return .= "</div></div></div>";
+					}
+				} //view == TRUE
+			}//foreach
+		}//if
+
+		$return .= "</div></div></span></fieldset></div></div>"; //content //viewset //dbo-element //fieldset //12-columns //row
+
+		return $return;
 	}
 	/*
 	* ===============================================================================================================================================

@@ -111,21 +111,14 @@
 					
 					<? $hooks->do_action('dbo_'.$tipo.'_form_resumo_before', $pag, $params); ?>
 
-					<?php
-						if($tipo != 'pagina')
-						{
-							?>
-							<div class="row wrapper-pagina-field-resumo" id="wrapper-resumo" style="<?= $pag->hideFormField('resumo') ? 'display: none;' : '' ?>">
-								<div class="large-12 columns">
-									<?= $pag->getFormElement($operation, 'resumo', array(
-										'placeholder' => 'Digite aqui o resumo',
-										'styles' => 'margin-top: 5px; margin-bottom: 1em',
-									)); ?>
-								</div>
-							</div>
-							<?php
-						}
-					?>
+					<div class="row wrapper-pagina-field-resumo" id="wrapper-resumo" style="<?= $pag->hideFormField('resumo') ? 'display: none;' : '' ?>">
+						<div class="large-12 columns">
+							<?= $pag->getFormElement($operation, 'resumo', array(
+								'placeholder' => 'Digite aqui o resumo',
+								'styles' => 'margin-top: 5px; margin-bottom: 1em',
+							)); ?>
+						</div>
+					</div>
 			
 					<? $hooks->do_action('dbo_'.$tipo.'_form_resumo_after', $pag, $params); ?>
 					
@@ -140,13 +133,20 @@
 							?>
 							<div class="input input-content-tools wrapper-pagina-field-texto" style="min-height: <?= $pag->tipo == 'pagina' ? 500 : 200 ?>px; <?= $pag->hideFormField('texto') ? 'display: none;' : '' ?>">
 								<div>
-								<?= dboUI::field('content-tools', 'update', $pag, array(
-									'name' => 'texto',
-									'value' => $pag->texto,
-									'params' => array(
-										'template' => $pag->getTemplate(),
-									),
-								)); ?>
+								<?php
+									$page_content = dboUI::field('content-tools', 'update', $pag, array(
+										'name' => 'texto',
+										'value' => $pag->texto,
+										'params' => array(
+											'template' => $pag->getTemplate(),
+										),
+									));
+
+									//ativa as áreas de seções desta página
+									$page_content = $pag->activatePageSections($page_content, array('context' => 'admin'));
+
+									echo $page_content;
+								?>
 								</div>
 							</div>
 							<?php
@@ -231,22 +231,26 @@
 					?>
 
 					<?php
-						//mostra os content blocks específicos para esta slug
-						if(is_array($_system['content_block']['pagina']['slug'][$pag->slug]))
+						//mostra os content blocks específicos para este tipo de página ou slug
+						if(is_array($_system['content_block']['pagina']['slug'][$pag->slug]) || is_array($_system['content_block']['pagina']['tipo'][$tipo]))
 						{
+							$content_blocks = array_merge((array)$_system['content_block']['pagina']['tipo'][$tipo], (array)$_system['content_block']['pagina']['slug'][$pag->slug])
 							?>
 							<div class="row">
 								<?php
-									foreach($_system['content_block']['pagina']['slug'][$pag->slug] as $block_name => $block)
+									foreach($content_blocks as $block_name => $block)
 									{
-										$block['modulo'] = 'pagina';
-										$block['modulo_id'] = $pag->slug;
-										$block['name'] = $block_name;
-										?>
-										<div class="large-<?= $block['grid'] ?> columns end">
-											<?= dbo_content_block::renderField($block) ?>
-										</div>
-										<?php
+										if(!in_array($block_name, (array)$_system['rendered_content_blocks']['pagina']['slug'][$pag->slug]))
+										{
+											$block['modulo'] = 'pagina';
+											$block['modulo_id'] = $pag->slug;
+											$block['name'] = $block_name;
+											?>
+											<div class="large-<?= $block['grid'] ?> columns end">
+												<?= dbo_content_block::renderField($block) ?>
+											</div>
+											<?php
+										}
 									}
 									unset($block);
 								?>
@@ -309,7 +313,7 @@
 									<strong>Publicação</strong><br />
 									<div id="wrapper-publicacao">
 										<hr class="small">
-										<span data-status="rascunho" class="button secondary small radius trigger-form-submit">Salvar como <span id="button-rascunho-term"><?= $pag->status == 'pendente' ? 'pendente' : 'rascunho' ?></span></span><br />
+										<span data-status="rascunho" class="button secondary small radius trigger-form-submit <?= $pag->status == 'rascunho' ? 'peixe-save' : '' ?>"><?= $pag->status == 'rascunho' ? 'Atualizar' : 'Salvar como' ?> <span id="button-rascunho-term"><?= $pag->status == 'pendente' ? 'pendente' : 'rascunho' ?></span></span><br />
 										<?
 											$status_name = $pag->getValue('status', $pag->status);
 										?>
@@ -363,21 +367,30 @@
 										<hr class="small">
 										<div class="row" id="">
 											<div class="large-6 columns">
-												<?
-													if($pag->status != 'rascunho-automatico' && $pag->status != 'lixeira')
-													{
-														?>
-														<a href="<?= secureUrl('dbo/core/dbo-pagina-ajax.php?action=lixeira-from-form&pagina_id='.$pag->id.'&'.CSRFVar()) ?>" class="top-9 peixe-json" data-confirm="Tem certeza que deseja enviar este item para a lixeira?"><i class="fa fa-trash font-14 fa-fw"></i> Lixeira</a>
-														<?
-													}
-												?>
+												<p class="no-margin top-minus-3">
+													<?
+														//botão para visualizar a página
+														if($pag->slug)
+														{
+															?>
+															<a href="<?= $pag->permalink() ?><?= $pag->status == 'rascunho' ? '?preview_draft=1' : '' ?>" target="_blank" style="display: block;"><i class="fa fa-eye fa-fw"></i> Visualizar</a>
+															<?php
+														}
+														if($pag->status != 'rascunho-automatico' && $pag->status != 'lixeira')
+														{
+															?>
+															<a href="<?= secureUrl('dbo/core/dbo-pagina-ajax.php?action=lixeira-from-form&pagina_id='.$pag->id.'&'.CSRFVar()) ?>" class="peixe-json" data-confirm="Tem certeza que deseja enviar este item para a lixeira?"><i class="fa fa-trash font-14 fa-fw"></i> Lixeira</a>
+															<?
+														}
+													?>
+												</p>
 											</div>
 											<div class="large-6 columns text-right">
 												<?
 													if(!$pag->status || $pag->status == 'rascunho' || $pag->status == 'rascunho-automatico' || $pag->status == 'pendente' || $pag->status == 'lixeira')
 													{
 														?>
-														<span data-status="publicado" id="button-publicar" class="button radius no-margin trigger-form-submit peixe-save" accesskey="s">Publicar</span>
+														<span data-status="publicado" id="button-publicar" class="button radius no-margin trigger-form-submit <?= $pag->status != 'rascunho' ? 'peixe-save' : '' ?>" accesskey="s">Publicar</span>
 														<?
 													}
 													else
@@ -438,6 +451,33 @@
 						?>
 
 						<?php
+							if(sizeof((array)$layouts) > 0)
+							{
+								$layout_ativo = $pag->getDetail('layout');
+								?>
+								<div class="panel radius font-13">
+									<div class="row">
+										<div class="small-12 large-12 columns">
+											<strong>Layout d<?= $genero ?> <?= $titulo ?></strong>
+											<hr class="small">
+											<select name="dbo_pagina_detail[layout]">
+												<?php
+													foreach($layouts as $key => $value)
+													{
+														?>
+														<option value="<?= $key ?>" <?= $layout_ativo == $key ? 'selected' : '' ?>><?= htmlSpecialChars($value) ?></option>
+														<?php
+													}
+												?>
+											</select>
+										</div>
+									</div>
+								</div>
+								<?php
+							}
+						?>
+
+						<?php
 							if(sizeof((array)$templates) > 0)
 							{
 								$template_ativo = $pag->getDetail('template');
@@ -445,7 +485,7 @@
 								<div class="panel radius font-13">
 									<div class="row">
 										<div class="small-12 large-12 columns">
-											<strong>Modelo da página</strong>
+											<strong>Diagramação d<?= $genero ?> <?= $titulo ?></strong>
 											<hr class="small">
 											<select name="dbo_pagina_detail[template]">
 												<?php
@@ -480,7 +520,7 @@
 													<?php
 														do {
 															?>
-															<option value="<?= $sli->id ?>" <?= $pag->getDetail('slider_destacado') ? 'selected' : '' ?>><?= $sli->nome ?></option>
+															<option value="<?= $sli->id ?>" <?= $pag->getDetail('slider_destacado') == $sli->id ? 'selected' : '' ?>><?= $sli->nome ?></option>
 															<?php
 														}while($sli->fetch());
 													?>
@@ -1537,7 +1577,7 @@
 					<div class="settings-box closed" id="settings-form-pagina">
 						<div class="row">
 							<div class="large-12 columns">
-								<h3>Campos exibidos</h3>
+								<h3>Campos do formulário</h3>
 								<div class="font-14">
 									<p>Selecione abaixo os campos que você gostaria de ver neste formulário.</p>
 									<?php
@@ -1573,18 +1613,43 @@
 											),
 										);
 
-										if($tipo == 'pagina')
-										{
-											//removendo o campo "resumo" das paginas
-											unset($campos[2]);
-										}
-
 										foreach($campos as $campo)
 										{
 											?>
 											<input type="checkbox" id="preference-hidden-field-<?= $campo['name'] ?>" <?= $pag->hideFormField($campo['name']) ? '' : 'checked' ?>/><label for="preference-hidden-field-<?= $campo['name'] ?>" data-dbo-set-pref data-meta_key="form_pagina_<?= $tipo ?>_prefs" data-pref_key="hide_<?= $campo['name'] ?>" data-pref_value="<?= $pag->hideFormField($campo['name']) ? 'false' : 'true' ?>" data-toggle onClick="togglePaginaFormField('<?= $campo['name'] ?>')"><?= $campo['label'] ?></label>
 											<?php
 										}
+										
+										//importação multi-linguagens. Mostra se tiver mais de 1
+										if(sizeof((array)$_system['dbo_languages']) > 1)
+										{
+											?>
+											<hr>
+											<p>Selecione os campos para realizar a importação de dados de outra língua.</p>
+											<form method="post" action="<?= secureUrl('dbo/core/dbo-multi-languages-ajax.php?action=importar-dados&target_lang='.$_system['dbo_active_language'].'&pagina_tipo='.$pag->tipo.'&pagina_id='.$pag->id.'&'.CSRFVar()); ?>" data-confirm="Tem certeza que deseja importar os dados selecionados para a língua\n\n'<?= $_system['dbo_languages'][$_system['dbo_active_language']] ?> (<?= $_system['dbo_active_language'] ?>)'?\n\n Qualquer conteúdo já existente será sobrescrito." class="no-margin peixe-json" id="form-importacao-campos-outra-lingua" peixe-log>
+												<input type="checkbox" name="importar_dados_outra_lingua[]" id="importar-dados-titulo" value="titulo" /> <label for="importar-dados-titulo">Título</label>
+												<input type="checkbox" name="importar_dados_outra_lingua[]" id="importar-dados-subtitulo" value="subtitulo" /> <label for="importar-dados-subtitulo">Subtítulo</label>
+												<input type="checkbox" name="importar_dados_outra_lingua[]" id="importar-dados-resumo" value="resumo" /> <label for="importar-dados-resumo">Resumo</label>
+												<input type="checkbox" name="importar_dados_outra_lingua[]" id="importar-dados-texto" value="texto" /> <label for="importar-dados-texto">Texto</label>
+												<select name="source_lang" class="inline-block w-auto font-12 no-margin" required>
+													<option value="">Importar do...</option>
+													<?php
+														foreach((array)$_system['dbo_languages'] as $key => $value)
+														{
+															if($key == $_system['dbo_active_language']) continue;
+															?>
+															<option value="<?= $key ?>"><?= $value ?></option>
+															<?php
+														}
+													?>
+												</select>
+												<button type="submit" class="button font-11 relative" style="top: -2px;">Importar</button>
+											</form>
+											<?php
+										}
+
+										//colocando um hook aqui para mais configurações
+										$hooks->do_action('dbo_'.$tipo.'_form_campos_after', $pag, $params);
 									?>
 								</div>
 							</div>
