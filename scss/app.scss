@@ -97,6 +97,12 @@ div{
 
 @include breakpoint(large) {
 	.top-bar-left { margin-left: rem-calc(-12); }
+	
+	.top-bar{
+		.main-menu{
+			width: 800px;
+		}
+	}
 }
 
 .top-bar-left{
@@ -108,12 +114,6 @@ div{
 
 .off-canvas.is-transition-overlap.is-open {
 	background-color: #333333 !important;
-}
-
-.top-bar{
-	.main-menu{
-		max-width: 800px;
-	}
 }
 #main-banner { padding-top: 30%; background-position: center center; background-size: cover; position: relative; background-attachment: fixed; }
 
