@@ -84,7 +84,7 @@ if(!class_exists('menu'))
 			}
 			return ob_get_clean();
 		}
-		
+
 		function getEstruturaAdmin($params = array())
 		{
 			extract($params);
@@ -110,7 +110,7 @@ if(!class_exists('menu'))
 				if(!is_array($value))
 				{
 					$str_data .= 'data-'.$key.'="'.htmlSpecialChars($value).'" ';
-				}				
+				}
 			}
 
 			ob_start();
@@ -190,7 +190,7 @@ if(!class_exists('menu'))
 						echo '</ol>';
 					}
 				?>
-			</li>			
+			</li>
 			<?
 			return ob_get_clean();
 		}
@@ -209,7 +209,7 @@ if(!class_exists('menu'))
 					}
 					$men->estrutura = json_encode($est);
 					$men->update();
-				}while($men->fetch());					
+				}while($men->fetch());
 			}
 		}
 
@@ -228,7 +228,7 @@ if(!class_exists('menu'))
 				{
 					menu::updateSlugArray($array[$key]['children'], $old_slug, $new_slug);
 				}
-			}			
+			}
 		}
 
 	} //class declaration
@@ -239,7 +239,7 @@ function auto_admin_menu()
 	global $_system;
 
 	ob_start();
-	
+
 	echo dboImportJs('nestable');
 
 	?>
@@ -257,7 +257,7 @@ function auto_admin_menu()
 		</div>
 	</div>
 	<hr>
-	
+
 	<div class="row almost full">
 		<div class="large-4 columns">
 			<ul class="accordion" data-accordion>
@@ -275,7 +275,7 @@ function auto_admin_menu()
 						?>
 						<script>
 							$(document).ready(function(){
-					
+
 								$(document).on('click', '.trigger-adicionar-paginas', function(){
 									if($('#nav-menus-disponiveis dd.active').length){
 										pags = $('input[name^="item-pagina"]:checked');
@@ -292,7 +292,7 @@ function auto_admin_menu()
 										alert('Erro: Não há nenhum menu cadastrado');
 									}
 								});
-					
+
 								$(document).on('click', '.trigger-selecionar-todas-paginas', function(e){
 									e.preventDefault();
 									c = $(this);
@@ -300,13 +300,13 @@ function auto_admin_menu()
 										$(this).prop('checked', true);
 									})
 								});
-					
+
 							}) //doc.ready
 						</script>
 						<?php
 					}
 					//verifica a classe categorias e se tem mais de 1 tipo de página alem do padrão
-					if(class_exists('categoria') && sizeof($_system['pagina_tipo']) > 1) 
+					if(class_exists('categoria') && sizeof($_system['pagina_tipo']) > 1)
 					{
 						require_once(DBO_PATH.'/core/dbo-categoria-admin.php');
 						echo renderCategoriaMenuAdminStructure();
@@ -345,10 +345,10 @@ function auto_admin_menu()
 									?>
 									<dd class="<?= (($men->getIterator() == $men->size())?('active'):('')) ?>" data-menu_id="<?= $men->id ?>" data-menu_profundidade="<?= $men->profundidade ?>"><a href="<?= $men->slug ?>"><?= $men->nome ?></a></dd>
 									<?
-								}while($men->fetch());								
+								}while($men->fetch());
 							}
 						?>
-					</dl>			
+					</dl>
 				</div>
 				<div class="large-4 columns text-right">
 					<?
@@ -434,7 +434,7 @@ function auto_admin_menu()
 		</div>
 	</div>
 	<script>
-		
+
 		function updateDDItemTitulo(dd_item) {
 			dd_item.find('.dd-handle').text(dd_item.find('input[name="titulo"]').val());
 		}
@@ -498,7 +498,7 @@ function auto_admin_menu()
 					clicado.closest('.dd-item').fadeOut('fast', function(){
 						$(this).remove();
 					})
-				} 
+				}
 			});
 
 			//enviando links personalizados ao menu
@@ -544,12 +544,12 @@ function auto_admin_menu()
 				$('#form-novo-menu').fadeOut('fast', function(){
 					$('#form-menu-update').fadeIn('fast');
 				})
-			});			
+			});
 
 			//salvando o menu ativo
 			$(document).on('click', '#button-salvar-menu', function(){
-				peixeJSON('dbo/core/dbo-menu-ajax.php?action=salvar-menu&menu_id='+$('#nav-menus-disponiveis dd.active').data('menu_id'), { 
-					menu_data: $('.dd').nestable('serialize') 
+				peixeJSON('dbo/core/dbo-menu-ajax.php?action=salvar-menu&menu_id='+$('#nav-menus-disponiveis dd.active').data('menu_id'), {
+					menu_data: $('.dd').nestable('serialize')
 				}, '', true);
 			});
 
@@ -569,7 +569,7 @@ function auto_admin_menu()
 				var ans = confirm("Tem certeza que deseja excluir este menu?");
 				if (ans==true) {
 					peixeJSON('dbo/core/dbo-menu-ajax.php?action=delete-menu', { menu_id: $('#nav-menus-disponiveis dd.active').data('menu_id') }, '', true);
-				} 
+				}
 			});
 
 		}) //doc.ready

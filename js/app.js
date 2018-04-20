@@ -3,7 +3,7 @@ function initAnimations() {
 	setTimeout(function(){
 		$('#main-title').removeClass('stop');
 	}, 1000);
-	
+
 	setTimeout(function(){
 		$('#banner-text-left').removeClass('stop');
 		$('#banner-text-right').removeClass('stop');
@@ -13,7 +13,7 @@ function initAnimations() {
 
 $(document).ready(function(){
 
-	$(document).foundation();	
+	$(document).foundation();
 
 	initAnimations();
 
@@ -55,4 +55,3 @@ $(document).ready(function(){
 	});
 
 }) //doc.ready
-

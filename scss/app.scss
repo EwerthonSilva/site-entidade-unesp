@@ -3,11 +3,11 @@
 @import 'settings';
 @import 'foundation';
 @import 'motion-ui';
-@import 'common-f6';
 
 @include foundation-global-styles;
 @include foundation-grid;
 // @include foundation-flex-grid;
+// @include foundation-xy-grid-classes;
 @include foundation-typography;
 @include foundation-button;
 @include foundation-forms;
@@ -18,21 +18,20 @@
 @include foundation-breadcrumbs;
 @include foundation-button-group;
 @include foundation-callout;
+@include foundation-card;
 @include foundation-close-button;
 @include foundation-menu;
 @include foundation-menu-icon;
 @include foundation-drilldown-menu;
 @include foundation-dropdown;
 @include foundation-dropdown-menu;
-@include foundation-flex-video;
+@include foundation-responsive-embed;
 @include foundation-label;
 @include foundation-media-object;
 @include foundation-off-canvas;
 @include foundation-orbit;
 @include foundation-pagination;
 @include foundation-progress-bar;
-// @include foundation-progress-element;
-// @include foundation-meter-element;
 @include foundation-slider;
 @include foundation-sticky;
 @include foundation-reveal;
@@ -46,6 +45,8 @@
 @include foundation-visibility-classes;
 @include foundation-float-classes;
 // @include foundation-flex-classes;
+
+// @include foundation-prototype-classes;
 
 @include motion-ui-transitions;
 @include motion-ui-animations;
@@ -84,9 +85,11 @@ div{
 
 .radius{border-radius: 5px;}
 
-.dropdown{
-	a { color: $light-gray;
-		&:hover { color: $white; }
+.dropdown, .dropdown .menu, .drilldown{
+	li {
+		a { color: $light-gray;
+			&:hover { color: get-color(primary); }
+		}
 	}
 }
 
@@ -96,6 +99,22 @@ div{
 	.top-bar-left { margin-left: rem-calc(-12); }
 }
 
+.top-bar-left{
+	button .mobile-button{
+		position: absolute;
+		left: 0;
+	}
+}
+
+.off-canvas.is-transition-overlap.is-open {
+	background-color: #333333 !important;
+}
+
+.top-bar{
+	.main-menu{
+		max-width: 800px;
+	}
+}
 #main-banner { padding-top: 30%; background-position: center center; background-size: cover; position: relative; background-attachment: fixed; }
 
 #main-banner-stage { position: absolute; top: 0; @include horizontal-center; width: 100%; height: 100%; }
@@ -115,14 +134,21 @@ div{
 
 #main-footer { padding-bottom: rem-calc(130); }
 
-article { padding-top: rem-calc(40);
+article {
+	padding-top: rem-calc(40);
 	h2 { color: $primary-color; margin-bottom: rem-calc(50); }
 }
 
 .social-footer {
 	li { display: inline-block; }
-	a { font-size: rem-calc(28); width: rem-calc(35); height: rem-calc(35); display: inline-block; line-height: rem-calc(35); text-align: center; transition: all .15s ease;
-		&:hover { background: $light-gray; color: #333; }
+	a {
+		font-size: rem-calc(28); width: rem-calc(35); height: rem-calc(35); display: inline-block; line-height: rem-calc(35); text-align: center; transition: all .15s ease;
+		&:hover {
+			background: $light-gray; color: #333;
+		}
 		span { display: none; }
 	}
+}
+.title-bar-title{
+	color: #fff !important;
 }

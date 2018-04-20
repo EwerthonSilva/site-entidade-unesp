@@ -8,8 +8,11 @@
 				</div>
 			</div>
 		</footer>
-
-		<script src="bower_components/what-input/what-input.js"></script>
+		<script src="node_modules/slick-carousel/slick/slick.js"></script>
+		<script src="node_modules/foundation-sites/dist/js/foundation.js"></script>
+		<script src="node_modules/what-input/dist/what-input.js"></script>
+		<script src="js/peixelaranja.js"></script>
+		<script src="js/app.js"></script>
 		<?= siteBody(); ?>
 	</body>
 </html>
