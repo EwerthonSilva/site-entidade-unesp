@@ -66,11 +66,11 @@
 
 			</div>
 		</div>
-		<div class="top-bar" id="responsive-menu">
+		<div class="top-bar show-for-large" id="responsive-menu">
 			<div class="row">
 				<div class="small-12 large-12 columns">
 					<div class="top-bar-left">
-						<ul class="dropdown menu main-menu show-for-large" data-dropdown-menu >
+						<ul class="dropdown menu main-menu" data-dropdown-menu >
 							<?= menu::render('menu-principal', array(
 								'items_only' => true,
 								'$foundation_6' => true,
