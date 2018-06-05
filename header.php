@@ -41,7 +41,7 @@
 		if(siteConfig()->imagem_com_texto)
 		{
 			?>
-			<img src="<?= siteConfig()->_background_image->url() ?>"/>
+			<img id="site-banner" src="<?= siteConfig()->_background_image->url() ?>"/>
 			<?php
 		}
 		else
